@@ -1,7 +1,7 @@
 import { getCampaignConfig } from '@/lib/config';
 import AdminForm from '@/components/AdminForm';
 
-export default async function AdminPage() {
+export default async function AdminSettingsPage() {
   const config = await getCampaignConfig();
 
   return (

@@ -26,22 +26,34 @@ export const defaultConfig: CampaignConfig = {
     mitolyn: {
       name: 'Mitolyn',
       platform: 'clickbank',
-      official_url: 'https://mitolyn.com/welcome/?hop=zzzzz&hopId=689154d7-cdcb-4751-8970-bcbe6f44c1fc',
-      affiliate_url: 'https://22ce2d09wbexoq6fts-b0b7ufm.hop.clickbank.net',
-      youtube_review_id: 'PSd-VG31tcE'
+      official_url: process.env.NEXT_PUBLIC_OFFICIAL_URL || 'https://mitolyn.com/welcome/?hop=zzzzz&hopId=689154d7-cdcb-4751-8970-bcbe6f44c1fc',
+      affiliate_url: process.env.NEXT_PUBLIC_AFFILIATE_URL || 'https://22ce2d09wbexoq6fts-b0b7ufm.hop.clickbank.net',
+      youtube_review_id: process.env.NEXT_PUBLIC_YOUTUBE_REVIEW_ID || 'PSd-VG31tcE'
     }
   }
 };
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
   if (!configClient) {
-    console.warn('EDGE_CONFIG not set, using default config');
+    // console.warn('EDGE_CONFIG not set, using default config with ENV fallbacks');
     return defaultConfig;
   }
   
   try {
     const config = await configClient.get<CampaignConfig>('campaign_config');
-    return config || defaultConfig;
+    
+    // Merge with default config to ensure structure exists
+    if (config) {
+      // Ensure products object exists
+      if (!config.products) config.products = {};
+      // Ensure mitolyn exists
+      if (!config.products.mitolyn) {
+        config.products.mitolyn = defaultConfig.products.mitolyn;
+      }
+      return config;
+    }
+    
+    return defaultConfig;
   } catch (error) {
     console.error('Error fetching Edge Config:', error);
     return defaultConfig;
