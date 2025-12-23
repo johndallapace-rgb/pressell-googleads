@@ -1,6 +1,4 @@
-import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
-import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -10,21 +8,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!user) {
+  if (!adminEmail || !adminPassword) {
+    return NextResponse.json({ error: 'Admin not configured' }, { status: 500 });
+  }
+
+  // Simple comparison
+  if (email !== adminEmail || password !== adminPassword) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  const isValid = await bcrypt.compare(password, user.password);
-
-  if (!isValid) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
-
-  const token = await signToken({ userId: user.id, email: user.email });
+  // Generate token
+  const token = await signToken({ userId: 'admin', email: adminEmail });
 
   const response = NextResponse.json({ success: true });
   response.cookies.set('admin_token', token, {

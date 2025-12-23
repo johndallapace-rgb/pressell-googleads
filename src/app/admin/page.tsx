@@ -1,8 +1,9 @@
-import { prisma } from '@/lib/prisma';
+import { products } from '@/data/products';
 
-export default async function AdminDashboard() {
-  const productsCount = await prisma.product.count();
-  const activeProducts = await prisma.product.count({ where: { active: true } });
+export default function AdminDashboard() {
+  const productsCount = products.length;
+  // All products in static file are effectively "active" unless filtered logic exists, assuming all for now
+  const activeProducts = products.length;
 
   return (
     <div>
@@ -16,6 +17,13 @@ export default async function AdminDashboard() {
           <h3 className="text-gray-500 text-sm font-medium uppercase">Active Products</h3>
           <p className="text-3xl font-bold text-green-600 mt-2">{activeProducts}</p>
         </div>
+      </div>
+      
+      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
+        <p>
+          <strong>Note:</strong> Database mode has been disabled. This admin panel is currently read-only or limited to environment configuration.
+          To manage products, edit <code>src/data/products.ts</code> and redeploy.
+        </p>
       </div>
     </div>
   );
