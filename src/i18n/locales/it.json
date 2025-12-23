@@ -1,0 +1,36 @@
+{
+  "menu": {
+    "science": "Supportato dalla Scienza",
+    "expert": "Recensione Esperta",
+    "privacy": "Privacy Policy",
+    "terms": "Termini di Servizio",
+    "disclaimer": "Disclaimer"
+  },
+  "footer": {
+    "rights": "Tutti i diritti riservati.",
+    "affiliate": "Questo sito web può contenere link di affiliazione. Se acquisti tramite questi link, potremmo ricevere una commissione senza costi aggiuntivi per te.",
+    "disclaimer": "Disclaimer: Il contenuto di questo sito è solo a scopo informativo e non intende sostituire la consulenza medica professionale, la diagnosi o il trattamento.",
+    "results": "I risultati individuali possono variare. Questo contenuto non intende sostituire la consulenza professionale."
+  },
+  "common": {
+    "visitOfficial": "Visita il Sito Ufficiale",
+    "checkAvailability": "Controlla Disponibilità",
+    "videoReview": "Video Recensione",
+    "customerReviews": "Recensioni Clienti",
+    "faq": "Domande Frequenti",
+    "whyRecommend": "Perché lo Consigliamo",
+    "notSure": "Non sei sicuro se fa per te?",
+    "takeQuiz": "Fai il Quiz",
+    "readReview": "Leggi Recensione",
+    "goodNews": "Buone Notizie!",
+    "matchMessage": "In base alle tue risposte, questo prodotto sembra essere un'opzione adatta ai tuoi obiettivi.",
+    "recommendation": "La Tua Raccomandazione",
+    "recommendationSub": "Consigliamo di controllare le informazioni ufficiali per confermare la disponibilità.",
+    "limitedAvailability": "Disponibilità soggetta a modifiche. Si prega di verificare sul sito ufficiale.",
+    "videoDisclaimer": "Il video è fornito da una piattaforma di terze parti. Potrebbero essere applicati cookie.",
+    "analyzing": "Analisi del tuo profilo...",
+    "findingMatch": "Ricerca della migliore corrispondenza per i tuoi obiettivi.",
+    "offlineTitle": "Sei offline",
+    "offlineMessage": "Controlla la tua connessione internet e riprova."
+  }
+}

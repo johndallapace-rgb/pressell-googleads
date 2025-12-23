@@ -1,0 +1,36 @@
+{
+  "menu": {
+    "science": "Wissenschaftlich fundiert",
+    "expert": "Expertenbewertung",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "disclaimer": "Haftungsausschluss"
+  },
+  "footer": {
+    "rights": "Alle Rechte vorbehalten.",
+    "affiliate": "Diese Website kann Affiliate-Links enthalten. Wenn Sie über diese Links kaufen, erhalten wir möglicherweise eine Provision ohne zusätzliche Kosten für Sie.",
+    "disclaimer": "Haftungsausschluss: Der Inhalt dieser Website dient nur zu Informationszwecken und ersetzt keine professionelle medizinische Beratung, Diagnose oder Behandlung.",
+    "results": "Individuelle Ergebnisse können variieren. Dieser Inhalt ersetzt keine professionelle Beratung."
+  },
+  "common": {
+    "visitOfficial": "Offizielle Website besuchen",
+    "checkAvailability": "Verfügbarkeit prüfen",
+    "videoReview": "Video-Review",
+    "customerReviews": "Kundenbewertungen",
+    "faq": "Häufig gestellte Fragen",
+    "whyRecommend": "Warum wir es empfehlen",
+    "notSure": "Unsicher, ob es für Sie ist?",
+    "takeQuiz": "Quiz machen",
+    "readReview": "Bewertung lesen",
+    "goodNews": "Gute Nachrichten!",
+    "matchMessage": "Basierend auf Ihren Antworten scheint dieses Produkt eine geeignete Option für Ihre Ziele zu sein.",
+    "recommendation": "Unsere Empfehlung",
+    "recommendationSub": "Wir empfehlen, die offiziellen Informationen zu prüfen, um die Verfügbarkeit zu bestätigen.",
+    "limitedAvailability": "Verfügbarkeit kann sich ändern. Bitte auf der offiziellen Website prüfen.",
+    "videoDisclaimer": "Das Video wird von einer Drittanbieter-Plattform bereitgestellt. Cookies können gelten.",
+    "analyzing": "Analysiere Ihr Profil...",
+    "findingMatch": "Suche nach der besten Übereinstimmung für Ihre Ziele.",
+    "offlineTitle": "Sie sind offline",
+    "offlineMessage": "Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+  }
+}
