@@ -1,47 +1,40 @@
-import { products } from '@/data/products';
-import { i18n } from '@/i18n/i18n-config';
+import { product } from '@/data/products';
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   const urls: string[] = [];
 
-  // Home pages per locale
-  i18n.locales.forEach(locale => {
-    urls.push(`
+  // Home (redirects to product, but good to index)
+  urls.push(`
     <url>
-      <loc>${baseUrl}/${locale}</loc>
+      <loc>${baseUrl}</loc>
       <lastmod>${new Date().toISOString()}</lastmod>
       <changefreq>daily</changefreq>
       <priority>1.0</priority>
     </url>
-    `);
-  });
+  `);
 
-  // Product pages per locale
-  products.forEach(p => {
-    i18n.locales.forEach(locale => {
-      urls.push(`
-        <url>
-          <loc>${baseUrl}/${locale}/p/${p.slug}</loc>
-          <lastmod>${new Date().toISOString()}</lastmod>
-          <changefreq>daily</changefreq>
-          <priority>0.8</priority>
-        </url>
-        <url>
-          <loc>${baseUrl}/${locale}/p/${p.slug}/quiz</loc>
-          <lastmod>${new Date().toISOString()}</lastmod>
-          <changefreq>weekly</changefreq>
-          <priority>0.7</priority>
-        </url>
-        <url>
-          <loc>${baseUrl}/${locale}/p/${p.slug}/review</loc>
-          <lastmod>${new Date().toISOString()}</lastmod>
-          <changefreq>weekly</changefreq>
-          <priority>0.9</priority>
-        </url>
-      `);
-    });
+  // Product Page
+  urls.push(`
+    <url>
+      <loc>${baseUrl}/${product.slug}</loc>
+      <lastmod>${new Date().toISOString()}</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>0.9</priority>
+    </url>
+  `);
+
+  // Legal pages
+  ['legal/privacy', 'legal/terms', 'legal/disclaimer'].forEach(path => {
+    urls.push(`
+      <url>
+        <loc>${baseUrl}/${path}</loc>
+        <lastmod>${new Date().toISOString()}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+      </url>
+    `);
   });
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

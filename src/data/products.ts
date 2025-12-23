@@ -1,14 +1,10 @@
-export type Lang = 'en';
-
 export type VideoReview = 
   | { provider: 'youtube'; id: string; thumbnailUrl?: string; title?: string };
 
-export type QuizOption = { id: string; label: string; scoreTags?: string[] };
-export type QuizQuestion = { id: string; question: string; options: QuizOption[] };
-export type QuizResult = { matchTags?: string[]; title: string; text: string; ctaText: string };
-
-export type ProductTranslation = {
+export type Product = {
+  slug: string;
   name: string;
+  officialUrl: string;
   heroHeadline: string;
   subHeadline: string;
   bullets: string[];
@@ -16,124 +12,106 @@ export type ProductTranslation = {
   badges: string[];
   faqs: { q: string; a: string }[];
   reviews: { name: string; rating: number; date: string; text: string }[];
-  quiz: { questions: QuizQuestion[]; resultMap: QuizResult[] };
   videoReview?: VideoReview;
+  
+  // Editorial Content Sections
+  whatIs: { title: string; content: string[] };
+  howItWorks: { title: string; content: string[] };
+  ingredients: { title: string; items: { name: string; description: string }[] };
+  prosCons: { pros: string[]; cons: string[] };
 };
 
-export type Product = {
-  slug: string;
-  officialUrl: string; // This will be used as fallback or initial value
-  translations: Record<Lang, ProductTranslation>;
-};
-
-const commonQuiz = {
-  questions: [
-    {
-      id: 'goal',
-      question: 'What is your primary wellness goal?',
-      options: [
-        { id: 'weight', label: 'Healthy Metabolism Support' },
-        { id: 'energy', label: 'All-Day Energy' },
-        { id: 'health', label: 'General Vitality' }
-      ]
-    },
-    {
-      id: 'age',
-      question: 'Select your age range:',
-      options: [
-        { id: '18-30', label: '18 - 30' },
-        { id: '31-50', label: '31 - 50' },
-        { id: '50+', label: '50+' }
-      ]
-    },
-    {
-      id: 'routine',
-      question: 'How consistent are you with supplements?',
-      options: [
-        { id: 'daily', label: 'I take them daily' },
-        { id: 'sometimes', label: 'I sometimes forget' },
-        { id: 'rarely', label: 'I rarely take them' }
-      ]
-    }
-  ],
-  resultMap: [
-    {
-      title: 'Mitolyn may be right for you.',
-      text: 'Based on your profile, Mitolyn’s blend of natural ingredients could support your metabolism and energy goals.',
-      ctaText: 'Check Availability'
-    }
-  ]
-};
-
-const mitolynEn: ProductTranslation = {
+export const mitolyn: Product = {
+  slug: 'mitolyn',
   name: 'Mitolyn',
-  heroHeadline: 'Discover Mitolyn: A Comprehensive Review',
-  subHeadline: 'Exploring the ingredients, benefits, and user experiences of this metabolism support formula.',
+  officialUrl: '/api/out?slug=mitolyn',
+  heroHeadline: 'Mitolyn Review: Does It Really Support Healthy Metabolism?',
+  subHeadline: 'An independent analysis of the ingredients, benefits, and potential side effects.',
   bullets: [
-    'Supports healthy metabolism naturally',
-    'Contains 6 clinically studied alpine nutrients',
-    'Manufactured in an FDA-registered, GMP-certified facility',
-    'Soy-free, dairy-free, and non-GMO',
-    'Backed by a 60-day money-back guarantee'
+    'Supports metabolic health',
+    'Natural ingredients',
+    'Manufactured in GMP facility',
+    '60-Day Money Back Guarantee'
   ],
   ctaLabel: 'Check Availability',
-  badges: ['Natural Ingredients', 'GMP Certified', 'Made in USA'],
+  badges: ['Natural Formula', 'GMP Certified', 'Made in USA'],
+  whatIs: {
+    title: 'What Is Mitolyn?',
+    content: [
+      'Mitolyn is a dietary supplement marketed as a metabolic support formula. It is designed to target low inner body temperature, which recent research suggests may be a common factor in unexplained weight gain.',
+      'The formula consists of a proprietary blend of natural ingredients, including alpine nutrients and plant extracts, intended to optimize metabolic function and support energy levels.'
+    ]
+  },
+  howItWorks: {
+    title: 'How Does Mitolyn Work?',
+    content: [
+      'Mitolyn works by addressing the underlying cause of slow metabolism: low inner body temperature. When inner body temperature is normal, calorie burning is fast and effortless.',
+      'By supplying the body with specific nutrients known to support thermogenesis, Mitolyn aims to electrify your sleeping metabolism into full fat-burning, energy-boosting mode.'
+    ]
+  },
+  ingredients: {
+    title: 'Key Ingredients',
+    items: [
+      { name: 'Maqui Berry', description: 'Rich in antioxidants, supports heart health and healthy blood sugar levels.' },
+      { name: 'Rhodiola', description: 'An adaptogen that helps reduce stress and supports brain health.' },
+      { name: 'Haematococcus', description: 'Contains astaxanthin, supports immune function and joint health.' },
+      { name: 'Amla', description: 'Supports digestion and healthy cholesterol levels.' },
+      { name: 'Theobroma Cacao', description: 'Supports healthy blood flow and cardiovascular health.' },
+      { name: 'Schisandra', description: 'Supports liver health and mental clarity.' }
+    ]
+  },
+  prosCons: {
+    pros: [
+      'Natural, non-GMO ingredients',
+      'No stimulants or habit-forming substances',
+      'Manufactured in an FDA-registered, GMP-certified facility',
+      'Backed by a 60-day money-back guarantee'
+    ],
+    cons: [
+      'Only available for purchase online',
+      'Results may vary from person to person',
+      'Stock may be limited due to high demand'
+    ]
+  },
   faqs: [
     {
-      q: 'What is Mitolyn?',
-      a: 'Mitolyn is a dietary supplement designed to support healthy metabolism using a blend of natural ingredients. It is formulated to target low inner body temperature, a factor linked to unexplained weight gain.'
-    },
-    {
       q: 'Is Mitolyn safe?',
-      a: 'Mitolyn contains 100% natural and safe ingredients. It is manufactured in the USA in an FDA-registered and GMP-certified facility. As with any supplement, consult your physician before use if you have a medical condition.'
+      a: 'Mitolyn is formulated with natural ingredients and is manufactured in a facility that follows GMP (Good Manufacturing Practice) guidelines. However, as with any supplement, it is recommended to consult with a healthcare professional before use.'
     },
     {
-      q: 'How should I take Mitolyn?',
-      a: 'Take one capsule of Mitolyn with a big glass of water every day. Its bespoke proprietary blend of natural ingredients will get to work dissolving fat for you even when sleeping.'
+      q: 'How do I take it?',
+      a: 'The recommended dosage is one capsule daily with a large glass of water. It is designed to work while you sleep.'
     },
     {
       q: 'What if it doesn’t work for me?',
-      a: 'Mitolyn comes with a 60-day money-back guarantee. If you are not satisfied with your results, you can request a full refund within 60 days of purchase.'
+      a: 'The manufacturer offers a 60-day money-back guarantee. If you are not satisfied, you can request a refund.'
     }
   ],
   reviews: [
     {
-      name: 'Eleanor J.',
+      name: 'Sarah J.',
       rating: 5,
       date: 'Verified Purchase',
-      text: 'I’ve been taking Mitolyn for about 3 weeks now. I feel more energetic throughout the day and my clothes fit better. Very happy with the purchase.'
+      text: 'I was skeptical at first, but after a month, I feel more energetic and lighter. It fits easily into my routine.'
     },
     {
-      name: 'Mark T.',
-      rating: 4.5,
+      name: 'Michael T.',
+      rating: 4,
       date: 'Verified Purchase',
-      text: 'Good product. Delivery was fast. It’s easy to take and I haven’t experienced any side effects. Seems to be helping with my metabolism.'
+      text: 'Good product. Shipping was fast. I haven’t seen drastic changes yet, but I feel better overall.'
     },
     {
-      name: 'Sarah L.',
+      name: 'Emily R.',
       rating: 5,
       date: 'Verified Purchase',
-      text: 'Finally found something that works for me. I love that it’s natural and non-GMO. Highly recommend trying it out.'
+      text: 'Love that it is natural. No jitters or weird side effects. Highly recommend giving it a try.'
     }
   ],
-  quiz: commonQuiz,
   videoReview: {
     provider: 'youtube',
-    id: 'PSd-VG31tcE', // Default ID, will be overridden by Edge Config if implemented in component
+    id: 'PSd-VG31tcE',
     title: 'Mitolyn Independent Review'
   }
 };
 
-export const products: Product[] = [
-  {
-    slug: 'mitolyn',
-    officialUrl: '/api/out?slug=mitolyn', // Point to internal redirect
-    translations: {
-      en: mitolynEn
-    }
-  }
-];
-
-export function getProduct(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug);
-}
+export const product = mitolyn; // Single product export

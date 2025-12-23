@@ -1,5 +1,4 @@
 import { MiddlewareConfig, NextRequest, NextResponse } from 'next/server';
-import { i18n } from './i18n/i18n-config';
 import { verifyToken } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
@@ -39,8 +38,7 @@ export async function middleware(request: NextRequest) {
     return;
   }
 
-  // API routes (except auth) - usually API routes are protected inside the route handler, 
-  // but if we have /api/admin/* we might want to protect it here too.
+  // API routes protection
   if (pathname.startsWith('/api/admin')) {
     const token = request.cookies.get('admin_token')?.value;
     if (!token || !(await verifyToken(token))) {
@@ -49,22 +47,7 @@ export async function middleware(request: NextRequest) {
     return;
   }
 
-  // Skip locale check for API routes
-  if (pathname.startsWith('/api')) {
-    return;
-  }
-
-  // Locale Middleware
-  const pathnameIsMissingLocale = i18n.locales.every(
-    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  );
-
-  if (pathnameIsMissingLocale) {
-    const locale = i18n.defaultLocale;
-    return NextResponse.redirect(
-      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
-    );
-  }
+  // No locale middleware needed anymore
 }
 
 export const config: MiddlewareConfig = {

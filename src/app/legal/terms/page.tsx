@@ -1,22 +1,13 @@
-import { getDictionary } from '@/i18n/getDictionary';
-import { PageProps } from '@/types';
-import { Locale } from '@/i18n/i18n-config';
+import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: PageProps) {
-  const { lang } = await params;
-  const locale = lang as Locale;
-  const dict = await getDictionary(locale);
-  return { title: dict.menu.terms };
-}
+export const metadata: Metadata = {
+  title: 'Terms of Service - SmartHealthChoices',
+};
 
-export default async function TermsPage({ params }: PageProps) {
-  const { lang } = await params;
-  const locale = lang as Locale;
-  const dict = await getDictionary(locale);
-
+export default function TermsPage() {
   return (
     <div className="container mx-auto px-4 py-12 prose text-gray-700 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">{dict.menu.terms}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900">Terms of Service</h1>
       <p className="mb-4">Last updated: {new Date().toLocaleDateString()}</p>
       
       <h2 className="text-xl font-bold mt-6 mb-4 text-gray-900">1. Informational Purpose Only</h2>

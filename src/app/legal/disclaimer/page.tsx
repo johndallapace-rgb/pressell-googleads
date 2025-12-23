@@ -1,22 +1,13 @@
-import { getDictionary } from '@/i18n/getDictionary';
-import { PageProps } from '@/types';
-import { Locale } from '@/i18n/i18n-config';
+import { Metadata } from 'next';
 
-export async function generateMetadata({ params }: PageProps) {
-  const { lang } = await params;
-  const locale = lang as Locale;
-  const dict = await getDictionary(locale);
-  return { title: dict.menu.disclaimer };
-}
+export const metadata: Metadata = {
+  title: 'Disclaimer - SmartHealthChoices',
+};
 
-export default async function DisclaimerPage({ params }: PageProps) {
-  const { lang } = await params;
-  const locale = lang as Locale;
-  const dict = await getDictionary(locale);
-
+export default function DisclaimerPage() {
   return (
     <div className="container mx-auto px-4 py-12 prose text-gray-700 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">{dict.menu.disclaimer}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-900">Disclaimer</h1>
       
       <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-8">
         <p className="font-semibold mb-4">
