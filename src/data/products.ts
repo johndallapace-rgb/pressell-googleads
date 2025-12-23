@@ -1,9 +1,7 @@
-export type Lang = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt';
+export type Lang = 'en';
 
 export type VideoReview = 
-  | { provider: 'youtube'; id: string; thumbnailUrl?: string; title?: string }
-  | { provider: 'vimeo'; id: string; thumbnailUrl?: string; title?: string }
-  | { provider: 'mp4'; url: string; thumbnailUrl?: string; title?: string };
+  | { provider: 'youtube'; id: string; thumbnailUrl?: string; title?: string };
 
 export type QuizOption = { id: string; label: string; scoreTags?: string[] };
 export type QuizQuestion = { id: string; question: string; options: QuizOption[] };
@@ -24,14 +22,9 @@ export type ProductTranslation = {
 
 export type Product = {
   slug: string;
-  officialUrl: string;
+  officialUrl: string; // This will be used as fallback or initial value
   translations: Record<Lang, ProductTranslation>;
 };
-
-// Mock translations helper for existing data to fit new structure
-// In a real app, you would translate these. 
-// For this task, I will provide English content for 'en' and placeholders for others
-// or duplicate English if translation is not provided to ensure type safety.
 
 const commonQuiz = {
   questions: [
@@ -39,117 +32,105 @@ const commonQuiz = {
       id: 'goal',
       question: 'What is your primary wellness goal?',
       options: [
-        { id: 'weight', label: 'Weight Management' },
-        { id: 'energy', label: 'Daily Energy' },
-        { id: 'health', label: 'General Health' }
+        { id: 'weight', label: 'Healthy Metabolism Support' },
+        { id: 'energy', label: 'All-Day Energy' },
+        { id: 'health', label: 'General Vitality' }
+      ]
+    },
+    {
+      id: 'age',
+      question: 'Select your age range:',
+      options: [
+        { id: '18-30', label: '18 - 30' },
+        { id: '31-50', label: '31 - 50' },
+        { id: '50+', label: '50+' }
+      ]
+    },
+    {
+      id: 'routine',
+      question: 'How consistent are you with supplements?',
+      options: [
+        { id: 'daily', label: 'I take them daily' },
+        { id: 'sometimes', label: 'I sometimes forget' },
+        { id: 'rarely', label: 'I rarely take them' }
       ]
     }
   ],
   resultMap: [
     {
-      title: 'This product might be suitable for you.',
-      text: 'Based on your answers, this formula aligns with your wellness goals.',
-      ctaText: 'Visit Official Website'
+      title: 'Mitolyn may be right for you.',
+      text: 'Based on your profile, Mitolyn’s blend of natural ingredients could support your metabolism and energy goals.',
+      ctaText: 'Check Availability'
     }
   ]
 };
 
 const mitolynEn: ProductTranslation = {
   name: 'Mitolyn',
-  heroHeadline: 'Mitolyn – Product Information & Customer Reviews',
-  subHeadline: 'An independent overview with publicly available information and user feedback.',
+  heroHeadline: 'Discover Mitolyn: A Comprehensive Review',
+  subHeadline: 'Exploring the ingredients, benefits, and user experiences of this metabolism support formula.',
   bullets: [
-    'May help support healthy metabolism',
-    'Contains natural ingredients',
-    'Manufactured in a GMP Certified Facility',
-    'Includes 60-Day Money Back Guarantee',
-    'Designed to be stimulant-free'
+    'Supports healthy metabolism naturally',
+    'Contains 6 clinically studied alpine nutrients',
+    'Manufactured in an FDA-registered, GMP-certified facility',
+    'Soy-free, dairy-free, and non-GMO',
+    'Backed by a 60-day money-back guarantee'
   ],
-  ctaLabel: 'Visit Official Website',
-  badges: ['GMP Certified', 'Made in USA', 'Natural Ingredients'],
+  ctaLabel: 'Check Availability',
+  badges: ['Natural Ingredients', 'GMP Certified', 'Made in USA'],
   faqs: [
     {
-      q: 'How do I take Mitolyn?',
-      a: 'The recommended usage is two capsules daily with a glass of water, preferably with a meal.'
+      q: 'What is Mitolyn?',
+      a: 'Mitolyn is a dietary supplement designed to support healthy metabolism using a blend of natural ingredients. It is formulated to target low inner body temperature, a factor linked to unexplained weight gain.'
     },
     {
-      q: 'Is it safe?',
-      a: 'Mitolyn is manufactured in a facility following GMP guidelines. Always consult your doctor.'
+      q: 'Is Mitolyn safe?',
+      a: 'Mitolyn contains 100% natural and safe ingredients. It is manufactured in the USA in an FDA-registered and GMP-certified facility. As with any supplement, consult your physician before use if you have a medical condition.'
+    },
+    {
+      q: 'How should I take Mitolyn?',
+      a: 'Take one capsule of Mitolyn with a big glass of water every day. Its bespoke proprietary blend of natural ingredients will get to work dissolving fat for you even when sleeping.'
+    },
+    {
+      q: 'What if it doesn’t work for me?',
+      a: 'Mitolyn comes with a 60-day money-back guarantee. If you are not satisfied with your results, you can request a full refund within 60 days of purchase.'
     }
   ],
   reviews: [
     {
-      name: 'Sarah J.',
+      name: 'Eleanor J.',
       rating: 5,
-      date: '2 days ago',
-      text: 'Mitolyn has been a helpful addition to my routine.'
+      date: 'Verified Purchase',
+      text: 'I’ve been taking Mitolyn for about 3 weeks now. I feel more energetic throughout the day and my clothes fit better. Very happy with the purchase.'
+    },
+    {
+      name: 'Mark T.',
+      rating: 4.5,
+      date: 'Verified Purchase',
+      text: 'Good product. Delivery was fast. It’s easy to take and I haven’t experienced any side effects. Seems to be helping with my metabolism.'
+    },
+    {
+      name: 'Sarah L.',
+      rating: 5,
+      date: 'Verified Purchase',
+      text: 'Finally found something that works for me. I love that it’s natural and non-GMO. Highly recommend trying it out.'
     }
   ],
   quiz: commonQuiz,
   videoReview: {
     provider: 'youtube',
-    id: 'dQw4w9WgXcQ', // Placeholder ID
-    title: 'Mitolyn Review Video'
+    id: 'PSd-VG31tcE', // Default ID, will be overridden by Edge Config if implemented in component
+    title: 'Mitolyn Independent Review'
   }
 };
-
-const brainsongEn: ProductTranslation = {
-  name: 'BrainSong',
-  heroHeadline: 'BrainSong – Product Information & Customer Reviews',
-  subHeadline: 'An independent overview with publicly available information and user feedback.',
-  bullets: [
-    'Designed to support focus and clarity',
-    'Ingredients may support memory retention',
-    'Formulated with studied ingredients',
-    'Non-GMO and Gluten Free',
-    'Designed for daily use'
-  ],
-  ctaLabel: 'Visit Official Website',
-  badges: ['Cognitive Support', 'Non-GMO', 'Gluten Free'],
-  faqs: [
-    {
-      q: 'Who is BrainSong for?',
-      a: 'BrainSong is for adults looking to support their cognitive health and focus.'
-    }
-  ],
-  reviews: [
-    {
-      name: 'David K.',
-      rating: 5,
-      date: 'Yesterday',
-      text: 'My focus at work seems better. I feel less distracted.'
-    }
-  ],
-  quiz: commonQuiz,
-  videoReview: {
-    provider: 'youtube',
-    id: 'dQw4w9WgXcQ', // Placeholder ID
-    title: 'BrainSong Review Video'
-  }
-};
-
-// Helper to duplicate for other languages (in a real scenario, use real translations)
-function duplicateForLangs(content: ProductTranslation): Record<Lang, ProductTranslation> {
-  return {
-    en: content,
-    es: { ...content, heroHeadline: content.heroHeadline + ' [ES]' }, // Marking as translated for demo
-    fr: { ...content, heroHeadline: content.heroHeadline + ' [FR]' },
-    de: { ...content, heroHeadline: content.heroHeadline + ' [DE]' },
-    it: { ...content, heroHeadline: content.heroHeadline + ' [IT]' },
-    pt: { ...content, heroHeadline: content.heroHeadline + ' [PT]' },
-  };
-}
 
 export const products: Product[] = [
   {
     slug: 'mitolyn',
-    officialUrl: 'https://example.com/mitolyn-offer',
-    translations: duplicateForLangs(mitolynEn)
-  },
-  {
-    slug: 'brainsong',
-    officialUrl: 'https://example.com/brainsong-offer',
-    translations: duplicateForLangs(brainsongEn)
+    officialUrl: '/api/out?slug=mitolyn', // Point to internal redirect
+    translations: {
+      en: mitolynEn
+    }
   }
 ];
 

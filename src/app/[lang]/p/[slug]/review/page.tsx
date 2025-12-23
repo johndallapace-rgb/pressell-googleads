@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getProduct } from '@/data/products';
+import { getProductWithConfig } from '@/lib/product-helper';
 import CTAButton from '@/components/CTAButton';
 import { generateSeoMetadata } from '@/lib/seo';
 import { getDictionary } from '@/i18n/getDictionary';
@@ -7,24 +7,23 @@ import VideoReview from '@/components/VideoReview';
 import { PageProps } from '@/types';
 import { Locale } from '@/i18n/i18n-config';
 
+// Force dynamic rendering to fetch latest Edge Config
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: PageProps) {
   const { lang, slug } = await params;
   if (!slug) return {};
-  const product = getProduct(slug);
+  const product = await getProductWithConfig(slug);
   const locale = lang as Locale;
   if (!product) return {};
   return generateSeoMetadata({ product, lang: locale }, 'review');
-}
-
-export async function generateStaticParams() {
-  return []; 
 }
 
 export default async function ReviewPage({ params }: PageProps) {
   const { lang, slug } = await params;
   if (!slug) notFound();
   
-  const product = getProduct(slug);
+  const product = await getProductWithConfig(slug);
   if (!product) notFound();
 
   const locale = lang as Locale;
