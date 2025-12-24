@@ -1,5 +1,5 @@
 import LayoutShell from '@/components/LayoutShell';
 
-export default function MitolynLayout({ children }: { children: React.ReactNode }) {
+export default function ProductLayout({ children }: { children: React.ReactNode }) {
   return <LayoutShell>{children}</LayoutShell>;
 }

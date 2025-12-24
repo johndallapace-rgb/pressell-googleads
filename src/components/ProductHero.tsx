@@ -1,22 +1,31 @@
-import { Product } from '@/data/products';
+import { ProductConfig } from '@/lib/config';
 import CTAButton from './CTAButton';
 
 interface Props {
-  product: Product;
+  product: ProductConfig;
 }
 
 export default function ProductHero({ product }: Props) {
-  // Direct access to product fields, no translation
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-12">
       <div className="md:flex">
-        {/* Image Placeholder */}
-        <div className="md:w-1/2 bg-gray-100 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative">
-          <div className="text-gray-400 font-bold text-2xl tracking-widest uppercase">
-            {product.name}
-            <br/>
-            <span className="text-sm font-normal normal-case block text-center mt-2">Product Image</span>
-          </div>
+        {/* Image Section */}
+        <div className="md:w-1/2 bg-gray-100 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative overflow-hidden">
+          {product.hero_image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={product.hero_image} 
+              alt={product.name} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-gray-400 font-bold text-2xl tracking-widest uppercase">
+              {product.name}
+              <br/>
+              <span className="text-sm font-normal normal-case block text-center mt-2">Product Image</span>
+            </div>
+          )}
+          
           {/* Badge Overlay */}
           <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             Top Choice
@@ -47,8 +56,8 @@ export default function ProductHero({ product }: Props) {
 
           <div className="mt-auto">
              <CTAButton 
-               href={product.officialUrl} 
-               label={product.ctaLabel} 
+               href={product.official_url} 
+               label={product.cta_text} 
                fullWidth 
                trackingData={{ product: product.slug, variant: 'default' }}
              />

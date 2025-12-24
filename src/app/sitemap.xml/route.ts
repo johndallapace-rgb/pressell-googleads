@@ -1,11 +1,12 @@
-import { product } from '@/data/products';
+import { getCampaignConfig } from '@/lib/config';
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const config = await getCampaignConfig();
 
   const urls: string[] = [];
 
-  // Home (redirects to product, but good to index)
+  // Home
   urls.push(`
     <url>
       <loc>${baseUrl}</loc>
@@ -15,15 +16,19 @@ export async function GET() {
     </url>
   `);
 
-  // Product Page
-  urls.push(`
-    <url>
-      <loc>${baseUrl}/${product.slug}</loc>
-      <lastmod>${new Date().toISOString()}</lastmod>
-      <changefreq>daily</changefreq>
-      <priority>0.9</priority>
-    </url>
-  `);
+  // Product Pages from Config (Active Only)
+  Object.values(config.products)
+    .filter(p => p.status === 'active')
+    .forEach(product => {
+      urls.push(`
+        <url>
+          <loc>${baseUrl}/${product.slug}</loc>
+          <lastmod>${new Date().toISOString()}</lastmod>
+          <changefreq>daily</changefreq>
+          <priority>0.9</priority>
+        </url>
+      `);
+    });
 
   // Legal pages
   ['legal/privacy', 'legal/terms', 'legal/disclaimer'].forEach(path => {

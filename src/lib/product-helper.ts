@@ -1,25 +1,32 @@
-import { product, Product } from '@/data/products';
-import { getCampaignConfig } from '@/lib/config';
+import { getCampaignConfig, ProductConfig } from '@/lib/config';
+
+// Re-export type for compatibility
+export type Product = ProductConfig;
 
 export async function getProductWithConfig(slug: string): Promise<Product | undefined> {
-  // Since we are single product mode, verify slug matches
-  if (slug !== 'mitolyn') return undefined;
-
   const config = await getCampaignConfig();
+  
+  // Directly return the product from config
   const productConfig = config.products[slug];
+  
+  if (!productConfig) return undefined;
 
-  // Clone product to avoid mutating shared state
-  const newProduct: Product = JSON.parse(JSON.stringify(product));
+  // Clone to avoid mutation issues (though less likely here)
+  const product = JSON.parse(JSON.stringify(productConfig));
 
-  if (productConfig) {
-    // Override fields
-    if (productConfig.youtube_review_id && newProduct.videoReview) {
-      newProduct.videoReview.id = productConfig.youtube_review_id;
-    }
-    // Also override affiliate/official URLs if present in config, 
-    // though the component usually reads from config or uses the API route.
-    // The API route reads from config, so `officialUrl` in the object 
-    // pointing to `/api/out` is correct.
+  // Ensure videoReview is populated if youtube_review_id is present but videoReview is missing
+  if (product.youtube_review_id && !product.videoReview) {
+    product.videoReview = {
+      provider: 'youtube',
+      id: product.youtube_review_id,
+      title: `${product.name} Review`
+    };
   }
-  return newProduct;
+  
+  // If youtube_review_id is explicitly empty string, ensure videoReview is undefined
+  if (product.youtube_review_id === '') {
+    delete product.videoReview;
+  }
+
+  return product;
 }

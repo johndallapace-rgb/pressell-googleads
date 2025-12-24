@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { VideoReview as VideoReviewType } from '@/data/products';
+import { VideoReview as VideoReviewType } from '@/lib/config';
 
 interface Props {
   video: VideoReviewType;

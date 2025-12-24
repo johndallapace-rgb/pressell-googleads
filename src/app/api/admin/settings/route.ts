@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCampaignConfig, updateCampaignConfig } from '@/lib/config';
 import { verifyToken } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   const token = request.cookies.get('admin_token')?.value;
   if (!token || !(await verifyToken(token))) {
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(config);
 }
 
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const token = request.cookies.get('admin_token')?.value;
   if (!token || !(await verifyToken(token))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,10 +23,11 @@ export async function PUT(request: NextRequest) {
   try {
     const newConfig = await request.json();
     
-    // Basic validation? The updateCampaignConfig might handle it or we trust the admin.
-    // Ensure active_product_slug matches the one we want to edit or is valid.
-    // For now, passing through.
-    
+    // Basic validation
+    if (!newConfig.active_product_slug || !newConfig.products) {
+       return NextResponse.json({ error: 'Invalid config structure' }, { status: 400 });
+    }
+
     const success = await updateCampaignConfig(newConfig);
 
     if (success) {

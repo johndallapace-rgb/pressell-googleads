@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
-import { Product } from '@/data/products';
+import { ProductConfig } from '@/lib/config';
 
 type PageType = 'landing' | 'quiz' | 'review' | 'legal';
 
 interface SeoProps {
-  product?: Product;
+  product?: ProductConfig;
   title?: string;
   description?: string;
   path?: string; 

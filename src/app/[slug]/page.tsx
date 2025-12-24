@@ -7,24 +7,43 @@ import StickyCTA from '@/components/StickyCTA';
 import VideoReview from '@/components/VideoReview';
 import CTAButton from '@/components/CTAButton';
 import { generateSeoMetadata } from '@/lib/seo';
+import { PageProps } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata() {
-  const product = await getProductWithConfig('mitolyn');
-  if (!product) return {};
-  return generateSeoMetadata({ product, path: '/mitolyn' });
+export async function generateMetadata({ params }: PageProps) {
+  const { slug } = await params;
+  if (!slug) return {};
+  const product = await getProductWithConfig(slug);
+  if (!product || product.status !== 'active') return {};
+  return generateSeoMetadata({ product, path: `/${slug}` });
 }
 
-export default async function MitolynPage() {
-  const product = await getProductWithConfig('mitolyn');
-  if (!product) notFound();
+export default async function DynamicProductPage({ params }: PageProps) {
+  const { slug } = await params;
+  if (!slug) notFound();
+
+  const product = await getProductWithConfig(slug);
+  
+  // Status check: only render if active
+  if (!product || product.status !== 'active') {
+    notFound();
+  }
+
+  // Determine the CTA target URL: /go/{slug}
+  // This preserves the safe redirect logic while keeping the frontend simple.
+  const ctaUrl = `/go/${product.slug}`;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <ProductHero product={product} />
+      <ProductHero product={{...product, official_url: ctaUrl}} /> 
+      {/* We override official_url passed to Hero to use our safe link, 
+          although ProductHero uses 'official_url' prop for the button href usually. 
+          Let's ensure ProductHero uses the passed prop or we change it here. 
+          Actually ProductHero takes 'product' prop. Let's patch the object passed to it.
+      */}
 
-      {/* What Is Mitolyn */}
+      {/* What Is */}
       <section className="mb-16">
         <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whatIs.title}</h2>
         <div className="prose lg:prose-lg text-gray-700">
@@ -40,18 +59,47 @@ export default async function MitolynPage() {
         </div>
       </section>
 
-      {/* Ingredients */}
-      <section className="mb-16">
-        <h2 className="text-2xl font-bold mb-8 text-gray-900">{product.ingredients.title}</h2>
-        <div className="grid md:grid-cols-2 gap-6">
-          {product.ingredients.items.map((item, i) => (
-            <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="font-bold text-lg mb-2 text-green-700">{item.name}</h3>
-              <p className="text-gray-600">{item.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Ingredients (Optional) */}
+      {product.ingredients && (
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold mb-8 text-gray-900">{product.ingredients.title}</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {product.ingredients.items.map((item, i) => (
+              <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <h3 className="font-bold text-lg mb-2 text-green-700">{item.name}</h3>
+                <p className="text-gray-600">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* What You Get (Optional) */}
+      {product.whatYouGet && (
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold mb-8 text-gray-900">{product.whatYouGet.title}</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {product.whatYouGet.items.map((item, i) => (
+              <div key={i} className="flex items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                 <svg className="w-6 h-6 text-green-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                 </svg>
+                 <span className="font-medium text-gray-800">{item}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Who This Is For (Optional) */}
+      {product.whoFor && (
+        <section className="mb-16 bg-gray-50 -mx-4 px-4 py-12 md:rounded-2xl border border-gray-100">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whoFor.title}</h2>
+          <div className="prose lg:prose-lg text-gray-700">
+            {product.whoFor.content.map((p, i) => <p key={i}>{p}</p>)}
+          </div>
+        </section>
+      )}
 
       {/* Video Review */}
       {product.videoReview && (
@@ -106,19 +154,20 @@ export default async function MitolynPage() {
         <ReviewList reviews={product.reviews} />
       </section>
       
-      {/* Bottom CTA */}
+      {/* Bottom CTA - SAFE LINK */}
       <div className="text-center mb-12">
         <CTAButton 
-          href={product.officialUrl} 
-          label={product.ctaLabel} 
+          href={ctaUrl} 
+          label={product.cta_text} 
           className="text-xl px-12 py-5"
           trackingData={{ product: product.slug, variant: 'bottom' }}
         />
       </div>
 
+      {/* Sticky CTA - SAFE LINK */}
       <StickyCTA 
-        href={product.officialUrl} 
-        label={product.ctaLabel} 
+        href={ctaUrl} 
+        label={product.cta_text} 
         trackingData={{ product: product.slug, variant: 'sticky' }}
       />
     </div>
