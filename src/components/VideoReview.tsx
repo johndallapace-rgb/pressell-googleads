@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { VideoReview as VideoReviewType } from '@/lib/config';
+
+export interface VideoReviewType {
+  provider: 'youtube';
+  id: string;
+  thumbnailUrl?: string;
+  title?: string;
+}
 
 interface Props {
   video: VideoReviewType;

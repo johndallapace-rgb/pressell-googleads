@@ -17,12 +17,12 @@ export function generateSeoMetadata({ product, title, description, path }: SeoPr
   if (product) {
     switch (pageType) {
       case 'landing':
-        finalTitle = product.heroHeadline;
+        finalTitle = product.headline;
         break;
       default:
         finalTitle = `${product.name} - Info`;
     }
-    finalDescription = product.subHeadline || product.heroHeadline;
+    finalDescription = product.subheadline || product.headline;
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';

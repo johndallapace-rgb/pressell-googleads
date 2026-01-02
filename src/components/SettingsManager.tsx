@@ -51,7 +51,7 @@ export default function SettingsManager({ initialConfig, readOnly = false }: { i
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">Active Product Slug</label>
           <p className="text-xs text-gray-500 mb-2">The product that will be shown on the home page (/).</p>
@@ -63,6 +63,21 @@ export default function SettingsManager({ initialConfig, readOnly = false }: { i
             {productKeys.map(slug => (
               <option key={slug} value={slug}>{config.products[slug].name} ({slug})</option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Default Language</label>
+          <p className="text-xs text-gray-500 mb-2">Fallback language for the platform.</p>
+          <select 
+            value={config.default_lang}
+            onChange={e => setConfig({...config, default_lang: e.target.value})}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="pt">Portuguese</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
           </select>
         </div>
       </div>

@@ -11,12 +11,15 @@ export default function ProductHero({ product }: Props) {
       <div className="md:flex">
         {/* Image Section */}
         <div className="md:w-1/2 bg-gray-100 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative overflow-hidden">
-          {product.hero_image ? (
+          {product.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img 
-              src={product.hero_image} 
+              src={product.image_url} 
               alt={product.name} 
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/images/placeholder.svg';
+              }}
             />
           ) : (
             <div className="text-gray-400 font-bold text-2xl tracking-widest uppercase">
@@ -26,20 +29,20 @@ export default function ProductHero({ product }: Props) {
             </div>
           )}
           
-          {/* Badge Overlay */}
+          {/* Badge Overlay - Simplified to just one static badge if needed, or removed as per user req. Keeping a simple "Review" badge could be nice. */}
           <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            Top Choice
+            Review
           </div>
         </div>
         
         {/* Content */}
         <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-4">
-            {product.heroHeadline}
+            {product.headline}
           </h1>
-          {product.subHeadline && (
+          {product.subheadline && (
             <p className="text-lg text-gray-600 mb-6">
-              {product.subHeadline}
+              {product.subheadline}
             </p>
           )}
           
@@ -56,8 +59,8 @@ export default function ProductHero({ product }: Props) {
 
           <div className="mt-auto">
              <CTAButton 
-               href={product.official_url} 
-               label={product.cta_text} 
+               href={product.official_url} // This will be overridden in page.tsx usually
+               label={product.cta_text || 'Check Availability'} 
                fullWidth 
                trackingData={{ product: product.slug, variant: 'default' }}
              />
@@ -66,18 +69,6 @@ export default function ProductHero({ product }: Props) {
              </p>
           </div>
         </div>
-      </div>
-      
-      {/* Trust Badges Bar */}
-      <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-         <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {product.badges.map((b, i) => (
-              <span key={i} className="flex items-center">
-                <svg className="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                {b}
-              </span>
-            ))}
-         </div>
       </div>
     </div>
   );

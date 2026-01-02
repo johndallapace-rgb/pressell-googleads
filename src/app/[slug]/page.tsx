@@ -1,20 +1,19 @@
 import { notFound } from 'next/navigation';
-import { getProductWithConfig } from '@/lib/product-helper';
-import ProductHero from '@/components/ProductHero';
-import FAQAccordion from '@/components/FAQAccordion';
-import ReviewList from '@/components/ReviewList';
-import StickyCTA from '@/components/StickyCTA';
-import VideoReview from '@/components/VideoReview';
-import CTAButton from '@/components/CTAButton';
+import { getProduct, ProductConfig } from '@/lib/config';
 import { generateSeoMetadata } from '@/lib/seo';
 import { PageProps } from '@/types';
+import EditorialTemplate from '@/components/templates/EditorialTemplate';
+import StoryTemplate from '@/components/templates/StoryTemplate';
+import ComparisonTemplate from '@/components/templates/ComparisonTemplate';
+import { cookies } from 'next/headers';
+import Script from 'next/script';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   if (!slug) return {};
-  const product = await getProductWithConfig(slug);
+  const product = await getProduct(slug);
   if (!product || product.status !== 'active') return {};
   return generateSeoMetadata({ product, path: `/${slug}` });
 }
@@ -23,153 +22,107 @@ export default async function DynamicProductPage({ params }: PageProps) {
   const { slug } = await params;
   if (!slug) notFound();
 
-  const product = await getProductWithConfig(slug);
+  let product = await getProduct(slug);
   
   // Status check: only render if active
   if (!product || product.status !== 'active') {
     notFound();
   }
 
-  // Determine the CTA target URL: /go/{slug}
-  // This preserves the safe redirect logic while keeping the frontend simple.
-  const ctaUrl = `/go/${product.slug}`;
-
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <ProductHero product={{...product, official_url: ctaUrl}} /> 
-      {/* We override official_url passed to Hero to use our safe link, 
-          although ProductHero uses 'official_url' prop for the button href usually. 
-          Let's ensure ProductHero uses the passed prop or we change it here. 
-          Actually ProductHero takes 'product' prop. Let's patch the object passed to it.
-      */}
-
-      {/* What Is */}
-      <section className="mb-16">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whatIs.title}</h2>
-        <div className="prose lg:prose-lg text-gray-700">
-          {product.whatIs.content.map((p, i) => <p key={i}>{p}</p>)}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="mb-16 bg-blue-50 -mx-4 px-4 py-12 md:rounded-2xl">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.howItWorks.title}</h2>
-        <div className="prose lg:prose-lg text-gray-700">
-          {product.howItWorks.content.map((p, i) => <p key={i}>{p}</p>)}
-        </div>
-      </section>
-
-      {/* Ingredients (Optional) */}
-      {product.ingredients && (
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold mb-8 text-gray-900">{product.ingredients.title}</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {product.ingredients.items.map((item, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-lg mb-2 text-green-700">{item.name}</h3>
-                <p className="text-gray-600">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* What You Get (Optional) */}
-      {product.whatYouGet && (
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold mb-8 text-gray-900">{product.whatYouGet.title}</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {product.whatYouGet.items.map((item, i) => (
-              <div key={i} className="flex items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                 <svg className="w-6 h-6 text-green-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                 </svg>
-                 <span className="font-medium text-gray-800">{item}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Who This Is For (Optional) */}
-      {product.whoFor && (
-        <section className="mb-16 bg-gray-50 -mx-4 px-4 py-12 md:rounded-2xl border border-gray-100">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whoFor.title}</h2>
-          <div className="prose lg:prose-lg text-gray-700">
-            {product.whoFor.content.map((p, i) => <p key={i}>{p}</p>)}
-          </div>
-        </section>
-      )}
-
-      {/* Video Review */}
-      {product.videoReview && (
-        <section className="mb-16">
-           <h2 className="text-2xl font-bold mb-8 text-center text-gray-900">Watch the Independent Review</h2>
-           <VideoReview video={product.videoReview} disclaimer="This review reflects the personal experience of the user." />
-        </section>
-      )}
-
-      {/* Pros & Cons */}
-      <section className="mb-16">
-        <h2 className="text-2xl font-bold mb-8 text-center text-gray-900">Pros & Cons</h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-green-50 p-6 rounded-xl border border-green-100">
-            <h3 className="font-bold text-lg mb-4 text-green-800 flex items-center">
-              <span className="mr-2">👍</span> Pros
-            </h3>
-            <ul className="space-y-3">
-              {product.prosCons.pros.map((item, i) => (
-                <li key={i} className="flex items-start text-gray-700">
-                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-red-50 p-6 rounded-xl border border-red-100">
-            <h3 className="font-bold text-lg mb-4 text-red-800 flex items-center">
-              <span className="mr-2">👎</span> Cons
-            </h3>
-            <ul className="space-y-3">
-              {product.prosCons.cons.map((item, i) => (
-                <li key={i} className="flex items-start text-gray-700">
-                  <svg className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="mb-16 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold mb-8 text-center text-gray-900">Frequently Asked Questions</h2>
-        <FAQAccordion items={product.faqs} />
-      </section>
-
-      {/* Reviews */}
-      <section className="mb-16">
-        <h2 className="text-2xl font-bold mb-8 text-center text-gray-900">Customer Feedback</h2>
-        <ReviewList reviews={product.reviews} />
-      </section>
+  // A/B Test Logic
+  let activeVariantId = 'control';
+  
+  if (product.ab_test && product.ab_test.enabled && product.ab_test.variants.length > 0) {
+      const cookieStore = await cookies();
+      const existingVariant = cookieStore.get(`ab_${slug}`);
       
-      {/* Bottom CTA - SAFE LINK */}
-      <div className="text-center mb-12">
-        <CTAButton 
-          href={ctaUrl} 
-          label={product.cta_text} 
-          className="text-xl px-12 py-5"
-          trackingData={{ product: product.slug, variant: 'bottom' }}
-        />
-      </div>
+      if (existingVariant) {
+          activeVariantId = existingVariant.value;
+      } else {
+          // Simple weighted random selection
+          const rand = Math.random() * 100;
+          let sum = 0;
+          for (const variant of product.ab_test.variants) {
+              sum += variant.weight;
+              if (rand <= sum) {
+                  activeVariantId = variant.id;
+                  break;
+              }
+          }
+          // Fallback if weights don't sum to 100 or something goes wrong
+          if (activeVariantId === 'control' && product.ab_test.variants.length > 0) {
+              activeVariantId = product.ab_test.variants[0].id;
+          }
+      }
 
-      {/* Sticky CTA - SAFE LINK */}
-      <StickyCTA 
-        href={ctaUrl} 
-        label={product.cta_text} 
-        trackingData={{ product: product.slug, variant: 'sticky' }}
-      />
-    </div>
+      // Apply Variant Overrides
+      const selectedVariant = product.ab_test.variants.find(v => v.id === activeVariantId);
+      if (selectedVariant) {
+          product = {
+              ...product,
+              headline: selectedVariant.headline || product.headline,
+              subheadline: selectedVariant.subheadline || product.subheadline,
+              cta_text: selectedVariant.cta_text || product.cta_text
+          };
+      }
+  }
+
+  // Tracking Script
+  const trackingScript = `
+    (function() {
+      // Set Cookie if new
+      if (!document.cookie.includes('ab_${slug}=${activeVariantId}')) {
+          document.cookie = "ab_${slug}=${activeVariantId}; path=/; max-age=${60 * 60 * 24 * 7}"; // 7 days
+      }
+      
+      // Track View
+      fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              slug: '${slug}', 
+              variant: '${activeVariantId}', 
+              event: 'view',
+              ts: Date.now()
+          })
+      }).catch(console.error);
+      
+      // Track Clicks (Delegate)
+      document.addEventListener('click', function(e) {
+          const target = e.target.closest('a');
+          if (target && target.href.includes('/go/${slug}')) {
+               fetch('/api/track', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                      slug: '${slug}', 
+                      variant: '${activeVariantId}', 
+                      event: 'click',
+                      ts: Date.now(),
+                      dest: 'go'
+                  })
+              }).catch(console.error);
+          }
+      });
+    })();
+  `;
+
+  const template = (
+    <>
+      <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
+      {(() => {
+        switch (product.template) {
+            case 'story':
+                return <StoryTemplate product={product} />;
+            case 'comparison':
+                return <ComparisonTemplate product={product} />;
+            case 'editorial':
+            default:
+                return <EditorialTemplate product={product} />;
+        }
+      })()}
+    </>
   );
+
+  return template;
 }

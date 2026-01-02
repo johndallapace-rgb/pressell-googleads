@@ -1,16 +1,15 @@
-import { getCampaignConfig } from '@/lib/config';
-import ProductManager from '@/components/ProductManager';
+import { listProducts } from '@/lib/config';
+import ProductList from '@/components/ProductList';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProductsPage() {
-  const config = await getCampaignConfig();
-  const readOnly = !process.env.VERCEL_API_TOKEN || !process.env.EDGE_CONFIG_ID;
+  const products = await listProducts();
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Manage Products</h1>
-      <ProductManager initialConfig={config} readOnly={readOnly} />
+      <ProductList products={products} />
     </div>
   );
 }

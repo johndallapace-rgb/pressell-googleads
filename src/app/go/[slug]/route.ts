@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductWithConfig } from '@/lib/product-helper';
-import { buildOutgoingUrl } from '@/lib/tracking';
+import { getProduct } from '@/lib/config';
 
 // Helper to preserve query params from request
 function preserveQueryParams(targetUrl: string, requestUrl: string): string {
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  const product = await getProductWithConfig(slug);
+  const product = await getProduct(slug);
 
   if (!product) {
     return NextResponse.redirect(new URL('/', request.url));

@@ -22,6 +22,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/settings" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md">
             Settings
           </Link>
+          <Link href="/admin/diagnostics" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md">
+            Diagnostics
+          </Link>
         </nav>
         <div className="p-4 border-t border-gray-200 absolute bottom-0 w-full">
           <form action={handleLogout}>

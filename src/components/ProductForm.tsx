@@ -1,0 +1,673 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ProductConfig, FaqItem } from '@/lib/config';
+import { templates, getTemplate, VerticalType, TemplateType } from '@/lib/templates';
+
+interface ProductFormProps {
+  initialProduct?: ProductConfig;
+  onSubmit: (product: ProductConfig) => Promise<void>;
+  isNew?: boolean;
+  readOnly?: boolean;
+}
+
+const defaultProduct: ProductConfig = {
+  slug: '',
+  name: '',
+  platform: 'clickbank',
+  language: 'en',
+  status: 'paused',
+  vertical: 'health',
+  template: 'editorial',
+  official_url: '',
+  affiliate_url: '',
+  image_url: '',
+  headline: '',
+  subheadline: '',
+  cta_text: 'Check Availability',
+  bullets: [''],
+  faq: [{ q: '', a: '' }],
+  seo: { title: '', description: '' },
+  whatIs: { title: 'What Is It?', content: [''] },
+  howItWorks: { title: 'How It Works?', content: [''] },
+  prosCons: { pros: [''], cons: [''] }
+};
+
+export default function ProductForm({ initialProduct, onSubmit, isNew = false, readOnly = false }: ProductFormProps) {
+  const [product, setProduct] = useState<ProductConfig>(initialProduct || defaultProduct);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importResult, setImportResult] = useState<any>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [abTestEnabled, setAbTestEnabled] = useState(false);
+
+  useEffect(() => {
+    if (initialProduct?.ab_test?.enabled) {
+        setAbTestEnabled(true);
+    }
+  }, [initialProduct]);
+
+  const toggleAbTest = () => {
+      const newState = !abTestEnabled;
+      setAbTestEnabled(newState);
+      setProduct(prev => ({
+          ...prev,
+          ab_test: {
+              enabled: newState,
+              variants: prev.ab_test?.variants || [
+                  { id: 'A', weight: 50, headline: prev.headline, cta_text: prev.cta_text },
+                  { id: 'B', weight: 50, headline: prev.headline + ' (Variant B)', cta_text: prev.cta_text }
+              ]
+          }
+      }));
+  };
+
+  const updateVariant = (index: number, field: string, value: any) => {
+      const newVariants = [...(product.ab_test?.variants || [])];
+      newVariants[index] = { ...newVariants[index], [field]: value };
+      setProduct(prev => ({
+          ...prev,
+          ab_test: { ...prev.ab_test!, variants: newVariants }
+      }));
+  };
+
+  const handleChange = (field: keyof ProductConfig, value: any) => {
+    setProduct(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSeoChange = (field: 'title' | 'description', value: string) => {
+    setProduct(prev => ({ ...prev, seo: { ...prev.seo, [field]: value } }));
+  };
+
+  const handleArrayChange = (field: 'bullets', index: number, value: string) => {
+    const newArray = [...product[field]];
+    newArray[index] = value;
+    setProduct(prev => ({ ...prev, [field]: newArray }));
+  };
+
+  const addArrayItem = (field: 'bullets') => {
+    setProduct(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+  };
+
+  const removeArrayItem = (field: 'bullets', index: number) => {
+    const newArray = [...product[field]];
+    newArray.splice(index, 1);
+    setProduct(prev => ({ ...prev, [field]: newArray }));
+  };
+
+  const handleFaqChange = (index: number, field: keyof FaqItem, value: string) => {
+    const newFaq = [...product.faq];
+    newFaq[index] = { ...newFaq[index], [field]: value };
+    setProduct(prev => ({ ...prev, faq: newFaq }));
+  };
+
+  const addFaq = () => {
+    setProduct(prev => ({ ...prev, faq: [...prev.faq, { q: '', a: '' }] }));
+  };
+
+  const removeFaq = (index: number) => {
+    const newFaq = [...product.faq];
+    newFaq.splice(index, 1);
+    setProduct(prev => ({ ...prev, faq: newFaq }));
+  };
+
+  const handleGenerateDraft = () => {
+    if (!confirm('This will overwrite current content (Headline, Bullets, FAQ, etc). Continue?')) return;
+    
+    const templateDef = getTemplate(product.vertical as VerticalType, product.template as TemplateType);
+    if (templateDef && templateDef.defaultContent) {
+      setProduct(prev => ({
+        ...prev,
+        ...templateDef.defaultContent,
+        seo: {
+             title: templateDef.defaultContent.headline || prev.seo.title,
+             description: templateDef.defaultContent.subheadline || prev.seo.description
+        }
+      }));
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importUrl) return;
+    setIsImporting(true);
+    try {
+      const res = await fetch('/api/admin/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ official_url: importUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import');
+      setImportResult(data);
+    } catch (err: any) {
+      alert(err.message || 'Import failed');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const applyDraft = () => {
+    if (!importResult) return;
+    setProduct(prev => ({
+      ...prev,
+      name: importResult.name || prev.name,
+      headline: importResult.headline_suggestions?.[0] || prev.headline,
+      bullets: importResult.bullets_suggestions || prev.bullets,
+      image_url: importResult.image_url || prev.image_url,
+      seo: {
+        title: importResult.seo?.title || prev.seo.title,
+        description: importResult.seo?.description || prev.seo.description
+      }
+    }));
+    setImportModalOpen(false);
+    setImportResult(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (readOnly) return;
+
+    setIsSaving(true);
+    setError('');
+
+    try {
+      // Trim all string fields
+      const cleanProduct = { ...product };
+      (Object.keys(cleanProduct) as Array<keyof ProductConfig>).forEach(key => {
+        if (typeof cleanProduct[key] === 'string') {
+          (cleanProduct as any)[key] = (cleanProduct[key] as string).trim();
+        }
+      });
+      cleanProduct.seo.title = cleanProduct.seo.title.trim();
+      cleanProduct.seo.description = cleanProduct.seo.description.trim();
+
+      // Validations
+      if (!cleanProduct.slug) throw new Error('Slug is required');
+      if (!/^[a-z0-9-]+$/.test(cleanProduct.slug)) throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
+      
+      if (!cleanProduct.name) throw new Error('Name is required');
+      
+      if (!cleanProduct.affiliate_url) throw new Error('Affiliate URL is required');
+      if (!cleanProduct.affiliate_url.startsWith('https://')) throw new Error('Affiliate URL must start with https://');
+      
+      if (!cleanProduct.official_url) throw new Error('Official URL is required');
+      if (!cleanProduct.official_url.startsWith('https://')) throw new Error('Official URL must start with https://');
+      
+      if (!cleanProduct.headline) throw new Error('Headline is required');
+      
+      if (!cleanProduct.seo.title) throw new Error('SEO Title is required');
+      if (!cleanProduct.seo.description) throw new Error('SEO Description is required');
+
+      await onSubmit(cleanProduct);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save product');
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 rounded-lg shadow">
+      {readOnly && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded mb-4">
+          <strong>Read Only Mode:</strong> You cannot make changes because VERCEL_API_TOKEN or EDGE_CONFIG_ID is missing.
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Header with Status Toggle */}
+      <div className="flex justify-between items-center border-b pb-4">
+        <h2 className="text-xl font-bold text-gray-800">
+           {isNew ? 'New Product' : `Editing: ${product.name}`}
+        </h2>
+        <div className="flex items-center space-x-3">
+             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+               {product.status}
+             </span>
+             {!isNew && !readOnly && (
+               <button 
+                 type="button"
+                 onClick={() => handleChange('status', product.status === 'active' ? 'paused' : 'active')}
+                 className={`text-xs font-bold px-3 py-1 rounded border ${product.status === 'active' ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
+               >
+                 {product.status === 'active' ? 'Pause Product' : 'Activate Product'}
+               </button>
+             )}
+        </div>
+      </div>
+      
+      {product.status === 'paused' && (
+         <div className="bg-gray-50 border-l-4 border-gray-400 p-4 text-sm text-gray-600">
+            ⚠️ <strong>Product is Paused:</strong> It will return a 404 error on the site and redirects will be disabled.
+         </div>
+      )}
+
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            value={product.slug}
+            onChange={e => handleChange('slug', e.target.value)}
+            disabled={!isNew || readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 disabled:opacity-60"
+            placeholder="e.g. mitolyn"
+          />
+          <p className="text-xs text-gray-500 mt-1">URL-friendly ID (a-z, 0-9, hyphens)</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Name <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            value={product.name}
+            onChange={e => handleChange('name', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Platform</label>
+          <select
+            value={product.platform}
+            onChange={e => handleChange('platform', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="clickbank">ClickBank</option>
+            <option value="digistore24">Digistore24</option>
+            <option value="buygoods">BuyGoods</option>
+            <option value="maxweb">MaxWeb</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Language <span className="text-red-500">*</span></label>
+          <select
+            value={product.language}
+            onChange={e => handleChange('language', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="pt">Portuguese</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Vertical</label>
+          <select
+            value={product.vertical}
+            onChange={e => handleChange('vertical', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="health">Health</option>
+            <option value="diy">DIY</option>
+            <option value="pets">Pets</option>
+            <option value="dating">Dating</option>
+            <option value="finance">Finance</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Template</label>
+          <select
+            value={product.template}
+            onChange={e => handleChange('template', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          >
+            <option value="editorial">Editorial (Review)</option>
+            <option value="story">Story (Personal Journey)</option>
+            <option value="comparison">Comparison (Versus)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Draft Generator & Import */}
+      {!readOnly && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-md flex justify-between items-center">
+            <div>
+                <h4 className="font-bold text-blue-900">Content Tools</h4>
+                <p className="text-sm text-blue-700">Generate a starting draft or import from the official page.</p>
+            </div>
+            <div className="flex space-x-2">
+                <button 
+                    type="button"
+                    onClick={() => setImportModalOpen(true)}
+                    className="bg-white text-blue-600 border border-blue-300 px-4 py-2 rounded text-sm hover:bg-blue-50"
+                >
+                    Import from URL
+                </button>
+                <button 
+                    type="button"
+                    onClick={handleGenerateDraft}
+                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                >
+                    Generate Template Draft
+                </button>
+            </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b">
+                    <h3 className="text-xl font-bold">Import from Official Page</h3>
+                </div>
+                <div className="p-6 space-y-4">
+                    {!importResult ? (
+                        <div className="flex gap-2">
+                            <input 
+                                type="url" 
+                                value={importUrl}
+                                onChange={e => setImportUrl(e.target.value)}
+                                placeholder="https://official-product-page.com"
+                                className="flex-1 border p-2 rounded"
+                            />
+                            <button 
+                                onClick={handleImport}
+                                disabled={isImporting}
+                                className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                            >
+                                {isImporting ? 'Scanning...' : 'Scan URL'}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="bg-green-50 p-4 rounded border border-green-200">
+                                <h4 className="font-bold text-green-800 mb-2">Found Content:</h4>
+                                <ul className="text-sm space-y-1 text-green-700">
+                                    <li><strong>Name:</strong> {importResult.name || 'Not found'}</li>
+                                    <li><strong>SEO Title:</strong> {importResult.seo.title || 'Not found'}</li>
+                                    <li><strong>Headings:</strong> {importResult.headline_suggestions.length} found</li>
+                                    <li><strong>Bullets:</strong> {importResult.bullets_suggestions.length} found</li>
+                                    <li><strong>Image:</strong> {importResult.image_url ? 'Found' : 'Not found'}</li>
+                                </ul>
+                            </div>
+                            
+                            {importResult.headline_suggestions.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Headline Suggestions:</label>
+                                    <select className="w-full border p-2 rounded text-sm">
+                                        {importResult.headline_suggestions.map((h: string, i: number) => <option key={i}>{h}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                             {importResult.bullets_suggestions.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-bold mb-1">Bullets Preview:</label>
+                                    <ul className="list-disc pl-5 text-sm text-gray-600">
+                                        {importResult.bullets_suggestions.map((b: string, i: number) => <li key={i}>{b}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+                    <button 
+                        onClick={() => { setImportModalOpen(false); setImportResult(null); }}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    >
+                        Cancel
+                    </button>
+                    {importResult && (
+                        <button 
+                            onClick={applyDraft}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        >
+                            Apply Draft
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* URLs */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-medium text-gray-900">Links & Assets</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700">Affiliate URL (Redirect Target) <span className="text-red-500">*</span></label>
+            <input
+              type="url"
+              value={product.affiliate_url}
+              onChange={e => handleChange('affiliate_url', e.target.value)}
+              disabled={readOnly}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              placeholder="https://hop.clickbank.net/..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Official URL (Fallback) <span className="text-red-500">*</span></label>
+            <input
+              type="url"
+              value={product.official_url}
+              onChange={e => handleChange('official_url', e.target.value)}
+              disabled={readOnly}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              placeholder="https://product.com..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">YouTube Review ID</label>
+            <input
+              type="text"
+              value={product.youtube_review_id || ''}
+              onChange={e => handleChange('youtube_review_id', e.target.value)}
+              disabled={readOnly}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              placeholder="e.g. dQw4w9WgXcQ (or full URL)"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700">Image URL</label>
+            <input
+              type="text"
+              value={product.image_url}
+              onChange={e => handleChange('image_url', e.target.value)}
+              disabled={readOnly}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              placeholder="/images/product.svg or https://..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-medium text-gray-900">Content</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Headline <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            value={product.headline}
+            onChange={e => handleChange('headline', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Subheadline</label>
+          <input
+            type="text"
+            value={product.subheadline}
+            onChange={e => handleChange('subheadline', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">CTA Text</label>
+          <input
+            type="text"
+            value={product.cta_text}
+            onChange={e => handleChange('cta_text', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        
+        {/* Bullets */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Bullets</label>
+          {product.bullets.map((bullet, i) => (
+            <div key={i} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={bullet}
+                onChange={e => handleArrayChange('bullets', i, e.target.value)}
+                disabled={readOnly}
+                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+              />
+              {!readOnly && <button type="button" onClick={() => removeArrayItem('bullets', i)} className="text-red-500 px-2">×</button>}
+            </div>
+          ))}
+          {!readOnly && <button type="button" onClick={() => addArrayItem('bullets')} className="text-blue-600 text-sm font-medium">+ Add Bullet</button>}
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-medium text-gray-900">FAQ</h3>
+        {product.faq.map((item, i) => (
+          <div key={i} className="bg-gray-50 p-4 rounded border">
+            <div className="flex justify-between mb-2">
+               <span className="text-sm font-bold text-gray-500">Q#{i+1}</span>
+               {!readOnly && <button type="button" onClick={() => removeFaq(i)} className="text-red-500 text-sm">Remove</button>}
+            </div>
+            <input
+              type="text"
+              value={item.q}
+              onChange={e => handleFaqChange(i, 'q', e.target.value)}
+              disabled={readOnly}
+              className="block w-full border border-gray-300 rounded-md shadow-sm p-2 mb-2"
+              placeholder="Question"
+            />
+            <textarea
+              value={item.a}
+              onChange={e => handleFaqChange(i, 'a', e.target.value)}
+              disabled={readOnly}
+              className="block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              placeholder="Answer"
+              rows={2}
+            />
+          </div>
+        ))}
+        {!readOnly && <button type="button" onClick={addFaq} className="text-blue-600 text-sm font-medium">+ Add FAQ Item</button>}
+      </div>
+
+      {/* SEO */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-medium text-gray-900">SEO</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Meta Title <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            value={product.seo.title}
+            onChange={e => handleSeoChange('title', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Meta Description <span className="text-red-500">*</span></label>
+          <textarea
+            value={product.seo.description}
+            onChange={e => handleSeoChange('description', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {/* A/B Testing */}
+      <div className="space-y-4 border-t pt-4">
+        <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">A/B Testing</h3>
+            {!readOnly && (
+                <button 
+                    type="button"
+                    onClick={toggleAbTest}
+                    className={`px-3 py-1 rounded text-sm font-bold ${abTestEnabled ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}
+                >
+                    {abTestEnabled ? 'Enabled' : 'Disabled'}
+                </button>
+            )}
+        </div>
+        
+        {abTestEnabled && product.ab_test && (
+            <div className="bg-purple-50 p-4 rounded border border-purple-100 space-y-4">
+                <p className="text-sm text-purple-800 mb-2">Define variants to split traffic. Weights should sum to 100.</p>
+                {product.ab_test.variants.map((variant, i) => (
+                    <div key={i} className="bg-white p-3 rounded shadow-sm border border-purple-100">
+                        <div className="flex justify-between mb-2">
+                            <span className="font-bold text-gray-700">Variant {variant.id}</span>
+                            <div className="flex items-center">
+                                <label className="text-xs mr-2">Weight %</label>
+                                <input 
+                                    type="number" 
+                                    value={variant.weight} 
+                                    onChange={e => updateVariant(i, 'weight', parseInt(e.target.value))}
+                                    className="w-16 border rounded p-1 text-right"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <input 
+                                type="text" 
+                                value={variant.headline || ''} 
+                                onChange={e => updateVariant(i, 'headline', e.target.value)}
+                                placeholder="Headline Override"
+                                className="w-full border rounded p-2 text-sm"
+                            />
+                            <input 
+                                type="text" 
+                                value={variant.cta_text || ''} 
+                                onChange={e => updateVariant(i, 'cta_text', e.target.value)}
+                                placeholder="CTA Text Override"
+                                className="w-full border rounded p-2 text-sm"
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="pt-6 border-t flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSaving || readOnly}
+          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isSaving ? 'Saving...' : 'Save Product'}
+        </button>
+      </div>
+    </form>
+  );
+}
