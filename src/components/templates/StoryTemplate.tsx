@@ -1,12 +1,12 @@
 import { ProductConfig } from '@/lib/config';
-import CTAButton from '@/components/CTAButton';
-import StickyCTA from '@/components/StickyCTA';
+import { CTAButton } from '@/components/CTAButton';
+import { StickyCTA } from '@/components/StickyCTA';
 
 interface Props {
   product: ProductConfig;
 }
 
-export default function StoryTemplate({ product }: Props) {
+export function StoryTemplate({ product }: Props) {
   const ctaUrl = `/go/${product.slug}`;
 
   return (

@@ -7,7 +7,7 @@ interface FAQItem {
   a: string;
 }
 
-export default function FAQAccordion({ items }: { items: FAQItem[] }) {
+export function FAQAccordion({ items }: { items: FAQItem[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (

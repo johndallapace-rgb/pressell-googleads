@@ -1,9 +1,9 @@
 import { ProductConfig } from '@/lib/config';
-import ProductHero from '@/components/ProductHero';
-import FAQAccordion from '@/components/FAQAccordion';
-import VideoReview from '@/components/VideoReview';
-import CTAButton from '@/components/CTAButton';
-import StickyCTA from '@/components/StickyCTA';
+import { ProductHero } from '@/components/ProductHero';
+import { FAQAccordion } from '@/components/FAQAccordion';
+import { VideoReview } from '@/components/VideoReview';
+import { CTAButton } from '@/components/CTAButton';
+import { StickyCTA } from '@/components/StickyCTA';
 
 function assertComponent(name: string, comp: any) {
   const t = typeof comp;
@@ -23,7 +23,7 @@ interface Props {
   product: ProductConfig;
 }
 
-export default function EditorialTemplate({ product }: Props) {
+export function EditorialTemplate({ product }: Props) {
   const ctaUrl = `/go/${product.slug}`;
   
   const videoObj = product.youtube_review_id ? {

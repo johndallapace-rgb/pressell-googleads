@@ -14,7 +14,7 @@ interface Props {
   disclaimer: string;
 }
 
-export default function VideoReview({ video, disclaimer }: Props) {
+export function VideoReview({ video, disclaimer }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   if (video.provider !== 'youtube') return null; // Only YouTube supported for now

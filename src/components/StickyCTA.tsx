@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import CTAButton from './CTAButton';
+import { CTAButton } from './CTAButton';
 
 interface StickyCTAProps {
   href: string;
@@ -13,7 +13,7 @@ interface StickyCTAProps {
   };
 }
 
-export default function StickyCTA({ href, label, trackingData }: StickyCTAProps) {
+export function StickyCTA({ href, label, trackingData }: StickyCTAProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

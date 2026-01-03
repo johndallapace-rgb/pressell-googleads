@@ -1,11 +1,11 @@
 import { ProductConfig } from '@/lib/config';
-import CTAButton from './CTAButton';
+import { CTAButton } from './CTAButton';
 
 interface Props {
   product: ProductConfig;
 }
 
-export default function ProductHero({ product }: Props) {
+export function ProductHero({ product }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-12">
       <div className="md:flex">

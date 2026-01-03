@@ -16,7 +16,7 @@ interface CTAButtonProps {
   };
 }
 
-export default function CTAButton({ href, label, className = '', variant = 'primary', fullWidth = false, trackingData }: CTAButtonProps) {
+export function CTAButton({ href, label, className = '', variant = 'primary', fullWidth = false, trackingData }: CTAButtonProps) {
   const [finalUrl, setFinalUrl] = useState(href);
 
   useEffect(() => {
