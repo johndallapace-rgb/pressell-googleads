@@ -29,9 +29,16 @@ export const AdsConfigSchema = z.object({
   slug: z.string(),
   vertical: z.enum(['health', 'diy', 'general', 'pets', 'dating', 'finance', 'other']),
   languages: z.array(z.string()),
-  status: z.enum(['draft', 'ready', 'published', 'paused']),
+  status: z.enum(['draft', 'ready', 'published', 'paused', 'exported']),
   generatedAt: z.string().datetime().optional(),
   version: z.number().int().default(1),
+  publication: z.object({
+    at: z.string(),
+    campaignId: z.string(),
+    adGroupId: z.string(),
+    customerId: z.string(),
+    adResourceName: z.string()
+  }).optional(),
   settings: z.custom<StrategySettings>(), // Zod custom validation if needed, or just type
   campaigns: z.array(CampaignSchema).optional()
 });

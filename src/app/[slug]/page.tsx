@@ -98,10 +98,14 @@ export default async function DynamicProductPage({ params }: PageProps) {
     // A/B Test Logic (Simplified - Client Side Only for Tracking)
     const activeVariantId = 'control';
 
+    // Google Ads Tracking
+    const googleAdsId = product.google_ads_id;
+    const googleAdsLabel = product.google_ads_label || '';
+
     // Tracking Script
     const trackingScript = `
       (function() {
-        // Track View
+        // Track View (Internal)
         fetch('/api/track', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -117,6 +121,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
         document.addEventListener('click', function(e) {
             const target = e.target.closest('a');
             if (target && target.href.includes('/go/${slug}')) {
+                 // Internal Tracking
                  fetch('/api/track', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -128,6 +133,19 @@ export default async function DynamicProductPage({ params }: PageProps) {
                         dest: 'go'
                     })
                 }).catch(console.error);
+
+                // Google Ads Conversion
+                if (typeof gtag === 'function' && '${googleAdsId}') {
+                    const label = '${googleAdsLabel}';
+                    const sendTo = '${googleAdsId}' + (label ? '/' + label : '');
+                    
+                    gtag('event', 'conversion', {
+                        'send_to': sendTo,
+                        'event_callback': function() {
+                            // Optional callback
+                        }
+                    });
+                }
             }
         });
       })();
@@ -135,6 +153,24 @@ export default async function DynamicProductPage({ params }: PageProps) {
 
     return (
       <LayoutShell vertical={product.vertical}>
+        {/* Google Ads Global Tag */}
+        {googleAdsId && (
+            <>
+                <Script 
+                    src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`} 
+                    strategy="afterInteractive" 
+                />
+                <Script id="google-ads-config" strategy="afterInteractive">
+                    {`
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){dataLayer.push(arguments);}
+                        gtag('js', new Date());
+                        gtag('config', '${googleAdsId}');
+                    `}
+                </Script>
+            </>
+        )}
+
         <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
         {(() => {
           switch (templateType) {

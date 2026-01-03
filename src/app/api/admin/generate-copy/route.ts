@@ -47,6 +47,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // MODE: REGENERATE ADS (Only Ads, specific angle)
+    if (mode === 'regenerate_ads') {
+        const { angle } = await request.json(); // e.g. "Price", "Curiosity", "Authority"
+        
+        const adsSystemInstruction = `
+            Você é um Especialista em Google Ads focado em CTR.
+            
+            Produto: ${productName}
+            Nicho: ${niche}
+            Ângulo Focado: ${angle || 'Geral/Persuasivo'}
+            
+            TAREFA:
+            Gere novos títulos e descrições para anúncios de pesquisa, focando EXCLUSIVAMENTE no ângulo solicitado.
+            
+            REGRAS:
+            - Headlines: Max 30 caracteres. Seja direto e impactante.
+            - Descriptions: Max 90 caracteres. Inclua Call to Action (CTA).
+            - Compliance: Sem promessas falsas, sem palavras banidas (Cura, Milagre).
+            
+            Retorne APENAS um JSON:
+            {
+                "ads": {
+                    "headlines": ["Titulo 1", "Titulo 2", ...], // 10 variações
+                    "descriptions": ["Desc 1", "Desc 2", ...] // 4 variações
+                }
+            }
+        `;
+
+        const generatedText = await generateContent(adsSystemInstruction);
+        const jsonString = generatedText.replace(/```json/g, '').replace(/```/g, '').trim();
+        try {
+            const data = JSON.parse(jsonString);
+            return NextResponse.json(data);
+        } catch (e) {
+            return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+        }
+    }
+
     // MODE: FULL COPY (Default)
     if (!niche) {
       return NextResponse.json({ error: 'Niche is required for full copy generation' }, { status: 400 });

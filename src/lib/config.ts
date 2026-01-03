@@ -81,6 +81,8 @@ export type ProductConfig = {
   youtube_review_id?: string;
   image_url: string;
   image_prompt?: string; // AI Suggested Prompt
+  google_ads_id?: string; // Google Ads Pixel ID (AW-XXXXXXXX)
+  google_ads_label?: string; // Conversion Label (optional)
   headline: string;
   subheadline: string;
   cta_text: string;

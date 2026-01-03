@@ -764,6 +764,37 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
         </div>
       </div>
 
+      {/* Tracking */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-medium text-gray-900">Tracking</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Google Ads Conversion ID (Pixel)</label>
+          <input
+            type="text"
+            value={product.google_ads_id || ''}
+            onChange={e => handleChange('google_ads_id', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            placeholder="AW-XXXXXXXX"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            If provided, <code>gtag.js</code> will be injected automatically. 
+            Clicks on checkout buttons will trigger a <code>conversion</code> event.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Google Ads Conversion Label (Optional)</label>
+          <input
+            type="text"
+            value={product.google_ads_label || ''}
+            onChange={e => handleChange('google_ads_label', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
+          />
+        </div>
+      </div>
+
       {/* Content */}
       <div className="space-y-4 border-t pt-4">
         <h3 className="text-lg font-medium text-gray-900">Content</h3>
