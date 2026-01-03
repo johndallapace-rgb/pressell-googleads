@@ -26,99 +26,100 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function DynamicProductPage({ params }: PageProps) {
-  const { slug } = await params;
-  if (!slug) notFound();
+  let slug: string | undefined;
 
-  let config;
   try {
+    const resolvedParams = await params;
+    slug = resolvedParams?.slug;
+
+    if (!slug) {
+      console.error('[DynamicPage] No slug provided');
+      notFound();
+    }
+
     // Securely fetch config
-    config = await getCampaignConfig();
+    const config = await getCampaignConfig();
+    
+    // 1. Validate Config Existence
+    if (!config || !config.products) {
+      console.error('[DynamicPage] Missing config or products');
+      notFound();
+    }
+    
+    // 2. Resolve Product directly from products object
+    // Safe access using ?.
+    const product = config.products?.[slug];
+    
+    // 3. Validate Product Existence & Status
+    if (!product || product.status !== 'active') {
+      console.log(`[DynamicPage] Product not found or inactive: ${slug}`);
+      notFound();
+    }
+
+    // 4. Safe Defaults (Defensive Programming)
+    const name = product.name ?? 'Product';
+    const image = product.image_url ?? '/images/default.svg';
+    // Use 'editorial' as safe default if template is missing or invalid
+    const templateType = product.template ?? 'editorial'; 
+
+    // A/B Test Logic (Simplified - Client Side Only for Tracking)
+    const activeVariantId = 'control';
+
+    // Tracking Script
+    const trackingScript = `
+      (function() {
+        // Track View
+        fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                slug: '${slug}', 
+                variant: '${activeVariantId}', 
+                event: 'view',
+                ts: Date.now()
+            })
+        }).catch(console.error);
+        
+        // Track Clicks (Delegate)
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('a');
+            if (target && target.href.includes('/go/${slug}')) {
+                 fetch('/api/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        slug: '${slug}', 
+                        variant: '${activeVariantId}', 
+                        event: 'click',
+                        ts: Date.now(),
+                        dest: 'go'
+                    })
+                }).catch(console.error);
+            }
+        });
+      })();
+    `;
+
+    return (
+      <LayoutShell>
+        <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
+        {(() => {
+          switch (templateType) {
+              case 'story':
+                  return <StoryTemplate product={product} />;
+              case 'comparison':
+                  return <ComparisonTemplate product={product} />;
+              case 'editorial':
+              default:
+                  return <EditorialTemplate product={product} />;
+          }
+        })()}
+      </LayoutShell>
+    );
+
   } catch (e) {
-      console.error('Critical error loading config:', e);
+      // Catch-all for any rendering error
+      console.error(`[DynamicPage] Critical error rendering slug ${slug}:`, e);
       notFound();
   }
-
-  // 1. Validate Config Existence
-  if (!config) {
-    console.error('[DynamicPage] Missing campaign_config');
-    notFound();
-  }
-
-  // 2. Validate Products Object
-  if (!config.products) {
-    console.error('[DynamicPage] Missing products object in config');
-    notFound();
-  }
-  
-  // 3. Resolve Product directly from products object
-  const product = config.products[slug];
-  
-  // 4. Validate Product Existence
-  if (!product) {
-    console.log(`[DynamicPage] Product not found in products object: ${slug}`);
-    notFound();
-  }
-
-  // 5. Validate Product Status
-  if (product.status !== 'active') {
-    console.log(`[DynamicPage] Product inactive: ${slug}`);
-    notFound();
-  }
-
-  // A/B Test Logic (Simplified - Client Side Only for Tracking)
-  const activeVariantId = 'control';
-
-  // Tracking Script
-  const trackingScript = `
-    (function() {
-      // Track View
-      fetch('/api/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-              slug: '${slug}', 
-              variant: '${activeVariantId}', 
-              event: 'view',
-              ts: Date.now()
-          })
-      }).catch(console.error);
-      
-      // Track Clicks (Delegate)
-      document.addEventListener('click', function(e) {
-          const target = e.target.closest('a');
-          if (target && target.href.includes('/go/${slug}')) {
-               fetch('/api/track', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                      slug: '${slug}', 
-                      variant: '${activeVariantId}', 
-                      event: 'click',
-                      ts: Date.now(),
-                      dest: 'go'
-                  })
-              }).catch(console.error);
-          }
-      });
-    })();
-  `;
-
-  const template = (
-    <LayoutShell>
-      <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
-      {(() => {
-        switch (product.template) {
-            case 'story':
-                return <StoryTemplate product={product} />;
-            case 'comparison':
-                return <ComparisonTemplate product={product} />;
-            case 'editorial':
-            default:
-                return <EditorialTemplate product={product} />;
-        }
-      })()}
-    </LayoutShell>
-  );
-
-  return template;
 }

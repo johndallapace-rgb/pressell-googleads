@@ -15,11 +15,6 @@ export function normalizeConfig(raw: any): CampaignConfig {
     
     if (typeof config !== 'object') return defaultConfig;
 
-    // Validate if it's using the wrapper "campaign_config" or flat keys
-    // The request says: "If campaign_config exists..., use it. Else read separate keys."
-    // However, the caller usually passes the result of client.get('campaign_config') OR client.getAll().
-    // Let's assume raw IS the content of campaign_config if fetched directly, OR the whole edge config object.
-    
     // Check for nested structure
     const effectiveConfig = config.campaign_config || config;
 
@@ -27,21 +22,22 @@ export function normalizeConfig(raw: any): CampaignConfig {
     const normalizedProducts: Record<string, ProductConfig> = {};
 
     // Validate each product
-    Object.entries(productsRaw).forEach(([slug, prod]: [string, any]) => {
-        if (typeof prod === 'object' && prod !== null) {
-             // Ensure required fields exist, fallback to default if critical fields missing? 
-             // Request says: "if missing, fallback to safe default". 
-             // We'll trust the partial object but ensure minimal structure.
-             normalizedProducts[slug] = {
-                 ...prod,
-                 name: prod.name || slug,
-                 status: prod.status || 'paused',
-                 affiliate_url: prod.affiliate_url || '',
-                 official_url: prod.official_url || '',
-                 slug: slug // Ensure slug is set
-             } as ProductConfig;
-        }
-    });
+    try {
+        Object.entries(productsRaw).forEach(([slug, prod]: [string, any]) => {
+            if (typeof prod === 'object' && prod !== null) {
+                 normalizedProducts[slug] = {
+                     ...prod,
+                     name: prod.name || slug,
+                     status: prod.status || 'paused',
+                     affiliate_url: prod.affiliate_url || '',
+                     official_url: prod.official_url || '',
+                     slug: slug
+                 } as ProductConfig;
+            }
+        });
+    } catch (e) {
+        console.error('Error normalizing products:', e);
+    }
 
     return {
         active_product_slug: effectiveConfig.active_product_slug || defaultConfig.active_product_slug,
