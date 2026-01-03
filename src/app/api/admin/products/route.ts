@@ -43,8 +43,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Generate/Normalize Slug
+    // Ensure slug does not conflict with admin routes
     let finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     if (!finalSlug) return NextResponse.json({ error: 'Invalid slug generation' }, { status: 400 });
+
+    const reservedSlugs = ['admin', 'api', 'login', 'dashboard', 'settings', 'analytics', 'diagnostics'];
+    if (reservedSlugs.includes(finalSlug)) {
+        finalSlug = `${finalSlug}-product`;
+    }
 
     // 4. Extract YouTube ID
     const youtubeId = youtube_review_url ? extractYoutubeId(youtube_review_url) : undefined;
