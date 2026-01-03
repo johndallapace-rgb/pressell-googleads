@@ -34,13 +34,36 @@ export default function AdsManagerPage() {
             >
                 ✅ Verify Tracking
             </button>
-            <button 
-                onClick={handleExportGemini}
-                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-bold"
-            >
-                ✨ Export Log for Gemini
-            </button>
         </div>
+      </div>
+
+      {/* Log Analyzer Section */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-lg p-6 mb-8 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                   🤖 Gemini Log Analyzer
+                </h3>
+                <p className="text-sm text-purple-700 mt-1">
+                   Paste your raw Google Ads CSV or text logs here. We'll generate a prompt to find optimization opportunities.
+                </p>
+              </div>
+              <button 
+                onClick={handleExportGemini}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-bold shadow-md"
+              >
+                ✨ Analyze with Gemini
+              </button>
+          </div>
+          <textarea 
+            className="w-full h-32 p-3 text-xs font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+            placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
+            value={logs.map(l => `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`).join('\n')}
+            onChange={(e) => {
+                // In a real app, we would parse this. For now, we just update the visual mock or ignore
+                // to show the UI capability
+            }}
+          />
       </div>
 
       {/* Product List Status */}

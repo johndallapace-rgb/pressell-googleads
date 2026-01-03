@@ -91,6 +91,22 @@ export default function CreateProductForm() {
     setLoading(true);
     setMessage(null);
 
+    // 0. Strict Validation (Safety Lock)
+    if (!formData.affiliate_url || !formData.affiliate_url.startsWith('http')) {
+        setLoading(false);
+        setMessage({ type: 'error', text: '⛔ Critical: Affiliate URL is required to make money!' });
+        // Scroll to top
+        window.scrollTo(0, 0);
+        return;
+    }
+
+    if (!formData.youtube_review_url || !formData.youtube_review_url.startsWith('http')) {
+        setLoading(false);
+        setMessage({ type: 'error', text: '⛔ Critical: YouTube Review is required for conversion!' });
+        window.scrollTo(0, 0);
+        return;
+    }
+
     try {
       // Get token from localStorage (as per existing admin login logic)
       const token = localStorage.getItem('admin_token');
