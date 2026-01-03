@@ -264,9 +264,10 @@ export default function CreateProductForm() {
               <input 
                 type="url" name="affiliate_url" required
                 value={formData.affiliate_url} onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : ''}`}
                 placeholder="https://hop.clickbank.net/..."
               />
+              {!formData.affiliate_url && <p className="text-xs text-red-500 mt-1 font-bold">⚠️ Commission Link Missing!</p>}
             </div>
 
             <div>
@@ -280,14 +281,14 @@ export default function CreateProductForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Review URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Review URL *</label>
               <input 
-                type="url" name="youtube_review_url"
+                type="url" name="youtube_review_url" required
                 value={formData.youtube_review_url} onChange={handleChange}
                 className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="https://youtube.com/watch?v=..."
               />
-              <p className="text-xs text-gray-500 mt-1">We will extract the ID automatically.</p>
+              <p className="text-xs text-gray-500 mt-1">Required for high conversion. We extract the ID automatically.</p>
             </div>
 
             <div className="flex items-center space-x-4 pt-4">

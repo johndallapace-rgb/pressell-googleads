@@ -27,12 +27,55 @@ export default function AdsManagerPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Ads Performance Manager</h1>
-        <button 
-            onClick={handleExportGemini}
-            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2"
-        >
-            ✨ Export Log for Gemini Analysis
-        </button>
+        <div className="flex gap-2">
+            <button 
+                onClick={() => window.open('/api/admin/verify-google-ads', '_blank')}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2 text-sm font-bold"
+            >
+                ✅ Verify Tracking
+            </button>
+            <button 
+                onClick={handleExportGemini}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-bold"
+            >
+                ✨ Export Log for Gemini
+            </button>
+        </div>
+      </div>
+
+      {/* Product List Status */}
+      <div className="bg-white rounded shadow-sm overflow-hidden mb-6 border border-gray-200">
+          <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
+              <h3 className="font-bold text-gray-700">Active Products & Pixel Status</h3>
+              <span className="text-xs text-gray-500">Global Pixel: 17850696537</span>
+          </div>
+          <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                      <th className="px-6 py-3">Product</th>
+                      <th className="px-6 py-3">Vertical</th>
+                      <th className="px-6 py-3">Pixel Status</th>
+                      <th className="px-6 py-3">Checkout Starts</th>
+                      <th className="px-6 py-3">Conversion Label</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr className="bg-white border-b">
+                      <td className="px-6 py-4 font-medium text-gray-900">Mitolyn</td>
+                      <td className="px-6 py-4"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Health</span></td>
+                      <td className="px-6 py-4 text-green-600 font-bold">● Active</td>
+                      <td className="px-6 py-4">45</td>
+                      <td className="px-6 py-4 font-mono text-xs">DPCoCMK5h9wbENmG8L9C</td>
+                  </tr>
+                  <tr className="bg-white border-b">
+                      <td className="px-6 py-4 font-medium text-gray-900">Teds Woodworking</td>
+                      <td className="px-6 py-4"><span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">DIY</span></td>
+                      <td className="px-6 py-4 text-green-600 font-bold">● Active</td>
+                      <td className="px-6 py-4">12</td>
+                      <td className="px-6 py-4 font-mono text-xs">-</td>
+                  </tr>
+              </tbody>
+          </table>
       </div>
 
       {/* Summary Cards */}

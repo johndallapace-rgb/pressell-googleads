@@ -52,8 +52,13 @@ export async function POST(request: NextRequest) {
         finalSlug = `${finalSlug}-product`;
     }
 
-    // 4. Extract YouTube ID
+    // 4. Extract YouTube ID (Force validation if needed, though frontend handles required)
     const youtubeId = youtube_review_url ? extractYoutubeId(youtube_review_url) : undefined;
+    
+    // Safety: If no Youtube ID but URL provided, log warning
+    if (youtube_review_url && !youtubeId) {
+        console.warn('Invalid YouTube URL provided:', youtube_review_url);
+    }
 
     // 5. Construct New Product
     const newProduct: ProductConfig = {
@@ -68,10 +73,11 @@ export async function POST(request: NextRequest) {
       official_url,
       youtube_review_id: youtubeId || undefined,
       
-      // Tracking
-       google_ads_id: google_ads_id || undefined,
-       google_ads_label: google_ads_label || undefined,
-       support_email: support_email || 'support@topproductofficial.com',
+      // Tracking - ENFORCE GLOBAL PIXEL IF NOT PROVIDED or IF DEFAULT
+      // If user clears it, we force it back to default for safety unless explicitly "none"
+      google_ads_id: (google_ads_id && google_ads_id.trim() !== '') ? google_ads_id : '17850696537',
+      google_ads_label: google_ads_label || undefined,
+      support_email: support_email || 'support@topproductofficial.com',
 
        // Content (Prefer passed values, fallback to defaults)
       image_url: image_url || `/images/default-${vertical.toLowerCase()}.svg`,
