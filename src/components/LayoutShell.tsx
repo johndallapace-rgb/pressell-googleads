@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
-import { SiteHeader } from './SiteHeader';
-import { SiteFooter } from './SiteFooter';
+import { BrandHeader } from '@/components/public/BrandHeader';
+import { BrandFooter } from '@/components/public/BrandFooter';
 
 interface LayoutShellProps {
   children: ReactNode;
@@ -10,13 +10,13 @@ interface LayoutShellProps {
 export default function LayoutShell({ children, vertical = 'general' }: LayoutShellProps) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 font-sans">
-      <SiteHeader />
+      <BrandHeader />
 
       <main className="flex-grow">
         {children}
       </main>
 
-      <SiteFooter vertical={vertical} />
+      <BrandFooter vertical={vertical} />
     </div>
   );
 }

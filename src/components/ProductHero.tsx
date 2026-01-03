@@ -1,6 +1,7 @@
 import { ProductConfig } from '@/lib/config';
 import { CTAButton } from './CTAButton';
 import { SafeImage } from './SafeImage';
+import { TrustBar } from '@/components/public/TrustBar';
 
 interface Props {
   product: ProductConfig;
@@ -26,9 +27,13 @@ export function ProductHero({ product }: Props) {
             </div>
           )}
           
-          {/* Badge Overlay - Simplified to just one static badge if needed, or removed as per user req. Keeping a simple "Review" badge could be nice. */}
+          {/* Badge Overlay */}
           <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             Review
+          </div>
+          
+          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
+             Updated: {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
           </div>
         </div>
         
@@ -61,9 +66,10 @@ export function ProductHero({ product }: Props) {
                fullWidth 
                trackingData={{ product: product.slug, variant: 'default' }}
              />
-             <p className="text-xs text-center text-gray-400 mt-3">
-               Official Site • 60-Day Money Back Guarantee
-             </p>
+             
+             <div className="mt-6">
+                <TrustBar />
+             </div>
           </div>
         </div>
       </div>

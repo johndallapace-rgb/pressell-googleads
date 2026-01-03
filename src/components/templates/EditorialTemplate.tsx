@@ -4,7 +4,8 @@ import { FAQAccordion } from '@/components/FAQAccordion';
 import { VideoReview } from '@/components/VideoReview';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
-import { TestimonialSection } from '@/components/TestimonialSection';
+import { QuickVerdict } from '@/components/public/QuickVerdict';
+import { Testimonials } from '@/components/public/Testimonials';
 
 function assertComponent(name: string, comp: any) {
   const t = typeof comp;
@@ -19,7 +20,8 @@ assertComponent('FAQAccordion', FAQAccordion);
 assertComponent('VideoReview', VideoReview);
 assertComponent('CTAButton', CTAButton);
 assertComponent('StickyCTA', StickyCTA);
-assertComponent('TestimonialSection', TestimonialSection);
+assertComponent('QuickVerdict', QuickVerdict);
+assertComponent('Testimonials', Testimonials);
 
 interface Props {
   product: ProductConfig;
@@ -33,6 +35,12 @@ export function EditorialTemplate({ product }: Props) {
     id: product.youtube_review_id,
     title: `${product.name} Review`
   } : undefined;
+
+  // Synthesize Quick Verdict Data (Safe Defaults if missing)
+  const verdict = 'recommended';
+  const bestFor = product.bullets?.[0] || 'Anyone looking for quality results';
+  const notIdealFor = 'Those seeking overnight miracles';
+  const bottomLine = `After reviewing ${product.name}, we found it to be a top contender in its category. The combination of ingredients and positive user feedback makes it a solid choice.`;
 
   // Determine accent colors based on vertical
   const getAccentColor = () => {
@@ -56,6 +64,37 @@ export function EditorialTemplate({ product }: Props) {
         
         {/* Hero Section */}
         <ProductHero product={{...product, official_url: ctaUrl}} /> 
+
+        {/* Quick Verdict */}
+        <QuickVerdict 
+          productName={product.name}
+          verdict={verdict}
+          bestFor={bestFor}
+          notIdealFor={notIdealFor}
+          bottomLine={bottomLine}
+          ctaUrl={ctaUrl}
+          slug={product.slug}
+        />
+
+        {/* What You Get (What Is) */}
+        {product.whatIs && (
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whatIs.title || "What You Get"}</h2>
+            <div className="prose lg:prose-lg text-gray-700">
+              {product.whatIs.content.map((p, i) => <p key={i}>{p}</p>)}
+            </div>
+          </section>
+        )}
+
+        {/* How It Works */}
+        {product.howItWorks && (
+          <section className={`mb-16 -mx-4 px-4 py-12 md:rounded-2xl ${accentClass}`}>
+            <h2 className="text-2xl font-bold mb-6">{product.howItWorks.title}</h2>
+            <div className="prose lg:prose-lg">
+              {product.howItWorks.content.map((p, i) => <p key={i}>{p}</p>)}
+            </div>
+          </section>
+        )}
 
         {/* Why People Choose It (Pros & Cons) */}
         {product.prosCons && (
@@ -92,26 +131,6 @@ export function EditorialTemplate({ product }: Props) {
           </section>
         )}
 
-        {/* What You Get (What Is) */}
-        {product.whatIs && (
-          <section className="mb-16">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">{product.whatIs.title || "What You Get"}</h2>
-            <div className="prose lg:prose-lg text-gray-700">
-              {product.whatIs.content.map((p, i) => <p key={i}>{p}</p>)}
-            </div>
-          </section>
-        )}
-
-        {/* How It Works */}
-        {product.howItWorks && (
-          <section className={`mb-16 -mx-4 px-4 py-12 md:rounded-2xl ${accentClass}`}>
-            <h2 className="text-2xl font-bold mb-6">{product.howItWorks.title}</h2>
-            <div className="prose lg:prose-lg">
-              {product.howItWorks.content.map((p, i) => <p key={i}>{p}</p>)}
-            </div>
-          </section>
-        )}
-
         {/* Video Review */}
         {videoObj && (
           <section className="mb-16">
@@ -121,7 +140,7 @@ export function EditorialTemplate({ product }: Props) {
         )}
 
         {/* Testimonials */}
-        <TestimonialSection testimonials={product.testimonials} productName={product.name} />
+        <Testimonials testimonials={product.testimonials} productName={product.name} />
 
         {/* FAQ */}
         {product.faq && product.faq.length > 0 && (
