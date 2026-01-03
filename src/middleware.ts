@@ -39,15 +39,16 @@ export async function middleware(request: NextRequest) {
     const isMainDomain = hostname === MAIN_DOMAIN || hostname === 'localhost:3000'; // Allow localhost for dev
 
     if (!isMainDomain) {
-       // Redirect to main domain admin or 404
-       // If we want to centralize, we redirect. If we want to hide, we 404.
-       // The prompt asked to redirect to Home of subdomain OR 404.
-       // Let's redirect to the main domain admin login to guide the user correctly.
-       return NextResponse.redirect(`https://${MAIN_DOMAIN}/admin`);
+       // Fix: Redirect to main domain preserving path and query
+       // This prevents looping if the user is on a subdomain accessing /admin/login
+       const url = request.nextUrl.clone();
+       url.hostname = MAIN_DOMAIN;
+       url.port = ''; // Clear port if moving to prod domain
+       return NextResponse.redirect(url);
     }
 
-    // Allow login page to load unconditionally
-    if (pathname === '/admin/login') {
+    // Allow login page to load unconditionally (Exact match or starting with)
+    if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
       return NextResponse.next();
     }
 

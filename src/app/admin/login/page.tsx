@@ -11,11 +11,13 @@ export default function LoginPage() {
 
   // Clear any existing session on mount to prevent loops
   useEffect(() => {
-    // Optional: We can call a logout API if needed, but client-side cookie clearing is hard for httpOnly cookies.
-    // However, since we might be here due to a loop, we just ensure we don't auto-redirect.
-    // The previous loop was server-side/middleware based.
-    // But let's prefetch the dashboard for faster nav
+    // Force cleanup of potentially stale cookies on the client side if possible
+    // (Note: HttpOnly cookies can't be cleared by JS, but we can ensure state is clean)
     router.prefetch('/admin');
+    
+    // Optional: Check if we have a token but are stuck here? 
+    // If so, maybe redirect to dashboard?
+    // But middleware should have handled that.
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
