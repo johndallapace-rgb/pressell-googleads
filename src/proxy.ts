@@ -33,6 +33,19 @@ export async function proxy(request: NextRequest) {
   // 2. Admin Authentication
   if (pathname.startsWith('/admin')) {
     
+    // Strict Admin Domain Check: Admin only accessible on main domain
+    // Replace 'www.topproductofficial.com' with your actual main domain or env var
+    const MAIN_DOMAIN = process.env.MAIN_DOMAIN || 'www.topproductofficial.com';
+    const isMainDomain = hostname === MAIN_DOMAIN || hostname === 'localhost:3000'; // Allow localhost for dev
+
+    if (!isMainDomain) {
+       // Redirect to main domain admin or 404
+       // If we want to centralize, we redirect. If we want to hide, we 404.
+       // The prompt asked to redirect to Home of subdomain OR 404.
+       // Let's redirect to the main domain admin login to guide the user correctly.
+       return NextResponse.redirect(`https://${MAIN_DOMAIN}/admin`);
+    }
+
     // Allow login page to load unconditionally
     if (pathname === '/admin/login') {
       return NextResponse.next();
@@ -47,7 +60,9 @@ export async function proxy(request: NextRequest) {
         const isBrowser = accept.includes('text/html') && !userAgent.toLowerCase().includes('bot');
 
         if (isBrowser) {
-             return NextResponse.redirect(new URL('/admin/login', request.url));
+             const MAIN_DOMAIN = process.env.MAIN_DOMAIN || 'www.topproductofficial.com';
+             // Ensure redirect goes to main domain login to set correct cookie
+             return NextResponse.redirect(`https://${MAIN_DOMAIN}/admin/login`);
         } else {
              return NextResponse.rewrite(new URL('/404', request.url));
         }

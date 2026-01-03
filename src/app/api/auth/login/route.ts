@@ -24,12 +24,24 @@ export async function POST(request: Request) {
   const token = await signToken({ userId: 'admin', email: adminEmail });
 
   const response = NextResponse.json({ success: true });
+  
+  // Set cookie on parent domain to allow access across subdomains (if we wanted)
+  // OR set on main domain only to centralize auth.
+  // The request is to centralize admin on www.
+  // So we set the domain to .topproductofficial.com to allow the cookie to be readable if we ever need it on subdomains,
+  // OR just defaults to current domain.
+  // Given the requirement: "Certifique-se de que o cookie de autenticação seja configurado para o domínio pai .topproductofficial.com"
+  
+  const isProduction = process.env.NODE_ENV === 'production';
+  const domain = isProduction ? '.topproductofficial.com' : undefined;
+
   response.cookies.set('admin_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24, // 1 day
     path: '/',
+    domain: domain // Enable cross-subdomain auth presence
   });
 
   return response;
