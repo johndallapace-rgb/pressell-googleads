@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
-import { getCampaignConfig } from '@/lib/config';
+import { getCampaignConfig } from '@/lib/campaignConfig';
+import { headers } from 'next/headers';
+import { getVerticalFromHost } from '@/lib/host';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,18 +11,41 @@ export default async function HomePage() {
   const activeSlug = config.active_product_slug;
   const products = config.products || {};
   
-  // 1. Check if the configured active product is actually active
+  // Detect Host Vertical
+  const headerList = await headers();
+  const host = headerList.get('host');
+  const detectedVertical = getVerticalFromHost(host);
+
+  // 1. If Subdomain Vertical detected, find first active product in that vertical
+  if (detectedVertical) {
+      const verticalProduct = Object.values(products).find(p => p.status === 'active' && p.vertical === detectedVertical);
+      if (verticalProduct) {
+          redirect(`/${verticalProduct.slug}`);
+      }
+      // If no product found for this vertical, show specific error
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-600 p-4">
+             <div className="max-w-md text-center">
+                <h1 className="text-2xl font-bold mb-2 text-gray-800">No {detectedVertical.toUpperCase()} Offers</h1>
+                <p>We couldn't find any active offers in this category right now.</p>
+             </div>
+        </div>
+      );
+  }
+
+  // 2. Default Logic (Root Domain)
+  // Check if the configured active product is actually active
   if (activeSlug && products[activeSlug]?.status === 'active') {
     redirect(`/${activeSlug}`);
   }
 
-  // 2. Fallback: Find the first active product available
+  // 3. Fallback: Find the first active product available (any vertical)
   const firstActive = Object.values(products).find(p => p.status === 'active');
   if (firstActive) {
     redirect(`/${firstActive.slug}`);
   }
 
-  // 3. No active campaign found -> Render "No Active Campaign" page
+  // 4. No active campaign found -> Render "No Active Campaign" page
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-600 p-4">
       <div className="max-w-md text-center">

@@ -74,19 +74,28 @@ export interface CampaignConfig {
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
   if (!configClient) {
-    console.warn('EDGE_CONFIG not found, using default config');
+    // Only warn if we expect it to work (env var is present)
+    if (process.env.EDGE_CONFIG) console.warn('EDGE_CONFIG client not initialized');
     return defaultConfig;
   }
   
   try {
-    const config = await configClient.get<CampaignConfig>('campaign_config');
-    if (config) {
+    // Fetch as unknown to handle string or object
+    let config = await configClient.get('campaign_config');
+
+    // Handle stringified JSON (common issue in Vercel env vars sometimes)
+    if (typeof config === 'string') {
+        try { config = JSON.parse(config); } catch (e) { console.error('Error parsing campaign_config JSON string', e); }
+    }
+    
+    if (config && typeof config === 'object') {
+      const cfg = config as any;
       return {
         ...defaultConfig,
-        ...config,
+        ...cfg, // Merges root keys (Formato B support)
         products: {
             ...defaultConfig.products,
-            ...(config.products || {})
+            ...(cfg.products || {})
         }
       };
     }
@@ -98,8 +107,19 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
 }
 
 export async function getProduct(slug: string): Promise<ProductConfig | null> {
-  const config = await getCampaignConfig();
-  return config.products[slug] || null;
+  try {
+    const config = await getCampaignConfig();
+    const cfgAny = config as any;
+    
+    // Support Formato A (products[slug]) AND Formato B (root[slug])
+    // Priority: products object -> root object
+    const product = cfgAny.products?.[slug] ?? cfgAny?.[slug];
+    
+    return product || null;
+  } catch (error) {
+    console.error(`Error in getProduct for slug ${slug}:`, error);
+    return null;
+  }
 }
 
 export async function listProducts(): Promise<ProductConfig[]> {

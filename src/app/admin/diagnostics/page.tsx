@@ -1,8 +1,11 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth';
-import { getCampaignConfig, configClient, CampaignConfig } from '@/lib/config';
+import { CampaignConfig } from '@/lib/config';
+import { getVerticalFromHost } from '@/lib/host';
+import { get } from '@vercel/edge-config';
 
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export default async function DiagnosticsPage() {
@@ -12,6 +15,10 @@ export default async function DiagnosticsPage() {
   if (!token || !(await verifyToken(token))) {
     redirect('/admin/login');
   }
+
+  const headerList = await headers();
+  const currentHost = headerList.get('host');
+  const currentVertical = getVerticalFromHost(currentHost);
 
   // Check Env Vars
   const envStatus = {
@@ -23,108 +30,138 @@ export default async function DiagnosticsPage() {
     JWT_SECRET: !!process.env.JWT_SECRET,
   };
 
-  // Check Edge Config Read
-  let edgeConfigReadSuccess = false;
-  let rawConfigKeys: string[] = [];
-  
-  if (configClient) {
-    try {
-      const rawConfig = await configClient.get<CampaignConfig>('campaign_config');
-      if (rawConfig) {
-        edgeConfigReadSuccess = true;
-        if (rawConfig.products) {
-            rawConfigKeys = Object.keys(rawConfig.products);
-        }
+  // Fetch from Edge Config
+  let edgeStatus = 'ERROR';
+  let config: CampaignConfig | null = null;
+  let errorMsg = '';
+
+  try {
+      if (process.env.EDGE_CONFIG) {
+          // Explicitly use 'get' as requested to validate direct access
+          const data = await get('campaign_config');
+          if (data) {
+              config = data as unknown as CampaignConfig;
+              edgeStatus = 'OK';
+          } else {
+              errorMsg = 'Key "campaign_config" returned null';
+          }
+      } else {
+          errorMsg = 'EDGE_CONFIG env var missing';
       }
-    } catch (e) {
-      console.error('Diagnostics: Edge Config Read Error', e);
-    }
+  } catch (err: any) {
+      errorMsg = err.message || 'Unknown error fetching Edge Config';
   }
 
-  // Get Effective Config
-  const config = await getCampaignConfig();
+  const products = config?.products || {};
+  const productKeys = Object.keys(products);
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Diagnostics Dashboard</h1>
+    <div className="p-8 max-w-5xl mx-auto font-sans">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Diagnostics Dashboard</h1>
 
       <div className="space-y-8">
+        {/* Status Overview */}
+        <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
+           <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">System Status</h2>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div className={`p-4 rounded border ${edgeStatus === 'OK' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                   <p className="text-sm font-bold text-gray-500 uppercase">Edge Config</p>
+                   <p className={`text-2xl font-bold ${edgeStatus === 'OK' ? 'text-green-700' : 'text-red-700'}`}>
+                       {edgeStatus === 'OK' ? '✅ ACCESSIBLE' : '❌ ERROR'}
+                   </p>
+                   {errorMsg && <p className="text-xs text-red-600 mt-1">{errorMsg}</p>}
+               </div>
+               <div className="p-4 rounded border bg-blue-50 border-blue-200">
+                   <p className="text-sm font-bold text-gray-500 uppercase">Active Product</p>
+                   <p className="text-xl font-bold text-blue-700 truncate">
+                       {config?.active_product_slug || 'None'}
+                   </p>
+               </div>
+               <div className="p-4 rounded border bg-gray-50 border-gray-200">
+                   <p className="text-sm font-bold text-gray-500 uppercase">Total Products</p>
+                   <p className="text-2xl font-bold text-gray-700">
+                       {productKeys.length}
+                   </p>
+               </div>
+           </div>
+        </section>
+
         {/* Environment Variables */}
-        <section className="bg-white p-6 rounded-lg shadow border">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Environment Variables</h2>
-          <div className="grid grid-cols-2 gap-4">
+        <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">Environment Variables</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {Object.entries(envStatus).map(([key, exists]) => (
-              <div key={key} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                <span className="font-mono text-sm text-gray-700">{key}</span>
-                <span className={`px-2 py-1 rounded text-xs font-bold ${exists ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {exists ? 'PRESENT' : 'MISSING'}
+              <div key={key} className="flex flex-col p-3 bg-gray-50 rounded border border-gray-100">
+                <span className="font-mono text-xs text-gray-500 mb-1">{key}</span>
+                <span className={`text-sm font-bold ${exists ? 'text-green-600' : 'text-red-600'}`}>
+                  {exists ? '✓ PRESENT' : 'MISSING'}
                 </span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Edge Config Status */}
-        <section className="bg-white p-6 rounded-lg shadow border">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Edge Config Connection</h2>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span>Read 'campaign_config' Success:</span>
-              <span className={`font-bold ${edgeConfigReadSuccess ? 'text-green-600' : 'text-red-600'}`}>
-                {edgeConfigReadSuccess.toString().toUpperCase()}
-              </span>
-            </div>
-            {edgeConfigReadSuccess && (
-               <div className="text-sm text-gray-600">
-                 Raw keys found in Edge Config: {rawConfigKeys.length > 0 ? rawConfigKeys.join(', ') : 'None'}
-               </div>
-            )}
-             {!process.env.EDGE_CONFIG && (
-                <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                    ⚠️ EDGE_CONFIG env var is missing. Using local default config.
-                </div>
-            )}
-          </div>
-        </section>
-
-        {/* Effective Configuration */}
-        <section className="bg-white p-6 rounded-lg shadow border">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Effective Configuration</h2>
-          <div className="mb-4">
-             <span className="font-medium">Active Product Slug: </span>
-             <code className="bg-blue-50 text-blue-700 px-2 py-1 rounded">{config.active_product_slug}</code>
-          </div>
+        {/* Products Table */}
+        <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">Products Validation</h2>
           
-          <h3 className="font-medium mb-3">Products List:</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 uppercase">
-                <tr>
-                  <th className="px-4 py-3">Slug</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">In Edge Config?</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {Object.values(config.products).map((product) => (
-                  <tr key={product.slug} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono">{product.slug}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {product.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">
-                        {edgeConfigReadSuccess && rawConfigKeys.includes(product.slug) 
-                            ? '✅ Yes' 
-                            : '❌ No (Using Default)'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {productKeys.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded border border-dashed border-gray-300 text-gray-500">
+                  ⚠️ No products found in configuration.
+              </div>
+          ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm text-left">
+                  <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-3">Slug</th>
+                      <th className="px-4 py-3">Name</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Affiliate URL</th>
+                      <th className="px-4 py-3">Official URL</th>
+                      <th className="px-4 py-3">Vertical</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {Object.values(products).map((product) => (
+                      <tr key={product.slug} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono font-medium text-gray-900">{product.slug}</td>
+                        <td className="px-4 py-3 text-gray-600">{product.name}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {product.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                            {product.affiliate_url ? (
+                                <span className="text-green-600 font-bold text-xs">✓ Set</span>
+                            ) : (
+                                <span className="text-red-400 font-bold text-xs">Missing</span>
+                            )}
+                        </td>
+                        <td className="px-4 py-3">
+                            {product.official_url ? (
+                                <span className="text-green-600 font-bold text-xs">✓ Set</span>
+                            ) : (
+                                <span className="text-red-400 font-bold text-xs">Missing</span>
+                            )}
+                        </td>
+                         <td className="px-4 py-3 capitalize text-gray-600">{product.vertical}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          )}
         </section>
+        
+        {/* Raw Config Dump (Debug) */}
+        <details className="bg-gray-50 p-4 rounded border border-gray-200">
+            <summary className="cursor-pointer text-gray-500 font-medium text-sm">View Raw Configuration (Debug)</summary>
+            <pre className="mt-4 p-4 bg-gray-900 text-green-400 rounded overflow-x-auto text-xs">
+                {JSON.stringify(config, null, 2)}
+            </pre>
+        </details>
       </div>
     </div>
   );

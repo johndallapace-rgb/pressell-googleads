@@ -3,9 +3,19 @@ import { verifyToken } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const hostname = request.headers.get('host') || '';
 
-  // Ignore assets
+  // 0. Debug Logging (Toggle via Env Var in Vercel)
+  if (process.env.DEBUG_MIDDLEWARE) {
+    console.log(`[Middleware] ${request.method} ${pathname} | Host: ${hostname}`);
+  }
+
+  // 1. Exclude Statics, APIs, and System Paths from any processing
+  // These should pass through directly without auth or rewrite checks
   if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/static') ||
     [
       '/manifest.json',
       '/favicon.ico',
@@ -14,13 +24,14 @@ export async function middleware(request: NextRequest) {
       '/sw.js',
       '/sitemap.xml',
       '/robots.txt',
+      '/offline',
     ].includes(pathname) ||
-    pathname.startsWith('/_next')
+    pathname.startsWith('/legal/')
   ) {
-    return;
+    return NextResponse.next();
   }
 
-  // Auth Middleware for /admin
+  // 2. Admin Authentication
   if (pathname.startsWith('/admin')) {
     if (pathname === '/admin/login') {
       // If already logged in, redirect to dashboard
@@ -28,26 +39,24 @@ export async function middleware(request: NextRequest) {
       if (token && (await verifyToken(token))) {
         return NextResponse.redirect(new URL('/admin', request.url));
       }
-      return;
+      return NextResponse.next();
     }
 
     const token = request.cookies.get('admin_token')?.value;
     if (!token || !(await verifyToken(token))) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
+      const loginUrl = new URL('/admin/login', request.url);
+      // Optional: Add ?next=...
+      return NextResponse.redirect(loginUrl);
     }
-    return;
+    return NextResponse.next();
   }
 
-  // API routes protection
-  if (pathname.startsWith('/api/admin')) {
-    const token = request.cookies.get('admin_token')?.value;
-    if (!token || !(await verifyToken(token))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return;
-  }
-
-  // No locale middleware needed anymore
+  // 3. Host-based Routing (Pass-through for now)
+  // We explicitly allow /[slug] routes (like /mitolyn, /tedswoodworking) to pass through
+  // to be handled by the App Router's dynamic route handler (app/[slug]/page.tsx).
+  // No rewrites are applied here to avoid confusion or 500 errors.
+  
+  return NextResponse.next();
 }
 
 export const config: MiddlewareConfig = {
