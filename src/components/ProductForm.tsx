@@ -228,6 +228,50 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
     }
   };
 
+  const handleQuickStructureGen = async () => {
+    if (!product.name) {
+        alert('Please enter a Product Name first');
+        return;
+    }
+    setAiLoading(true);
+    try {
+        const res = await fetch('/api/admin/generate-copy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                productName: product.name,
+                mode: 'structure' 
+            })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Structure generation failed');
+
+        setProduct(prev => ({
+            ...prev,
+            vertical: data.vertical || prev.vertical,
+            slug: data.slug || prev.slug,
+            headline: data.headline || prev.headline,
+            subheadline: data.subheadline || prev.subheadline,
+            bullets: data.bullets || prev.bullets,
+            whatIs: { 
+                title: 'What Is It?', 
+                content: data.content ? [data.content] : prev.whatIs?.content || [''] 
+            },
+            seo: {
+                title: data.headline || prev.seo.title,
+                description: data.subheadline || prev.seo.description
+            }
+        }));
+
+        alert('✨ Structure generated! Vertical, Slug, and Base Copy updated.');
+    } catch (e: any) {
+        alert('Error: ' + e.message);
+    } finally {
+        setAiLoading(false);
+    }
+  };
+
   const handleImport = async () => {
     if (!importUrl) return;
     setIsImporting(true);

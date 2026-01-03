@@ -5,10 +5,51 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { productName, niche, competitorText, tone, layout } = await request.json();
+    const { productName, niche, competitorText, tone, layout, mode } = await request.json();
 
-    if (!productName || !niche) {
-      return NextResponse.json({ error: 'Product Name and Niche are required' }, { status: 400 });
+    if (!productName) {
+      return NextResponse.json({ error: 'Product Name is required' }, { status: 400 });
+    }
+
+    // MODE: STRUCTURE (Quick Generation based on Name only)
+    if (mode === 'structure') {
+      const structureSystemInstruction = `
+        Você é um Especialista em Marketing Digital e Classificação de Produtos.
+        Seu objetivo é analisar o nome de um produto e gerar automaticamente sua estrutura base.
+
+        Produto: ${productName}
+
+        TAREFAS:
+        1. Identifique o Nicho (Vertical) mais provável entre: 'health', 'diy', 'pets', 'dating', 'finance', 'other'.
+        2. Crie um Slug URL-friendly (apenas letras minúsculas, números e hífens).
+        3. Escreva uma Copy Base (Editorial) persuasiva.
+
+        Retorne APENAS um JSON válido com esta estrutura:
+        {
+          "vertical": "health", // ou outro nicho identificado
+          "slug": "nome-do-produto-exemplo",
+          "headline": "Headline principal chamativa",
+          "subheadline": "Subheadline complementar",
+          "content": "Introdução persuasiva para um artigo editorial (2-3 parágrafos). Fale sobre o problema que o produto resolve.",
+          "bullets": ["Benefício 1", "Benefício 2", "Benefício 3"]
+        }
+      `;
+
+      const generatedText = await generateContent(structureSystemInstruction);
+      const jsonString = generatedText.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      try {
+        const data = JSON.parse(jsonString);
+        return NextResponse.json(data);
+      } catch (e) {
+        console.error('Failed to parse Gemini structure response:', jsonString);
+        return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+      }
+    }
+
+    // MODE: FULL COPY (Default)
+    if (!niche) {
+      return NextResponse.json({ error: 'Niche is required for full copy generation' }, { status: 400 });
     }
 
     const isQuiz = layout === 'quiz';
