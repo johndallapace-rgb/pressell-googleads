@@ -173,7 +173,7 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<b
         body: JSON.stringify({
           items: [
             {
-              operation: 'update',
+              operation: 'upsert',
               key: 'campaign_config',
               value: newConfig,
             },

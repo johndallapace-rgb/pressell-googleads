@@ -1,8 +1,25 @@
 import Link from 'next/link';
-import { logout } from '@/lib/auth';
+import { logout, verifyToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
+};
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Server-side authentication check (Hardening)
+  const cookieStore = await cookies();
+  const token = cookieStore.get('admin_token')?.value;
+
+  if (!token || !(await verifyToken(token))) {
+    redirect('/admin/login');
+  }
+
   async function handleLogout() {
     'use server';
     await logout();

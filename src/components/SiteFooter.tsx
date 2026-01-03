@@ -41,7 +41,7 @@ export function SiteFooter({ vertical = 'general' }: SiteFooterProps) {
            <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
            <Link href="/legal/terms" className="hover:text-white transition-colors">Terms of Use</Link>
            <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
-           <Link href="/admin/login" className="hover:text-white transition-colors opacity-50">Admin</Link>
+           {/* Admin link removed for security */}
         </div>
 
         {/* Copyright */}
