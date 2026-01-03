@@ -1,6 +1,7 @@
 import { ProductConfig } from '@/lib/config';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
+import { SafeImage } from '@/components/SafeImage';
 
 interface Props {
   product: ProductConfig;
@@ -40,8 +41,7 @@ export function ComparisonTemplate({ product }: Props) {
                 </div>
                 <div className="h-48 bg-blue-50 rounded mb-6 flex items-center justify-center relative overflow-hidden">
                      {product.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={product.image_url} alt={product.name} className="h-full object-contain" />
+                        <SafeImage src={product.image_url} alt={product.name} className="h-full object-contain" />
                      ) : (
                         <span className="text-blue-200 font-bold text-2xl">{product.name}</span>
                      )}

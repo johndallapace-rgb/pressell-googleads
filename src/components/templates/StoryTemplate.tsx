@@ -1,6 +1,7 @@
 import { ProductConfig } from '@/lib/config';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
+import { SafeImage } from '@/components/SafeImage';
 
 interface Props {
   product: ProductConfig;
@@ -41,12 +42,10 @@ export function StoryTemplate({ product }: Props) {
                 
                 {product.image_url && (
                     <div className="my-8">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
+                        <SafeImage 
                             src={product.image_url} 
                             alt={product.name} 
                             className="w-full rounded-lg shadow-md"
-                            onError={(e) => { e.currentTarget.src = '/images/placeholder.svg'; }}
                         />
                         <p className="text-center text-sm text-gray-500 mt-2 italic font-sans">The product that changed my perspective.</p>
                     </div>

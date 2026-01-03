@@ -1,5 +1,6 @@
 import { ProductConfig } from '@/lib/config';
 import { CTAButton } from './CTAButton';
+import { SafeImage } from './SafeImage';
 
 interface Props {
   product: ProductConfig;
@@ -12,14 +13,10 @@ export function ProductHero({ product }: Props) {
         {/* Image Section */}
         <div className="md:w-1/2 bg-gray-100 min-h-[300px] md:min-h-[400px] flex items-center justify-center relative overflow-hidden">
           {product.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
+            <SafeImage 
               src={product.image_url} 
               alt={product.name} 
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/images/placeholder.svg';
-              }}
             />
           ) : (
             <div className="text-gray-400 font-bold text-2xl tracking-widest uppercase">
