@@ -134,7 +134,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
     `;
 
     return (
-      <LayoutShell>
+      <LayoutShell vertical={product.vertical}>
         <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
         {(() => {
           switch (templateType) {

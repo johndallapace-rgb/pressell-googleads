@@ -39,6 +39,14 @@ export type AbTestConfig = {
   variants: Variant[];
 };
 
+export type Testimonial = {
+  name: string;
+  age?: number;
+  location?: string;
+  rating: number; // 1-5
+  text: string;
+};
+
 export type ProductConfig = {
   slug: string;
   name: string;
@@ -64,6 +72,7 @@ export type ProductConfig = {
   whatIs?: ContentSection;
   howItWorks?: ContentSection;
   prosCons?: ProsCons;
+  testimonials?: Testimonial[];
 };
 
 export interface CampaignConfig {

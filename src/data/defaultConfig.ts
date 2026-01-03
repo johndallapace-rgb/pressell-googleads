@@ -96,7 +96,12 @@ export const defaultConfig: CampaignConfig = {
       prosCons: {
         pros: ['Massive variety of projects', 'Detailed cutting lists', 'Beginner friendly'],
         cons: ['Overwhelming amount of content', 'Some older plans need updates']
-      }
+      },
+      testimonials: [
+        { name: "John D.", age: 60, location: "Denver, CO", rating: 5, text: "I've built 5 projects so far. The plans are incredibly detailed." },
+        { name: "Mark S.", age: 42, location: "Seattle, WA", rating: 5, text: "Worth every penny. The shed plans alone saved me thousands." },
+        { name: "David L.", age: 55, location: "Miami, FL", rating: 4, text: "Great collection, though some videos could be updated. Still a bargain." }
+      ]
     }
   }
 };
