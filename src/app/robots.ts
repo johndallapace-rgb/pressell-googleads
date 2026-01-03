@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/api/admin/'],
+      disallow: ['/admin/', '/api/admin/', '/admin/login'],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL}/sitemap.xml`,
+    sitemap: 'https://www.topproductofficial.com/sitemap.xml',
   };
 }

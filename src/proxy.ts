@@ -1,7 +1,7 @@
 import { MiddlewareConfig, NextRequest, NextResponse } from 'next/server';
 // import { verifyToken } from './lib/auth'; // Removed to avoid Edge runtime issues with crypto
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = request.headers.get('host') || '';
 
