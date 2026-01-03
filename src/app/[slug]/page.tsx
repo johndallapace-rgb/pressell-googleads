@@ -7,6 +7,7 @@ import ComparisonTemplate from '@/components/templates/ComparisonTemplate';
 import Script from 'next/script';
 import { getCampaignConfig, getProductBySlug } from '@/lib/campaignConfig';
 
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true; // Allow new slugs that weren't generated at build time
 

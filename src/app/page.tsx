@@ -3,6 +3,7 @@ import { getCampaignConfig } from '@/lib/campaignConfig';
 import { headers } from 'next/headers';
 import { getVerticalFromHost } from '@/lib/host';
 
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {

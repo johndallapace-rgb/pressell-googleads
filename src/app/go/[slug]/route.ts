@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProduct } from '@/lib/config';
+import { getCampaignConfig, getProductBySlug } from '@/lib/campaignConfig';
 import { getVerticalFromHost } from '@/lib/host';
+
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 // Helper to preserve query params from request
 function preserveQueryParams(targetUrl: string, requestUrl: string): string {
@@ -23,40 +26,43 @@ function preserveQueryParams(targetUrl: string, requestUrl: string): string {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  
-  if (!slug) {
-    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
-  }
-
-  const product = await getProduct(slug);
-
-  if (!product || product.status !== 'active') {
-    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
-  }
-
-  // Vertical Check
-  const host = request.headers.get('host');
-  const detectedVertical = getVerticalFromHost(host);
-  
-  if (detectedVertical && product.vertical !== detectedVertical) {
-      // If we are on health.domain.com but product is 'diy', redirect to offline or home
+  try {
+    const { slug } = await params;
+    
+    if (!slug) {
       return NextResponse.redirect(new URL('/offline', request.url));
-  }
+    }
 
-  // Determine target URL: affiliate > official
-  let targetUrl = product.affiliate_url || product.official_url;
-  
-  if (!targetUrl) {
+    const config = await getCampaignConfig();
+    const product = getProductBySlug(config, slug);
+
+    if (!product || product.status !== 'active') {
+       console.error(`[Redirect] Product not found or inactive: ${slug}`);
+       return NextResponse.redirect(new URL('/offline', request.url));
+    }
+
+    // Vertical Check
+    const host = request.headers.get('host');
+    const detectedVertical = getVerticalFromHost(host);
+    
+    if (detectedVertical && product.vertical !== detectedVertical) {
+        console.warn(`[Redirect] Vertical Mismatch: Host=${detectedVertical}, Product=${product.vertical}`);
+        return NextResponse.redirect(new URL('/offline', request.url));
+    }
+
+    // Determine target URL: affiliate > official
+    let targetUrl = product.affiliate_url || product.official_url;
+    
+    if (!targetUrl) {
+      return NextResponse.redirect(new URL('/offline', request.url));
+    }
+
+    // Preserve UTMs and other tracking params
+    targetUrl = preserveQueryParams(targetUrl, request.url);
+
+    return NextResponse.redirect(targetUrl, { status: 302 });
+  } catch (error) {
+    console.error(`[Redirect] Critical Error for slug ${request.url}:`, error);
     return NextResponse.redirect(new URL('/offline', request.url));
   }
-
-  // Preserve UTMs and other tracking params
-  targetUrl = preserveQueryParams(targetUrl, request.url);
-
-  // Apply internal tracking logic (if any additional processing is needed from tracking lib)
-  // Note: buildOutgoingUrl might assume client-side localStorage, so we rely on server-side query params mostly here.
-  // But if we had server-side cookies we could use them. For now query params are the reliable source.
-
-  return NextResponse.redirect(targetUrl, { status: 302 });
 }
