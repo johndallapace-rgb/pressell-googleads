@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { ProductConfig, FaqItem } from '@/lib/config';
 import { templates, getTemplate, VerticalType, TemplateType } from '@/lib/templates';
 
+import { AdsConfig } from '@/lib/ads/types';
+
 interface ProductFormProps {
   initialProduct?: ProductConfig;
   onSubmit: (product: ProductConfig) => Promise<void>;
@@ -43,6 +45,12 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
   const [importResult, setImportResult] = useState<any>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [abTestEnabled, setAbTestEnabled] = useState(false);
+
+  // AI Generation State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPromptData, setAiPromptData] = useState({ productName: '', niche: 'health', competitorText: '', tone: 'persuasive' });
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialProduct?.ab_test?.enabled) {
@@ -127,6 +135,84 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
              description: templateDef.defaultContent.subheadline || prev.seo.description
         }
       }));
+    }
+  };
+
+  const handleAiGenerate = async () => {
+    if (!aiPromptData.productName || !aiPromptData.niche) {
+        alert('Product Name and Niche are required');
+        return;
+    }
+    setAiLoading(true);
+    try {
+        const res = await fetch('/api/admin/generate-copy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(aiPromptData)
+        });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'AI generation failed');
+
+        // Apply generated content
+        setProduct(prev => ({
+            ...prev,
+            name: aiPromptData.productName, // Ensure name matches
+            headline: data.headline || prev.headline,
+            subheadline: data.subheadline || prev.subheadline,
+            bullets: data.bulletPoints || prev.bullets,
+            // Map 'content' to 'whatIs.content' (splitting by paragraph or just wrapping in array)
+            whatIs: { 
+                title: 'What Is It?', 
+                content: data.content ? [data.content] : prev.whatIs?.content || [''] 
+            },
+            // We can also populate SEO if empty
+            seo: {
+                title: data.headline || prev.seo.title,
+                description: data.subheadline || prev.seo.description
+            },
+            // Save generated ads to the ads module config if present
+            ads: data.ads ? {
+                slug: prev.slug || aiPromptData.productName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                vertical: prev.vertical as any,
+                languages: [prev.language],
+                status: 'ready',
+                generatedAt: new Date().toISOString(),
+                version: (prev.ads?.version || 0) + 1,
+                settings: prev.ads?.settings || {
+                    bidStrategy: 'Manual CPC',
+                    dailyBudget: 50,
+                    locations: ['United States'],
+                    languages: ['en'],
+                    networks: 'Search'
+                },
+                campaigns: [{
+                    product: prev.slug || aiPromptData.productName,
+                    language: prev.language,
+                    campaignName: `[AI Generated] ${aiPromptData.productName}`,
+                    adGroups: [{
+                        name: 'AI Generated Group',
+                        keywords: [aiPromptData.productName, `${aiPromptData.productName} review`, `buy ${aiPromptData.productName}`],
+                        negatives: ["free", "scam"],
+                        ads: [{
+                            headlines: data.ads.headlines.slice(0, 15),
+                            descriptions: data.ads.descriptions.slice(0, 4),
+                            finalUrl: prev.official_url || 'https://example.com',
+                            label: 'AI Variant'
+                        }]
+                    }]
+                }]
+            } : prev.ads
+        }));
+
+        setAiModalOpen(false);
+        setAiAnalysis(data.ctaAnalysis || null);
+        alert('✨ Content generated successfully!');
+        
+    } catch (e: any) {
+        alert('Error: ' + e.message);
+    } finally {
+        setAiLoading(false);
     }
   };
 
@@ -242,6 +328,16 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
         </div>
       </div>
       
+      {aiAnalysis && (
+        <div className="bg-purple-50 border-l-4 border-purple-500 p-4 relative">
+            <button onClick={() => setAiAnalysis(null)} className="absolute top-2 right-2 text-purple-400 hover:text-purple-700">×</button>
+            <h4 className="font-bold text-purple-900 flex items-center gap-2">
+                <span>🧠</span> AI Strategy Insight
+            </h4>
+            <p className="text-sm text-purple-800 mt-1">{aiAnalysis}</p>
+        </div>
+      )}
+
       {product.status === 'paused' && (
          <div className="bg-gray-50 border-l-4 border-gray-400 p-4 text-sm text-gray-600">
             ⚠️ <strong>Product is Paused:</strong> It will return a 404 error on the site and redirects will be disabled.
@@ -344,6 +440,13 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             <div className="flex space-x-2">
                 <button 
                     type="button"
+                    onClick={() => setAiModalOpen(true)}
+                    className="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 flex items-center shadow-sm"
+                >
+                    ✨ Generate with AI
+                </button>
+                <button 
+                    type="button"
                     onClick={() => setImportModalOpen(true)}
                     className="bg-white text-blue-600 border border-blue-300 px-4 py-2 rounded text-sm hover:bg-blue-50"
                 >
@@ -356,6 +459,89 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                 >
                     Generate Template Draft
                 </button>
+            </div>
+        </div>
+      )}
+
+      {/* AI Generation Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div className="p-6 border-b">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        <span>✨</span> Generate Copy with AI
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Uses Google Gemini to create high-converting presell content.
+                    </p>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                        <input 
+                            type="text" 
+                            value={aiPromptData.productName}
+                            onChange={e => setAiPromptData({...aiPromptData, productName: e.target.value})}
+                            className="w-full border rounded px-3 py-2"
+                            placeholder="e.g. Sugar Defender"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Niche *</label>
+                        <select 
+                            value={aiPromptData.niche}
+                            onChange={e => setAiPromptData({...aiPromptData, niche: e.target.value})}
+                            className="w-full border rounded px-3 py-2 bg-white"
+                        >
+                            <option value="health">Health / Supplements</option>
+                            <option value="diy">DIY / Home Improvement</option>
+                            <option value="finance">Finance / Crypto</option>
+                            <option value="dating">Dating / Relationships</option>
+                            <option value="software">Software / SaaS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Competitor URL or Text (Optional)</label>
+                        <textarea 
+                            value={aiPromptData.competitorText}
+                            onChange={e => setAiPromptData({...aiPromptData, competitorText: e.target.value})}
+                            className="w-full border rounded px-3 py-2"
+                            placeholder="Paste VSL transcript, competitor copy, or 'Big Promise' to analyze..."
+                            rows={3}
+                        />
+                        <p className="text-xs text-purple-600 mt-1">🕵️ Competitor Espionage: AI will analyze this to counter their angle.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tone of Voice</label>
+                        <select 
+                            value={aiPromptData.tone}
+                            onChange={e => setAiPromptData({...aiPromptData, tone: e.target.value})}
+                            className="w-full border rounded px-3 py-2 bg-white"
+                        >
+                            <option value="persuasive">Persuasive (Default)</option>
+                            <option value="aggressive">Aggressive (Hard Sell)</option>
+                            <option value="informative">Informative / Educational</option>
+                            <option value="friendly">Friendly / Relatable</option>
+                            <option value="urgent">Urgent / Scarcity</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+                    <button 
+                        onClick={() => setAiModalOpen(false)}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        disabled={aiLoading}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={handleAiGenerate}
+                        disabled={aiLoading || !aiPromptData.productName}
+                        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {aiLoading ? 'Generating...' : '✨ Generate Content'}
+                    </button>
+                </div>
             </div>
         </div>
       )}
