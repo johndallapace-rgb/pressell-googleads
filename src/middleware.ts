@@ -10,11 +10,12 @@ export async function middleware(request: NextRequest) {
     console.log(`[Middleware] ${request.method} ${pathname} | Host: ${hostname}`);
   }
 
-  // 1. Exclude Statics
+  // 1. Exclude Statics (Redundant with matcher but good for safety)
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/static') ||
+    pathname.startsWith('/images') ||
     [
       '/manifest.json',
       '/favicon.ico',
@@ -30,91 +31,65 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Admin Authentication
+  // 2. Admin Authentication - ABSOLUTE PRIORITY
+  // If we are in admin, we DO NOT process verticals.
   if (pathname.startsWith('/admin')) {
     
-    // Smart Domain Check: Allow both www and non-www of the main domain
-    const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'https://www.topproductofficial.com';
-    let mainDomain = 'www.topproductofficial.com';
-    try {
-        mainDomain = new URL(NEXTAUTH_URL).hostname;
-    } catch (e) {
-        // Fallback
-    }
+    // DEBUG: Log admin access
+    console.log(`[Middleware] Admin Access: ${pathname} | Host: ${hostname}`);
 
-    // Normalize: Remove port and www for comparison
-    const cleanHost = hostname.split(':')[0].replace(/^www\./, '');
-    const cleanMain = mainDomain.replace(/^www\./, '');
-
-    const isMainDomain = cleanHost === cleanMain || cleanHost === 'localhost';
-
-    if (!isMainDomain) {
-       // Redirect to main domain (canonical) preserving path
-       const url = request.nextUrl.clone();
-       url.hostname = mainDomain;
-       url.port = ''; 
-       return NextResponse.redirect(url);
-    }
-
-    // Allow login page to load unconditionally
+    // Allow login page unconditionally
     if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
       return NextResponse.next();
     }
 
     const token = request.cookies.get('admin_token')?.value;
 
-    // If no token, redirect to login (Browser) or 404 (Bot)
+    // If no token, redirect to login
     if (!token) {
         const accept = request.headers.get('accept') || '';
         const userAgent = request.headers.get('user-agent') || '';
         const isBrowser = accept.includes('text/html') && !userAgent.toLowerCase().includes('bot');
 
         if (isBrowser) {
-             const MAIN_DOMAIN = process.env.MAIN_DOMAIN || 'www.topproductofficial.com';
-             // Ensure redirect goes to main domain login to set correct cookie
-             return NextResponse.redirect(`https://${MAIN_DOMAIN}/admin/login`);
+             console.log(`[Middleware] No Token. Redirecting to /admin/login`);
+             return NextResponse.redirect(new URL('/admin/login', request.url));
         } else {
              return NextResponse.rewrite(new URL('/404', request.url));
         }
     }
     
+    // STOP HERE. Do not fall through to vertical logic.
     return NextResponse.next();
   }
 
   // 3. Vertical Logic (Subdomains)
   // Only process if NOT admin (which is handled above and returns)
-  // And ignore API routes generally handled by Next.js
   
-  // Detect subdomain
+  // HOST CHECK: Explicitly ignore main domain
+  if (hostname === 'topproductofficial.com' || hostname === 'www.topproductofficial.com') {
+      return NextResponse.next();
+  }
+
   const hostnameParts = hostname.split('.');
-  // e.g. health.topproductofficial.com -> ['health', 'topproductofficial', 'com']
-  // localhost:3000 -> ['localhost:3000']
-  
   let subdomain = '';
-  const isLocal = hostname.includes('localhost');
   
-  if (isLocal) {
-     // Localhost logic: maybe sub.localhost? For now, ignore or mock
-  } else {
-     // Production: if 3 parts, first is subdomain (unless www)
+  if (!hostname.includes('localhost')) {
+     // Check if subdomain exists and is NOT www
+     // e.g. [health, topproductofficial, com]
      if (hostnameParts.length >= 3) {
          const sub = hostnameParts[0];
+         // Explicitly ignore 'www' as requested
          if (sub !== 'www') {
              subdomain = sub;
          }
      }
   }
 
-  // If subdomain exists, rewrite to vertical path
-  // BUT: Ensure we are not already on that path to avoid loops
+  // Rewrite logic only if subdomain is valid and we aren't already there
   if (subdomain && !pathname.startsWith(`/${subdomain}`)) {
-      // Rewrite health.domain.com/foo -> domain.com/health/foo ?
-      // Or just health.domain.com -> domain.com/health (Root)
-      
-      // Note: The user's request "Fallback de Vertical" implies handling this here.
-      // However, usually Vercel handles rewrites. 
-      // If we do manual rewrite:
-      // return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, request.url));
+       // Rewrite health.domain.com/foo -> /health/foo
+       return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, request.url));
   }
   
   return NextResponse.next();
@@ -122,8 +97,17 @@ export async function middleware(request: NextRequest) {
 
 export const config: MiddlewareConfig = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-    '/admin/:path*',
-    '/api/admin/:path*'
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - manifest.json (web manifest)
+     * - robots.txt (robots file)
+     * - sitemap.xml (sitemap file)
+     * - sw.js (service worker)
+     * - images (public images)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|robots.txt|sitemap.xml|sw.js|images).*)',
   ],
 };
