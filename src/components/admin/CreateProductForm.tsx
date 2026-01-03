@@ -29,7 +29,8 @@ export default function CreateProductForm() {
     seo: null as any,
     // Tracking
     google_ads_id: '17850696537', // Default for scale
-    google_ads_label: ''
+    google_ads_label: '',
+    support_email: 'support@topproductofficial.com'
   });
 
   const [importUrl, setImportUrl] = useState('');
@@ -296,6 +297,15 @@ export default function CreateProductForm() {
                         value={formData.google_ads_label} onChange={handleChange}
                         className="w-full border rounded px-3 py-2"
                         placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
+                    />
+                </div>
+                <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Support Email (Public)</label>
+                    <input 
+                        type="email" name="support_email"
+                        value={formData.support_email} onChange={handleChange}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="support@topproductofficial.com"
                     />
                 </div>
             </div>

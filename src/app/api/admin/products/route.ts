@@ -29,9 +29,10 @@ export async function POST(request: NextRequest) {
       subheadline,
       bullets,
       google_ads_id,
-      google_ads_label,
-      image_url,
-      pain_points,
+       google_ads_label,
+       support_email,
+       image_url,
+       pain_points,
       unique_mechanism,
       seo
     } = body;
@@ -62,10 +63,11 @@ export async function POST(request: NextRequest) {
       youtube_review_id: youtubeId || undefined,
       
       // Tracking
-      google_ads_id: google_ads_id || undefined,
-      google_ads_label: google_ads_label || undefined,
+       google_ads_id: google_ads_id || undefined,
+       google_ads_label: google_ads_label || undefined,
+       support_email: support_email || 'support@topproductofficial.com',
 
-      // Content (Prefer passed values, fallback to defaults)
+       // Content (Prefer passed values, fallback to defaults)
       image_url: image_url || `/images/default-${vertical.toLowerCase()}.svg`,
       headline: headline || `${name} Review: Key Facts, Benefits, and Who It’s For`,
       subheadline: subheadline || 'Independent-style overview based on official info and user feedback.',

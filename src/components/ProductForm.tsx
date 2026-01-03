@@ -793,6 +793,17 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Support Email</label>
+          <input
+            type="email"
+            value={product.support_email || 'support@topproductofficial.com'}
+            onChange={e => handleChange('support_email', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            placeholder="support@topproductofficial.com"
+          />
+        </div>
       </div>
 
       {/* Content */}

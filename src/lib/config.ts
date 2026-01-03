@@ -83,6 +83,7 @@ export type ProductConfig = {
   image_prompt?: string; // AI Suggested Prompt
   google_ads_id?: string; // Google Ads Pixel ID (AW-XXXXXXXX)
   google_ads_label?: string; // Conversion Label (optional)
+  support_email?: string; // e.g. support@topproductofficial.com
   headline: string;
   subheadline: string;
   cta_text: string;

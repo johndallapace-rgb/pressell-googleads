@@ -152,7 +152,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
     `;
 
     return (
-      <LayoutShell vertical={product.vertical}>
+      <LayoutShell vertical={product.vertical} supportEmail={product.support_email}>
         {/* Google Ads Global Tag */}
         {googleAdsId && (
             <>

@@ -2,9 +2,10 @@ import Link from 'next/link';
 
 interface BrandFooterProps {
   vertical?: string;
+  supportEmail?: string;
 }
 
-export function BrandFooter({ vertical = 'general' }: BrandFooterProps) {
+export function BrandFooter({ vertical = 'general', supportEmail }: BrandFooterProps) {
   const year = new Date().getFullYear();
 
   const getDisclaimer = () => {
@@ -42,6 +43,9 @@ export function BrandFooter({ vertical = 'general' }: BrandFooterProps) {
            <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
            <Link href="/legal/terms" className="hover:text-white transition-colors">Terms of Use</Link>
            <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
+           {supportEmail && (
+               <a href={`mailto:${supportEmail}`} className="hover:text-white transition-colors">Contact Support</a>
+           )}
         </div>
 
         {/* Copyright */}
