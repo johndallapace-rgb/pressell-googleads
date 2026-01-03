@@ -49,7 +49,7 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
   // AI Generation State
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiPromptData, setAiPromptData] = useState({ productName: '', niche: 'health', competitorText: '', tone: 'persuasive' });
+  const [aiPromptData, setAiPromptData] = useState({ productName: '', niche: 'health', competitorText: '', tone: 'persuasive', layout: 'editorial' });
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
   useEffect(() => {
@@ -171,6 +171,15 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                 title: data.headline || prev.seo.title,
                 description: data.subheadline || prev.seo.description
             },
+            // Save AI Suggested Image Prompt
+            image_prompt: data.imagePrompt || prev.image_prompt,
+            
+            // Save Quiz if present
+            quiz: data.quizQuestions ? {
+                enabled: true,
+                questions: data.quizQuestions
+            } : prev.quiz,
+            
             // Save generated ads to the ads module config if present
             ads: data.ads ? {
                 slug: prev.slug || aiPromptData.productName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
@@ -202,7 +211,10 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                         }]
                     }]
                 }]
-            } : prev.ads
+            } : prev.ads,
+            
+            // Update Template if changed
+            template: aiPromptData.layout === 'quiz' ? 'quiz' : prev.template
         }));
 
         setAiModalOpen(false);
@@ -525,6 +537,18 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                             <option value="urgent">Urgent / Scarcity</option>
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Layout Strategy</label>
+                        <select 
+                            value={aiPromptData.layout}
+                            onChange={e => setAiPromptData({...aiPromptData, layout: e.target.value})}
+                            className="w-full border rounded px-3 py-2 bg-white"
+                        >
+                            <option value="editorial">Editorial / Text (Standard)</option>
+                            <option value="story">Advertorial (Storytelling)</option>
+                            <option value="quiz">Interactive Quiz (High Engagement)</option>
+                        </select>
+                    </div>
                 </div>
                 <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
                     <button 
@@ -671,6 +695,27 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               placeholder="/images/product.svg or https://..."
             />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700">AI Image Prompt (Suggestion)</label>
+            <div className="flex gap-2">
+                <textarea
+                  value={product.image_prompt || ''}
+                  onChange={e => handleChange('image_prompt', e.target.value)}
+                  disabled={readOnly}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm text-gray-600 bg-gray-50"
+                  placeholder="AI will suggest an image prompt here..."
+                  rows={2}
+                />
+                <button 
+                    type="button"
+                    onClick={() => setAiModalOpen(true)} // Re-open modal to generate image prompt? Or just use main generation
+                    className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded text-xs hover:bg-gray-200"
+                    title="Generate content to get a prompt"
+                >
+                    🎨 Suggest
+                </button>
+            </div>
           </div>
         </div>
       </div>

@@ -5,11 +5,14 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { productName, niche, competitorText, tone } = await request.json();
+    const { productName, niche, competitorText, tone, layout } = await request.json();
 
     if (!productName || !niche) {
       return NextResponse.json({ error: 'Product Name and Niche are required' }, { status: 400 });
     }
+
+    const isQuiz = layout === 'quiz';
+    const isAdvertorial = layout === 'story' || layout === 'advertorial';
 
     const systemInstruction = `
       Você é um Estrategista de Vendas Fundo de Funil (BOFU) e Copywriter Sênior.
@@ -18,6 +21,7 @@ export async function POST(request: NextRequest) {
       Produto: ${productName}
       Nicho: ${niche}
       Tom de Voz: ${tone || 'Persuasivo'}
+      Layout/Formato: ${isQuiz ? 'Quiz Interativo (Lead Segmentation)' : isAdvertorial ? 'Advertorial (Storytelling)' : 'Página de Vendas Direta'}
       ${competitorText ? `
       CONTEXTO DO CONCORRENTE:
       "${competitorText}"
@@ -31,6 +35,13 @@ export async function POST(request: NextRequest) {
       - Escolha UM destes ângulos para a copy principal: "Medo de Perder (FOMO)", "Descoberta Científica Recente" ou "Facilidade Extrema".
       - Use gatilhos de Autoridade (ex: "estudos mostram", "especialistas") e Escassez (ex: "oferta limitada") sutilmente.
 
+      ${isQuiz ? `
+      REGRAS PARA QUIZ:
+      - Crie 3 a 5 perguntas estratégicas que ajudem a segmentar o lead e aumentar o desejo.
+      - As perguntas devem começar fáceis e ficar mais específicas (técnica de "Micro-Compromisso").
+      - As opções de resposta devem validar a dor do usuário.
+      ` : ''}
+
       COMPLIANCE GOOGLE ADS (CRUCIAL):
       - NUNCA use palavras banidas como: "Cura", "Milagroso", "Garantido", "Desaparecer instantaneamente", "Perda de peso rápida".
       - USE termos seguros: "Apoio à saúde", "Fórmula avançada", "Resultados comprovados", "Bem-estar", "Auxilia".
@@ -39,9 +50,38 @@ export async function POST(request: NextRequest) {
       {
         "headline": "Headline de alta conversão (max 60 chars)",
         "subheadline": "Subheadline quebra de objeção (max 100 chars)",
-        "content": "Texto persuasivo de presell (3-4 parágrafos). Use HTML básico (<p>, <strong>).",
+        "content": "Texto persuasivo de presell (3-4 parágrafos). Use HTML básico (<p>, <strong>). Se for Quiz, use este campo para a intro antes do botão 'Começar'.",
         "bulletPoints": ["Benefício 1", "Benefício 2", "Benefício 3", "Benefício 4", "Benefício 5"],
-        "adAngles": ["Ângulo Conservador (Foco em segurança/ingredientes)", "Ângulo Agressivo (Foco em dor/resultado)", "Ângulo Curiosidade (Foco em mecanismo único)"],
+        "imagePrompt": "Descrição detalhada para gerar uma imagem realista e de alta conversão para este produto (ex: foto de pessoa feliz, ou close no produto, estilo editorial).",
+        ${isQuiz ? `
+        "quizQuestions": [
+          {
+            "id": "q1",
+            "question": "Texto da Pergunta 1",
+            "options": [
+               { "text": "Opção A", "value": "a" },
+               { "text": "Opção B", "value": "b" }
+            ]
+          },
+          {
+            "id": "q2",
+            "question": "Texto da Pergunta 2",
+            "options": [
+               { "text": "Opção A", "value": "a" },
+               { "text": "Opção B", "value": "b" }
+            ]
+          },
+          {
+             "id": "q3",
+             "question": "Texto da Pergunta 3",
+             "options": [
+                { "text": "Opção A", "value": "a" },
+                { "text": "Opção B", "value": "b" }
+             ]
+          }
+        ],
+        ` : ''}
+        "adAngles": ["Ângulo Conservador", "Ângulo Agressivo", "Ângulo Curiosidade"],
         "ctaAnalysis": "Explicação breve (2 linhas) de POR QUE essa copy converte mais que a do concorrente e qual ângulo psicológico foi usado.",
         "ads": {
            "headlines": [

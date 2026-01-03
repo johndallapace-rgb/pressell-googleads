@@ -47,6 +47,23 @@ export type Testimonial = {
   text: string;
 };
 
+export type QuizOption = {
+  text: string;
+  value: string; // Internal value for logic if needed
+  next?: number; // Index of next question (optional override)
+};
+
+export type QuizQuestion = {
+  id: string;
+  question: string;
+  options: QuizOption[];
+};
+
+export type QuizConfig = {
+  enabled: boolean;
+  questions: QuizQuestion[];
+};
+
 import { AdsConfig } from '@/lib/ads/types';
 
 export type ProductConfig = {
@@ -56,13 +73,14 @@ export type ProductConfig = {
   language: string;
   status: 'active' | 'paused';
   vertical: 'health' | 'diy' | 'pets' | 'dating' | 'finance' | 'other';
-  template: 'editorial' | 'story' | 'comparison';
+  template: 'editorial' | 'story' | 'comparison' | 'quiz'; // Added 'quiz'
   theme?: string;
   ab_test?: AbTestConfig;
   official_url: string;
   affiliate_url: string;
   youtube_review_id?: string;
   image_url: string;
+  image_prompt?: string; // AI Suggested Prompt
   headline: string;
   subheadline: string;
   cta_text: string;
@@ -75,6 +93,7 @@ export type ProductConfig = {
   howItWorks?: ContentSection;
   prosCons?: ProsCons;
   testimonials?: Testimonial[];
+  quiz?: QuizConfig;
   
   // Ads Module Configuration
   ads?: AdsConfig;

@@ -5,13 +5,12 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = request.headers.get('host') || '';
 
-  // 0. Debug Logging (Toggle via Env Var in Vercel)
+  // 0. Debug Logging
   if (process.env.DEBUG_MIDDLEWARE) {
     console.log(`[Middleware] ${request.method} ${pathname} | Host: ${hostname}`);
   }
 
-  // 1. Exclude Statics, APIs, and System Paths from any processing
-  // These should pass through directly without auth or rewrite checks
+  // 1. Exclude Statics
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/') ||
@@ -31,52 +30,32 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Admin Authentication (Security Hardening)
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+  // 2. Admin Authentication
+  if (pathname.startsWith('/admin')) {
     
-    // Allow login page to load (if not authenticated)
+    // Allow login page to load unconditionally
     if (pathname === '/admin/login') {
-      const token = request.cookies.get('admin_token')?.value;
-      // If has token and it MIGHT be valid (light check), redirect to dashboard
-      // We do not do full async verification here to keep middleware fast/edge compatible
-      if (token) {
-         return NextResponse.redirect(new URL('/admin', request.url));
-      }
       return NextResponse.next();
     }
 
     const token = request.cookies.get('admin_token')?.value;
 
-    // BOT PROTECTION & STEALTH MODE
-    // If no token provided, we want to hide the admin existence from bots/scanners.
+    // If no token, redirect to login (Browser) or 404 (Bot)
     if (!token) {
-        // Simple heuristic: If it looks like a browser (HTML request), redirect to login.
-        // If it looks like a bot/API client, return 404 to "hide" the route.
         const accept = request.headers.get('accept') || '';
         const userAgent = request.headers.get('user-agent') || '';
-        
         const isBrowser = accept.includes('text/html') && !userAgent.toLowerCase().includes('bot');
 
         if (isBrowser) {
              return NextResponse.redirect(new URL('/admin/login', request.url));
         } else {
-             // Return 404 to bots/scanners
              return NextResponse.rewrite(new URL('/404', request.url));
         }
     }
-
-    // Note: Full async token verification (verifyToken) is often problematic in Edge Middleware
-    // if it relies on crypto libs or complex env vars not available in Edge.
-    // For robust security, we trust the cookie presence here but validate deeply in the Layout/Page.
     
     return NextResponse.next();
   }
 
-  // 3. Host-based Routing (Pass-through for now)
-  // We explicitly allow /[slug] routes (like /mitolyn, /tedswoodworking) to pass through
-  // to be handled by the App Router's dynamic route handler (app/[slug]/page.tsx).
-  // No rewrites are applied here to avoid confusion or 500 errors.
-  
   return NextResponse.next();
 }
 

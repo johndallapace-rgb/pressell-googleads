@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -8,6 +8,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+
+  // Clear any existing session on mount to prevent loops
+  useEffect(() => {
+    // Optional: We can call a logout API if needed, but client-side cookie clearing is hard for httpOnly cookies.
+    // However, since we might be here due to a loop, we just ensure we don't auto-redirect.
+    // The previous loop was server-side/middleware based.
+    // But let's prefetch the dashboard for faster nav
+    router.prefetch('/admin');
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
