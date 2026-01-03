@@ -30,15 +30,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { slug } = await params;
     
     if (!slug) {
-      return NextResponse.redirect(new URL('/offline', request.url));
+      return new NextResponse('Not Found', { status: 404 });
     }
 
     const config = await getCampaignConfig();
-    const product = getProductBySlug(config, slug);
+    const product = config.products[slug]; // Access directly via validated object
 
     if (!product || product.status !== 'active') {
        console.error(`[Redirect] Product not found or inactive: ${slug}`);
-       return NextResponse.redirect(new URL('/offline', request.url));
+       return new NextResponse('Not Found', { status: 404 });
+    }
+    
+    // Validate affiliate URL
+    if (!product.affiliate_url) {
+        console.error(`[Redirect] Missing affiliate_url for: ${slug}`);
+        return new NextResponse('Not Found', { status: 404 });
     }
 
     // Vertical Check
@@ -47,22 +53,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     
     if (detectedVertical && product.vertical !== detectedVertical) {
         console.warn(`[Redirect] Vertical Mismatch: Host=${detectedVertical}, Product=${product.vertical}`);
-        return NextResponse.redirect(new URL('/offline', request.url));
+        return new NextResponse('Not Found', { status: 404 });
     }
 
     // Determine target URL: affiliate > official
     let targetUrl = product.affiliate_url || product.official_url;
     
-    if (!targetUrl) {
-      return NextResponse.redirect(new URL('/offline', request.url));
-    }
-
     // Preserve UTMs and other tracking params
     targetUrl = preserveQueryParams(targetUrl, request.url);
 
     return NextResponse.redirect(targetUrl, { status: 302 });
   } catch (error) {
     console.error(`[Redirect] Critical Error for slug ${request.url}:`, error);
-    return NextResponse.redirect(new URL('/offline', request.url));
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

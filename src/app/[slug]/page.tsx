@@ -29,8 +29,14 @@ export default async function DynamicProductPage({ params }: PageProps) {
   const { slug } = await params;
   if (!slug) notFound();
 
-  // Securely fetch config
-  const config = await getCampaignConfig();
+  let config;
+  try {
+    // Securely fetch config
+    config = await getCampaignConfig();
+  } catch (e) {
+      console.error('Critical error loading config:', e);
+      notFound();
+  }
 
   // 1. Validate Config Existence
   if (!config) {

@@ -34,16 +34,28 @@ export default async function DiagnosticsPage() {
   let edgeStatus = 'ERROR';
   let config: CampaignConfig | null = null;
   let errorMsg = '';
+  let configSource = 'unknown';
 
   try {
       if (process.env.EDGE_CONFIG) {
-          // Explicitly use 'get' as requested to validate direct access
-          const data = await get('campaign_config');
-          if (data) {
-              config = data as unknown as CampaignConfig;
+          const { createClient } = await import('@vercel/edge-config');
+          const client = createClient(process.env.EDGE_CONFIG);
+          
+          const wrapper = await client.get('campaign_config');
+          if (wrapper) {
+              config = wrapper as CampaignConfig;
+              configSource = 'wrapper (campaign_config)';
               edgeStatus = 'OK';
           } else {
-              errorMsg = 'Key "campaign_config" returned null';
+              // Try separate keys
+              const products = await client.get('products');
+              if (products) {
+                  config = { products } as CampaignConfig;
+                  configSource = 'separate keys';
+                  edgeStatus = 'OK';
+              } else {
+                  errorMsg = 'No config found (wrapper or keys)';
+              }
           }
       } else {
           errorMsg = 'EDGE_CONFIG env var missing';
@@ -63,7 +75,7 @@ export default async function DiagnosticsPage() {
         {/* Status Overview */}
         <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
            <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">System Status</h2>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                <div className={`p-4 rounded border ${edgeStatus === 'OK' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                    <p className="text-sm font-bold text-gray-500 uppercase">Edge Config</p>
                    <p className={`text-2xl font-bold ${edgeStatus === 'OK' ? 'text-green-700' : 'text-red-700'}`}>
@@ -72,8 +84,14 @@ export default async function DiagnosticsPage() {
                    {errorMsg && <p className="text-xs text-red-600 mt-1">{errorMsg}</p>}
                </div>
                <div className="p-4 rounded border bg-blue-50 border-blue-200">
+                   <p className="text-sm font-bold text-gray-500 uppercase">Config Source</p>
+                   <p className="text-lg font-bold text-blue-700 truncate">
+                       {configSource}
+                   </p>
+               </div>
+               <div className="p-4 rounded border bg-purple-50 border-purple-200">
                    <p className="text-sm font-bold text-gray-500 uppercase">Active Product</p>
-                   <p className="text-xl font-bold text-blue-700 truncate">
+                   <p className="text-xl font-bold text-purple-700 truncate">
                        {config?.active_product_slug || 'None'}
                    </p>
                </div>
