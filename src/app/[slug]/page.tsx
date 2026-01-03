@@ -67,7 +67,21 @@ export default async function DynamicProductPage({ params }: PageProps) {
 
     // 2. Resolve Product directly from products object
     // Safe access using ?.
-    const product = config.products?.[slug];
+    // TRY: Exact Slug match first
+    let product = config.products?.[slug];
+    
+    // RETRY: If not found, try to find by iterating keys (case insensitive or partial?)
+    // This helps if Edge Config has 'health-mitolyn' but url is 'mitolyn'
+    if (!product) {
+        const keys = Object.keys(config.products || {});
+        // Try to find a key that ends with the slug (e.g. 'mitolyn' matches 'health-mitolyn')
+        // OR matches exact slug
+        const match = keys.find(k => k === slug || k.endsWith(`-${slug}`));
+        if (match) {
+            product = config.products[match];
+            console.log(`[DynamicPage] Soft match found: ${slug} -> ${match}`);
+        }
+    }
     
     // Log Product Status
     if (product) {
@@ -103,8 +117,8 @@ export default async function DynamicProductPage({ params }: PageProps) {
     // 4. Safe Defaults (Defensive Programming)
     // Most defaults are now handled in normalizeConfig, but we keep this as extra safety
     const name = product.name ?? 'Product';
-    // Ensure vertical is set. If null, default to 'general' or 'health'
-    const vertical = product.vertical || 'general';
+    // Ensure vertical is set. Prioritize product config, fallback to detected vertical, then default.
+    const vertical = product.vertical || detectedVertical || 'general';
 
     const image = product.image_url ?? '/images/default.svg';
     // Use 'editorial' as safe default if template is missing or invalid

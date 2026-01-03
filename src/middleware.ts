@@ -66,33 +66,28 @@ export async function middleware(request: NextRequest) {
   // 3. Vertical Logic (Subdomains)
   // Only process if NOT admin (which is handled above and returns)
   
-  // HOST CHECK: Explicitly ignore main domain and vercel.app domains to prevent loop
-  if (hostname === 'topproductofficial.com' || hostname === 'www.topproductofficial.com' || hostname.endsWith('.vercel.app')) {
-      return NextResponse.next();
-  }
-
   const hostnameParts = hostname.split('.');
   let subdomain = '';
   
-  if (!hostname.includes('localhost') && !hostname.endsWith('.vercel.app')) {
-     // Check if subdomain exists and is NOT www
-     // e.g. [health, topproductofficial, com]
-     if (hostnameParts.length >= 3) {
-         const sub = hostnameParts[0];
-         // Explicitly ignore 'www' as requested
-         if (sub !== 'www') {
-             subdomain = sub;
-         }
-     }
+  if (!hostname.includes('localhost')) {
+    // Check if subdomain exists and is NOT www
+    // e.g. [health, topproductofficial, com]
+    if (hostnameParts.length >= 3) {
+      const sub = hostnameParts[0];
+      // Explicitly ignore 'www' as requested
+      if (sub !== 'www') {
+        subdomain = sub;
+      }
+    }
   }
 
-  // Rewrite logic only if subdomain is valid and we aren't already there
-  if (subdomain && !pathname.startsWith(`/${subdomain}`)) {
-       // Rewrite health.domain.com/foo -> /health/foo
-       return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, request.url));
+  // Pass subdomain as header instead of rewriting path
+  const response = NextResponse.next();
+  if (subdomain) {
+    response.headers.set('x-vertical', subdomain);
   }
   
-  return NextResponse.next();
+  return response;
 }
 
 export const config: MiddlewareConfig = {
