@@ -47,6 +47,8 @@ export type Testimonial = {
   text: string;
 };
 
+import { AdsConfig } from '@/lib/ads/types';
+
 export type ProductConfig = {
   slug: string;
   name: string;
@@ -73,6 +75,9 @@ export type ProductConfig = {
   howItWorks?: ContentSection;
   prosCons?: ProsCons;
   testimonials?: Testimonial[];
+  
+  // Ads Module Configuration
+  ads?: AdsConfig;
 };
 
 export interface CampaignConfig {
