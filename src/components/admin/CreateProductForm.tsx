@@ -30,7 +30,10 @@ export default function CreateProductForm() {
     // Tracking
     google_ads_id: '17850696537', // Default for scale
     google_ads_label: '',
-    support_email: 'support@topproductofficial.com'
+    support_email: 'support@topproductofficial.com',
+    // Generated Ads
+    google_ads_headlines: [] as string[],
+    google_ads_descriptions: [] as string[]
   });
 
   const [importUrl, setImportUrl] = useState('');
@@ -52,6 +55,7 @@ export default function CreateProductForm() {
           setFormData(prev => ({
               ...prev,
               name: data.name || prev.name,
+              vertical: data.vertical || prev.vertical,
               official_url: importUrl,
               headline: data.headline_suggestions?.[0] || '',
               subheadline: data.subheadline_suggestions?.[0] || '',
@@ -59,9 +63,11 @@ export default function CreateProductForm() {
               pain_points: data.pain_points || [],
               unique_mechanism: data.unique_mechanism || '',
               image_url: data.image_url || '',
-              seo: data.seo || prev.seo
+              seo: data.seo || prev.seo,
+              google_ads_headlines: data.google_ads?.headlines || [],
+              google_ads_descriptions: data.google_ads?.descriptions || []
           }));
-          setMessage({ type: 'success', text: '✨ Analyzed & Auto-Filled from URL!' });
+          setMessage({ type: 'success', text: '✨ Analyzed, Vertical Detected & Ads Generated!' });
       } catch (e: any) {
           setMessage({ type: 'error', text: 'Import failed: ' + e.message });
       } finally {
@@ -164,6 +170,27 @@ export default function CreateProductForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {formData.google_ads_headlines.length > 0 && (
+            <div className="bg-blue-50 p-4 rounded border border-blue-100 mb-6">
+                <h3 className="font-bold text-blue-800 mb-2">📢 Generated Google Ads Copy</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <h4 className="text-xs font-bold text-blue-600 uppercase mb-1">Headlines</h4>
+                        <ul className="list-disc pl-4 text-sm text-blue-800">
+                            {formData.google_ads_headlines.map((h, i) => <li key={i}>{h}</li>)}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-bold text-blue-600 uppercase mb-1">Descriptions</h4>
+                        <ul className="list-disc pl-4 text-sm text-blue-800">
+                            {formData.google_ads_descriptions.map((d, i) => <li key={i}>{d}</li>)}
+                        </ul>
+                    </div>
+                </div>
+                <p className="text-xs text-blue-500 mt-2">These will be saved to the Ads Manager automatically.</p>
+            </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6">
           
           {/* Basic Info */}

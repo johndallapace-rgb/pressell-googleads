@@ -16,6 +16,11 @@ interface ImportResult {
     title: string;
     description: string;
   };
+  vertical?: string;
+  google_ads?: {
+    headlines: string[];
+    descriptions: string[];
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -82,16 +87,24 @@ export async function POST(request: NextRequest) {
       5. 3 Major Pain Points the product solves
       6. The "Unique Mechanism" (How it works/Secret ingredient)
       7. SEO Title & Description
+      8. Determine Vertical (Choose one: health, diy, pets, dating, finance, other)
+      9. Write 3 Google Ads Headlines (Max 30 chars each, persuasive, relevant)
+      10. Write 2 Google Ads Descriptions (Max 90 chars each)
 
       Return ONLY valid JSON:
       {
         "name": "Product Name",
+        "vertical": "health",
         "headline_suggestions": ["Headline 1"],
         "subheadline_suggestions": ["Subhead 1"],
         "bullets_suggestions": ["Benefit 1", ...],
         "pain_points": ["Pain 1", ...],
         "unique_mechanism": "Description...",
-        "seo": { "title": "...", "description": "..." }
+        "seo": { "title": "...", "description": "..." },
+        "google_ads": {
+            "headlines": ["Ad Headline 1", "Ad Headline 2", "Ad Headline 3"],
+            "descriptions": ["Ad Description 1", "Ad Description 2"]
+        }
       }
 
       CONTENT:
