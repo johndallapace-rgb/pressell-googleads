@@ -5,6 +5,20 @@ import VideoReview from '@/components/VideoReview';
 import CTAButton from '@/components/CTAButton';
 import StickyCTA from '@/components/StickyCTA';
 
+function assertComponent(name: string, comp: any) {
+  const t = typeof comp;
+  if (t !== 'function') {
+    console.error(`[ASSERT] ${name} is not a component. typeof=${t}`, comp);
+    throw new Error(`[ASSERT] ${name} invalid type: ${t}`);
+  }
+}
+
+assertComponent('ProductHero', ProductHero);
+assertComponent('FAQAccordion', FAQAccordion);
+assertComponent('VideoReview', VideoReview);
+assertComponent('CTAButton', CTAButton);
+assertComponent('StickyCTA', StickyCTA);
+
 interface Props {
   product: ProductConfig;
 }
