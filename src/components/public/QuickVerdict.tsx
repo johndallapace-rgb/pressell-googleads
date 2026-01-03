@@ -9,6 +9,8 @@ interface QuickVerdictProps {
   ctaUrl: string;
   ctaText?: string;
   slug: string;
+  googleAdsId?: string;
+  googleAdsLabel?: string;
 }
 
 export function QuickVerdict({ 
@@ -19,7 +21,9 @@ export function QuickVerdict({
   bottomLine,
   ctaUrl,
   ctaText = 'Check Availability',
-  slug
+  slug,
+  googleAdsId,
+  googleAdsLabel
 }: QuickVerdictProps) {
   
   const isRecommended = verdict === 'recommended';
@@ -72,6 +76,8 @@ export function QuickVerdict({
           variant="secondary"
           className="text-base py-3 px-6 w-full md:w-auto"
           trackingData={{ product: slug, variant: 'quick_verdict' }}
+          googleAdsId={googleAdsId}
+          googleAdsLabel={googleAdsLabel}
         />
       </div>
     </div>

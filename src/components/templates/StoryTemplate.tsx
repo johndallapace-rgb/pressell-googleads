@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function StoryTemplate({ product }: Props) {
-  const ctaUrl = `/go/${product.slug}`;
+  const ctaUrl = product.affiliate_url; // Direct Affiliate Link (Bridged by CTAButton)
 
   return (
     <div className="min-h-screen flex flex-col font-serif text-gray-800 bg-[#fdfbf7]">
@@ -89,6 +89,8 @@ export function StoryTemplate({ product }: Props) {
                     label={product.cta_text || 'Check Availability'} 
                     className="text-xl px-12 py-4 shadow-lg hover:shadow-xl transition-shadow"
                     trackingData={{ product: product.slug, variant: 'story_bottom' }}
+                    googleAdsId={product.google_ads_id}
+                    googleAdsLabel={product.google_ads_label}
                 />
             </div>
         </article>
@@ -98,6 +100,8 @@ export function StoryTemplate({ product }: Props) {
           href={ctaUrl} 
           label={product.cta_text || 'Check Availability'} 
           trackingData={{ product: product.slug, variant: 'sticky' }}
+          googleAdsId={product.google_ads_id}
+          googleAdsLabel={product.google_ads_label}
         />
 
       <footer className="bg-gray-100 text-gray-500 py-12 text-sm font-sans border-t">

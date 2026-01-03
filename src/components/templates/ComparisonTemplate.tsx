@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function ComparisonTemplate({ product }: Props) {
-  const ctaUrl = `/go/${product.slug}`;
+  const ctaUrl = product.affiliate_url; // Direct Affiliate Link (Bridged by CTAButton)
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-800 bg-gray-50">
@@ -61,6 +61,8 @@ export function ComparisonTemplate({ product }: Props) {
                     fullWidth
                     className="py-4 text-lg font-bold shadow-lg"
                     trackingData={{ product: product.slug, variant: 'comparison_card' }}
+                    googleAdsId={product.google_ads_id}
+                    googleAdsLabel={product.google_ads_label}
                 />
             </div>
 
@@ -122,6 +124,8 @@ export function ComparisonTemplate({ product }: Props) {
           href={ctaUrl} 
           label={product.cta_text || 'Check Availability'} 
           trackingData={{ product: product.slug, variant: 'sticky' }}
+          googleAdsId={product.google_ads_id}
+          googleAdsLabel={product.google_ads_label}
         />
 
        <footer className="bg-gray-900 text-gray-500 py-8 text-center text-xs mt-12">

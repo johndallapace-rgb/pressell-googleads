@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function EditorialTemplate({ product }: Props) {
-  const ctaUrl = `/go/${product.slug}`;
+  const ctaUrl = product.affiliate_url; // Direct Affiliate Link (Bridged by CTAButton)
   
   const videoObj = product.youtube_review_id ? {
     provider: 'youtube' as const,
@@ -63,7 +63,14 @@ export function EditorialTemplate({ product }: Props) {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         
         {/* Hero Section */}
-        <ProductHero product={{...product, official_url: ctaUrl}} /> 
+        <ProductHero 
+            product={{
+                ...product, 
+                official_url: ctaUrl, // Override with safe URL
+                google_ads_id: product.google_ads_id,
+                google_ads_label: product.google_ads_label
+            }} 
+        /> 
 
         {/* Quick Verdict */}
         <QuickVerdict 
@@ -74,6 +81,8 @@ export function EditorialTemplate({ product }: Props) {
           bottomLine={bottomLine}
           ctaUrl={ctaUrl}
           slug={product.slug}
+          googleAdsId={product.google_ads_id}
+          googleAdsLabel={product.google_ads_label}
         />
 
         {/* What You Get (What Is) */}
@@ -157,6 +166,8 @@ export function EditorialTemplate({ product }: Props) {
             label="Visit Official Website"
             className="text-xl px-12 py-5"
             trackingData={{ product: product.slug, variant: 'bottom' }}
+            googleAdsId={product.google_ads_id}
+            googleAdsLabel={product.google_ads_label}
           />
           <p className="mt-4 text-sm text-gray-500">
             Secure 256-bit Encrypted Connection
@@ -168,6 +179,8 @@ export function EditorialTemplate({ product }: Props) {
           href={ctaUrl} 
           label="Visit Official Website"
           trackingData={{ product: product.slug, variant: 'sticky' }}
+          googleAdsId={product.google_ads_id}
+          googleAdsLabel={product.google_ads_label}
         />
       </div>
     </div>

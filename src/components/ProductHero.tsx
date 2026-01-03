@@ -3,7 +3,7 @@ import { CTAButton } from './CTAButton';
 import { SafeImage } from './SafeImage';
 import { TrustBar } from '@/components/public/TrustBar';
 
-interface Props {
+export interface Props {
   product: ProductConfig;
 }
 
@@ -65,6 +65,8 @@ export function ProductHero({ product }: Props) {
                label={product.cta_text || 'Check Availability'} 
                fullWidth 
                trackingData={{ product: product.slug, variant: 'default' }}
+               googleAdsId={product.google_ads_id}
+               googleAdsLabel={product.google_ads_label}
              />
              
              <div className="mt-6">
