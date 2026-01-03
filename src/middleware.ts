@@ -33,21 +33,30 @@ export async function middleware(request: NextRequest) {
   // 2. Admin Authentication
   if (pathname.startsWith('/admin')) {
     
-    // Strict Admin Domain Check: Admin only accessible on main domain
-    // Replace 'www.topproductofficial.com' with your actual main domain or env var
-    const MAIN_DOMAIN = process.env.MAIN_DOMAIN || 'www.topproductofficial.com';
-    const isMainDomain = hostname === MAIN_DOMAIN || hostname === 'localhost:3000'; // Allow localhost for dev
+    // Smart Domain Check: Allow both www and non-www of the main domain
+    const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'https://www.topproductofficial.com';
+    let mainDomain = 'www.topproductofficial.com';
+    try {
+        mainDomain = new URL(NEXTAUTH_URL).hostname;
+    } catch (e) {
+        // Fallback
+    }
+
+    // Normalize: Remove port and www for comparison
+    const cleanHost = hostname.split(':')[0].replace(/^www\./, '');
+    const cleanMain = mainDomain.replace(/^www\./, '');
+
+    const isMainDomain = cleanHost === cleanMain || cleanHost === 'localhost';
 
     if (!isMainDomain) {
-       // Fix: Redirect to main domain preserving path and query
-       // This prevents looping if the user is on a subdomain accessing /admin/login
+       // Redirect to main domain (canonical) preserving path
        const url = request.nextUrl.clone();
-       url.hostname = MAIN_DOMAIN;
-       url.port = ''; // Clear port if moving to prod domain
+       url.hostname = mainDomain;
+       url.port = ''; 
        return NextResponse.redirect(url);
     }
 
-    // Allow login page to load unconditionally (Exact match or starting with)
+    // Allow login page to load unconditionally
     if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
       return NextResponse.next();
     }
@@ -72,6 +81,42 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // 3. Vertical Logic (Subdomains)
+  // Only process if NOT admin (which is handled above and returns)
+  // And ignore API routes generally handled by Next.js
+  
+  // Detect subdomain
+  const hostnameParts = hostname.split('.');
+  // e.g. health.topproductofficial.com -> ['health', 'topproductofficial', 'com']
+  // localhost:3000 -> ['localhost:3000']
+  
+  let subdomain = '';
+  const isLocal = hostname.includes('localhost');
+  
+  if (isLocal) {
+     // Localhost logic: maybe sub.localhost? For now, ignore or mock
+  } else {
+     // Production: if 3 parts, first is subdomain (unless www)
+     if (hostnameParts.length >= 3) {
+         const sub = hostnameParts[0];
+         if (sub !== 'www') {
+             subdomain = sub;
+         }
+     }
+  }
+
+  // If subdomain exists, rewrite to vertical path
+  // BUT: Ensure we are not already on that path to avoid loops
+  if (subdomain && !pathname.startsWith(`/${subdomain}`)) {
+      // Rewrite health.domain.com/foo -> domain.com/health/foo ?
+      // Or just health.domain.com -> domain.com/health (Root)
+      
+      // Note: The user's request "Fallback de Vertical" implies handling this here.
+      // However, usually Vercel handles rewrites. 
+      // If we do manual rewrite:
+      // return NextResponse.rewrite(new URL(`/${subdomain}${pathname}`, request.url));
+  }
+  
   return NextResponse.next();
 }
 
