@@ -85,12 +85,27 @@ export default async function DynamicProductPage({ params }: PageProps) {
     // 3. Validate Product Existence & Status
     if (!product || product.status !== 'active') {
       console.log(`[DynamicPage] Product not found or inactive: ${slug} (Status: ${product?.status})`);
+      
+      // FALLBACK: If vertical is null/undefined (Main Domain) or product not found,
+      // instead of 404, we could redirect to Home or show a generic landing.
+      // But 404 is technically correct for a missing product URL.
+      // However, if the slug is something weird like 'favicon.ico' or 'pressell-googleads...' (from host), ignore.
+      
+      const ignoredSlugs = ['favicon.ico', 'robots.txt', 'sitemap.xml'];
+      if (ignoredSlugs.includes(slug) || slug.startsWith('pressell-googleads')) {
+          return notFound();
+      }
+
+      // If we are here, it's a real user visiting a dead link.
       notFound();
     }
 
     // 4. Safe Defaults (Defensive Programming)
     // Most defaults are now handled in normalizeConfig, but we keep this as extra safety
     const name = product.name ?? 'Product';
+    // Ensure vertical is set. If null, default to 'general' or 'health'
+    const vertical = product.vertical || 'general';
+
     const image = product.image_url ?? '/images/default.svg';
     // Use 'editorial' as safe default if template is missing or invalid
     const templateType = product.template ?? 'editorial'; 
@@ -152,7 +167,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
     `;
 
     return (
-      <LayoutShell vertical={product.vertical} supportEmail={product.support_email}>
+      <LayoutShell vertical={vertical} supportEmail={product.support_email}>
         {/* Google Ads Global Tag */}
         {googleAdsId && (
             <>
