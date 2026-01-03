@@ -1,10 +1,13 @@
 import Link from 'next/link';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export function BrandHeader() {
   return (
     <header className="bg-white border-b border-gray-200 py-4 shadow-sm">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link href="/" className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight font-serif">
+        <Link href="/" className={`text-xl md:text-2xl font-bold text-gray-900 tracking-tight ${inter.className}`}>
           TopProduct<span className="text-blue-700">Digest</span>
         </Link>
         
