@@ -174,8 +174,12 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<b
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error('Error updating Edge Config:', error);
+      const errorText = await response.text();
+      console.error('Error updating Edge Config:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
       return false;
     }
 

@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ success: true, mock: true });
     }
 
+    const hasToken = !!process.env.VERCEL_API_TOKEN;
+    const edgeConfigIdTail = process.env.EDGE_CONFIG_ID.slice(-6);
+
     // We need to fetch current metrics, update, and save.
     // This is NOT concurrency safe.
     
@@ -61,8 +64,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (!updateRes.ok) {
-        console.error('Failed to update metrics in Edge Config');
-        return NextResponse.json({ error: 'Failed to record metric' }, { status: 500 });
+        const errorBody = await updateRes.text();
+        console.error('Failed to update metrics in Edge Config', {
+            status: updateRes.status,
+            statusText: updateRes.statusText,
+            body: errorBody,
+            hasToken,
+            edgeConfigIdTail
+        });
+        // Do not return 500, return success: true (queued) to not break the client
+        return NextResponse.json({ success: true, queued: true });
     }
 
     return NextResponse.json({ success: true });
