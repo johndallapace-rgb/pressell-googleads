@@ -23,15 +23,58 @@ export function normalizeConfig(raw: any): CampaignConfig {
 
     // Validate each product
     try {
-        Object.entries(productsRaw).forEach(([slug, prod]: [string, any]) => {
+        Object.entries(productsRaw).forEach(([key, prod]: [string, any]) => {
             if (typeof prod === 'object' && prod !== null) {
+                 const slug = (prod.slug || key).trim();
+                 
+                 // Get base from defaultConfig if available, otherwise create a safe default base
+                 const base = defaultConfig.products[slug] ?? {
+                    slug,
+                    name: slug,
+                    platform: 'unknown',
+                    language: effectiveConfig.default_lang || 'en',
+                    status: 'paused',
+                    vertical: 'health',
+                    template: 'editorial',
+                    official_url: '',
+                    affiliate_url: '',
+                    youtube_review_id: '',
+                    image_url: '/images/placeholder.svg',
+                    headline: '',
+                    subheadline: '',
+                    cta_text: 'Check Availability',
+                    bullets: [],
+                    faq: [],
+                    seo: { title: '', description: '' },
+                    whatIs: { title: '', content: [] },
+                    howItWorks: { title: '', content: [] },
+                    prosCons: { pros: [], cons: [] }
+                 };
+
+                 const incoming = prod;
+
                  normalizedProducts[slug] = {
-                     ...prod,
-                     name: prod.name || slug,
-                     status: prod.status || 'paused',
-                     affiliate_url: prod.affiliate_url || '',
-                     official_url: prod.official_url || '',
-                     slug: slug
+                    ...base,
+                    ...incoming,
+                    slug,
+                    status: String(incoming.status || base.status).toLowerCase().trim() as 'active' | 'paused',
+                    vertical: String(incoming.vertical || base.vertical).toLowerCase().trim() as any,
+                    template: incoming.template || base.template || 'editorial',
+                    affiliate_url: incoming.affiliate_url || base.affiliate_url || '',
+                    official_url: incoming.official_url || base.official_url || '',
+                    image_url: incoming.image_url || incoming.image || base.image_url || '/images/placeholder.svg',
+                    headline: incoming.headline || base.headline || `${incoming.name || base.name || slug} Review`,
+                    subheadline: incoming.subheadline || base.subheadline || '',
+                    cta_text: incoming.cta_text || base.cta_text || 'Check Availability',
+                    bullets: Array.isArray(incoming.bullets) ? incoming.bullets : (Array.isArray(base.bullets) ? base.bullets : []),
+                    faq: Array.isArray(incoming.faq) ? incoming.faq : (Array.isArray(base.faq) ? base.faq : []),
+                    seo: {
+                        title: incoming?.seo?.title || base?.seo?.title || '',
+                        description: incoming?.seo?.description || base?.seo?.description || ''
+                    },
+                    whatIs: incoming.whatIs || base.whatIs,
+                    howItWorks: incoming.howItWorks || base.howItWorks,
+                    prosCons: incoming.prosCons || base.prosCons
                  } as ProductConfig;
             }
         });
@@ -68,9 +111,6 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
         }
 
         // If not found, try reading separate keys
-        // Note: client.getAll() might be expensive or not what we want. 
-        // Better to fetch specific known keys if wrapper fails.
-        // But request says "read separately".
         const [activeSlug, defaultLang, products] = await Promise.all([
             client.get('active_product_slug'),
             client.get('default_lang'),
@@ -98,9 +138,7 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
  * Resolves a product by slug, supporting both config formats.
  */
 export function getProductBySlug(config: CampaignConfig, slug: string): ProductConfig | null {
-    const cfgAny = config as any;
-    // Priority: products object -> root object
-    return cfgAny.products?.[slug] ?? cfgAny?.[slug] ?? null;
+    return config.products[slug] || null;
 }
 
 /**
