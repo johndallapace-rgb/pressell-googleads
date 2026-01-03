@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
+import { generateContent } from '@/lib/gemini';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +10,8 @@ interface ImportResult {
   headline_suggestions: string[];
   subheadline_suggestions: string[];
   bullets_suggestions: string[];
+  pain_points?: string[];
+  unique_mechanism?: string;
   seo: {
     title: string;
     description: string;
@@ -30,8 +33,8 @@ export async function POST(request: NextRequest) {
 
     // Fetch with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     const res = await fetch(official_url, {
       signal: controller.signal,
       headers: {
@@ -48,64 +51,68 @@ export async function POST(request: NextRequest) {
 
     const html = await res.text();
     
-    // Safety check: Don't process massive files
-    if (html.length > 5 * 1024 * 1024) { // 5MB limit
+    // Safety check
+    if (html.length > 5 * 1024 * 1024) { 
          return NextResponse.json({ error: 'Page too large to process' }, { status: 400 });
     }
 
-    // Heuristic Extraction using Regex
-    const result: ImportResult = {
-      headline_suggestions: [],
-      subheadline_suggestions: [],
-      bullets_suggestions: [],
-      seo: { title: '', description: '' }
-    };
+    // Clean HTML for AI (Remove scripts, styles, svgs to save tokens)
+    const cleanText = html
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gim, "")
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gim, "")
+        .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gim, "")
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/\s+/g, " ")
+        .slice(0, 100000); // Limit to ~100k chars for speed
 
-    // 1. Title & SEO
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch) {
-        result.seo.title = titleMatch[1].trim();
-        result.name = result.seo.title.split(/[-|]/)[0].trim(); // Guess name from title
-    }
-
-    const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-    if (descMatch) {
-        result.seo.description = descMatch[1].trim();
-    }
-
-    // 2. Image (OG Image or first large img)
+    // Extract Image separately (Regex is faster/reliable for OG tags)
+    let imageUrl = '';
     const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-    if (ogImageMatch) {
-        result.image_url = ogImageMatch[1];
+    if (ogImageMatch) imageUrl = ogImageMatch[1];
+
+    // AI Analysis
+    const prompt = `
+      You are a Direct Response Copywriter. Analyze the following HTML/Text from a sales page.
+      
+      EXTRACT THE FOLLOWING:
+      1. Product Name
+      2. Main Headline (The big promise)
+      3. Subheadline (The hook/support)
+      4. 5 Key Benefits (Bullets)
+      5. 3 Major Pain Points the product solves
+      6. The "Unique Mechanism" (How it works/Secret ingredient)
+      7. SEO Title & Description
+
+      Return ONLY valid JSON:
+      {
+        "name": "Product Name",
+        "headline_suggestions": ["Headline 1"],
+        "subheadline_suggestions": ["Subhead 1"],
+        "bullets_suggestions": ["Benefit 1", ...],
+        "pain_points": ["Pain 1", ...],
+        "unique_mechanism": "Description...",
+        "seo": { "title": "...", "description": "..." }
+      }
+
+      CONTENT:
+      ${cleanText}
+    `;
+
+    const aiResponse = await generateContent(prompt);
+    const jsonString = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    let data;
+    try {
+        data = JSON.parse(jsonString);
+    } catch (e) {
+        console.error('Failed to parse AI response', jsonString);
+        throw new Error('AI analysis failed');
     }
 
-    // 3. Headings (H1, H2)
-    const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/gi);
-    if (h1Match) {
-        h1Match.slice(0, 3).forEach(h => {
-            const text = h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-            if (text.length > 10) result.headline_suggestions.push(text);
-        });
-    }
-
-    const h2Match = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/gi);
-    if (h2Match) {
-        h2Match.slice(0, 5).forEach(h => {
-            const text = h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-            if (text.length > 10) result.subheadline_suggestions.push(text);
-        });
-    }
-
-    // 4. Bullets (LI items that look like features)
-    const liMatch = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
-    if (liMatch) {
-        const potentialBullets = liMatch
-            .map(li => li.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
-            .filter(text => text.length > 20 && text.length < 150) // Filter short/long items
-            .slice(0, 10); // Take top 10 candidates
-        
-        result.bullets_suggestions = [...new Set(potentialBullets)].slice(0, 5); // Dedup and take 5
-    }
+    const result: ImportResult = {
+        ...data,
+        image_url: imageUrl || data.image_url // Prefer OG tag, fallback to AI
+    };
 
     return NextResponse.json(result);
 

@@ -18,8 +18,55 @@ export default function CreateProductForm() {
     official_url: '',
     youtube_review_url: '',
     status: 'active',
-    set_as_active: false
+    set_as_active: false,
+    // AI Content
+    headline: '',
+    subheadline: '',
+    bullets: [] as string[],
+    pain_points: [] as string[],
+    unique_mechanism: '',
+    image_url: '',
+    seo: null as any,
+    // Tracking
+    google_ads_id: '17850696537', // Default for scale
+    google_ads_label: ''
   });
+
+  const [importUrl, setImportUrl] = useState('');
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async () => {
+      if (!importUrl) return;
+      setImporting(true);
+      setMessage(null);
+      try {
+          const res = await fetch('/api/admin/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ official_url: importUrl })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+
+          setFormData(prev => ({
+              ...prev,
+              name: data.name || prev.name,
+              official_url: importUrl,
+              headline: data.headline_suggestions?.[0] || '',
+              subheadline: data.subheadline_suggestions?.[0] || '',
+              bullets: data.bullets_suggestions || [],
+              pain_points: data.pain_points || [],
+              unique_mechanism: data.unique_mechanism || '',
+              image_url: data.image_url || '',
+              seo: data.seo || prev.seo
+          }));
+          setMessage({ type: 'success', text: '✨ Analyzed & Auto-Filled from URL!' });
+      } catch (e: any) {
+          setMessage({ type: 'error', text: 'Import failed: ' + e.message });
+      } finally {
+          setImporting(false);
+      }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -88,6 +135,32 @@ export default function CreateProductForm() {
           {message.text}
         </div>
       )}
+
+      {/* Quick Scale / Import */}
+      <div className="mb-8 bg-purple-50 p-4 rounded border border-purple-100">
+          <h3 className="font-bold text-purple-800 mb-2 flex items-center gap-2">
+            🚀 Scale New Product with AI
+          </h3>
+          <p className="text-sm text-purple-600 mb-3">
+             Paste the official sales page URL below. Gemini will analyze the copy, extract pain points, find images, and auto-configure the presell.
+          </p>
+          <div className="flex gap-2">
+              <input 
+                type="url" 
+                value={importUrl}
+                onChange={(e) => setImportUrl(e.target.value)}
+                placeholder="https://official-product-site.com"
+                className="flex-1 border rounded px-3 py-2 text-sm"
+              />
+              <button 
+                onClick={handleImport}
+                disabled={importing || !importUrl}
+                className="bg-purple-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-purple-700 disabled:opacity-50"
+              >
+                {importing ? 'Analyzing...' : 'Auto-Fill & Analyze'}
+              </button>
+          </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
@@ -200,6 +273,32 @@ export default function CreateProductForm() {
                </label>
             </div>
           </div>
+        </div>
+
+        {/* Tracking Section */}
+        <div className="border-t pt-6">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Tracking Configuration</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Google Ads Pixel ID</label>
+                    <input 
+                        type="text" name="google_ads_id"
+                        value={formData.google_ads_id} onChange={handleChange}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="AW-XXXXXXXX"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Default: 17850696537 (Mitolyn Account)</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Conversion Label</label>
+                    <input 
+                        type="text" name="google_ads_label"
+                        value={formData.google_ads_label} onChange={handleChange}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
+                    />
+                </div>
+            </div>
         </div>
 
         <div className="pt-4 border-t flex justify-end">
