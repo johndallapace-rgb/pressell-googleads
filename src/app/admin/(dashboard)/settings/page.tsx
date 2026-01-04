@@ -126,6 +126,30 @@ export default function SettingsPage() {
             </div>
         </div>
 
+        {/* Manual Token Entry */}
+        <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6 mt-4">
+             <h3 className="font-bold text-gray-700 mb-2">⌨️ Manual Token Override</h3>
+             <p className="text-sm text-gray-600 mb-2">
+                 If you used OAuth Playground, paste the generated <code>Refresh Token</code> here to verify it instantly.
+             </p>
+             <div className="flex gap-2">
+                 <input 
+                    type="text" 
+                    placeholder="1//0e..." 
+                    className="flex-1 border p-2 rounded text-sm font-mono"
+                    onChange={(e) => {
+                        // Just a visual helper to copy
+                    }}
+                 />
+                 <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm font-bold disabled:opacity-50" disabled>
+                     Copy to Vercel
+                 </button>
+             </div>
+             <p className="text-xs text-orange-600 mt-2 font-bold">
+                 Note: You must still paste this into Vercel Environment Variables manually.
+             </p>
+        </div>
+
         {/* Action Button */}
         <div className="border-t pt-4">
             <p className="text-sm text-gray-600 mb-4">

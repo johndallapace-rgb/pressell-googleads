@@ -29,10 +29,17 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[VerifyGoogleAds] Error:', error);
+    
+    // Improved Error Hints based on message
+    let hint = 'Check GOOGLE_ADS_REFRESH_TOKEN and permissions for account 338-031-9096';
+    if (error.message?.includes('invalid_client')) hint = 'Your GOOGLE_ADS_CLIENT_ID or SECRET is incorrect.';
+    if (error.message?.includes('invalid_grant')) hint = 'Your REFRESH_TOKEN is expired or revoked. Generate a new one.';
+    if (error.message?.includes('unauthorized_client')) hint = 'The OAuth Client is not authorized for this scope.';
+
     return NextResponse.json({ 
         error: error.message || 'Unknown Error',
-        details: JSON.stringify(error),
-        hint: 'Check GOOGLE_ADS_REFRESH_TOKEN and permissions for account 338-031-9096'
+        details: JSON.stringify(error, Object.getOwnPropertyNames(error)), // Capture stack/etc
+        hint
     }, { status: 500 });
   }
 }
