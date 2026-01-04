@@ -64,6 +64,9 @@ async function googleAdsRequest(
   
   const url = `${GOOGLE_ADS_API_BASE}/${GOOGLE_ADS_API_VERSION}/customers/${cleanCustomerId}/${path}`;
   
+  // Log URL for debugging 404s
+  console.log(`[GoogleAds] Requesting: ${url}`);
+
   const headers = {
     'Authorization': `Bearer ${accessToken}`,
     'developer-token': config.developerToken,
