@@ -166,8 +166,18 @@ export default function CreateProductForm() {
       <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Create New Product</h2>
       
       {message && (
-        <div className={`p-4 mb-4 rounded ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {message.text}
+        <div className={`p-4 mb-6 rounded-lg border flex items-start shadow-sm ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className="flex-shrink-0 mr-3 mt-0.5">
+            {message.type === 'success' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            )}
+          </div>
+          <div>
+            <p className="font-medium">{message.type === 'success' ? 'Success' : 'Error'}</p>
+            <p className="text-sm mt-1 opacity-90">{message.text}</p>
+          </div>
         </div>
       )}
 
@@ -240,7 +250,7 @@ export default function CreateProductForm() {
               <input 
                 type="text" name="name" required
                 value={formData.name} onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                 placeholder="Ex: Mitolyn"
               />
             </div>
@@ -250,7 +260,7 @@ export default function CreateProductForm() {
               <input 
                 type="text" name="slug"
                 value={formData.slug} onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                 placeholder="Ex: mitolyn (auto-generated if empty)"
               />
             </div>
@@ -260,7 +270,7 @@ export default function CreateProductForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Vertical *</label>
                 <select 
                     name="vertical" value={formData.vertical} onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 bg-white shadow-sm"
                 >
                     <option value="health">Health</option>
                     <option value="diy">DIY</option>
@@ -274,7 +284,7 @@ export default function CreateProductForm() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Language *</label>
                 <select 
                     name="language" value={formData.language} onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 bg-white shadow-sm"
                 >
                     <option value="en">English (en)</option>
                     <option value="pt">Portuguese (pt)</option>
@@ -288,7 +298,7 @@ export default function CreateProductForm() {
                <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
                <select 
                    name="template" value={formData.template} onChange={handleChange}
-                   className="w-full border rounded px-3 py-2 bg-white"
+                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 bg-white shadow-sm"
                >
                    <option value="editorial">Editorial (Recommended)</option>
                    <option value="story">Story</option>
@@ -304,10 +314,10 @@ export default function CreateProductForm() {
               <input 
                 type="url" name="affiliate_url" required
                 value={formData.affiliate_url} onChange={handleChange}
-                className={`w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : ''}`}
+                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                 placeholder="https://hop.clickbank.net/..."
               />
-              {!formData.affiliate_url && <p className="text-xs text-red-500 mt-1 font-bold">⚠️ Commission Link Missing!</p>}
+              {!formData.affiliate_url && <p className="text-xs text-red-600 mt-1 font-bold">⚠️ Commission Link Missing!</p>}
             </div>
 
             <div>
@@ -315,7 +325,7 @@ export default function CreateProductForm() {
               <input 
                 type="url" name="official_url" required
                 value={formData.official_url} onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                 placeholder="https://product.com"
               />
             </div>
@@ -325,7 +335,7 @@ export default function CreateProductForm() {
               <input 
                 type="url" name="youtube_review_url" required
                 value={formData.youtube_review_url} onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                 placeholder="https://youtube.com/watch?v=..."
               />
               <p className="text-xs text-gray-500 mt-1">Required for high conversion. We extract the ID automatically.</p>
@@ -353,7 +363,7 @@ export default function CreateProductForm() {
                     <input 
                         type="text" name="google_ads_id"
                         value={formData.google_ads_id} onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                         placeholder="AW-XXXXXXXX"
                     />
                     <p className="text-xs text-gray-500 mt-1">Default: 17850696537 (Mitolyn Account)</p>
@@ -363,7 +373,7 @@ export default function CreateProductForm() {
                     <input 
                         type="text" name="google_ads_label"
                         value={formData.google_ads_label} onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                         placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
                     />
                 </div>
@@ -372,7 +382,7 @@ export default function CreateProductForm() {
                     <input 
                         type="email" name="support_email"
                         value={formData.support_email} onChange={handleChange}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 placeholder:text-gray-400 bg-white shadow-sm"
                         placeholder="support@topproductofficial.com"
                     />
                 </div>
@@ -383,7 +393,7 @@ export default function CreateProductForm() {
            <button 
              type="submit" 
              disabled={loading}
-             className={`px-6 py-3 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+             className={`px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
            >
              {loading ? 'Creating...' : 'Create Product'}
            </button>
