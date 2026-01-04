@@ -23,8 +23,12 @@ export async function GET(request: NextRequest) {
 
   // Determine Redirect URI (Must match init)
   const host = request.headers.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const redirectUri = `${protocol}://${host}/api/admin/oauth/callback`;
+  const isLocal = host.includes('localhost');
+  const protocol = isLocal ? 'http' : 'https';
+  
+  // FIX: Force the exact production domain for consistency with Google Console
+  const domain = isLocal ? host : 'topproductofficial.com';
+  const redirectUri = `${protocol}://${domain}/api/admin/oauth/callback`;
 
   try {
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

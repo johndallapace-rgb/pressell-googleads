@@ -9,10 +9,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing GOOGLE_ADS_CLIENT_ID in env' }, { status: 500 });
   }
 
-  // Determine Redirect URI dynamically based on request
+  // Determine Redirect URI
+  // In Production (Vercel), host might be internal, so we enforce the public domain if not localhost
   const host = request.headers.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  const redirectUri = `${protocol}://${host}/api/admin/oauth/callback`;
+  const isLocal = host.includes('localhost');
+  const protocol = isLocal ? 'http' : 'https';
+  
+  // FIX: Force the exact production domain for consistency with Google Console
+  const domain = isLocal ? host : 'topproductofficial.com';
+  const redirectUri = `${protocol}://${domain}/api/admin/oauth/callback`;
 
   // Scopes for Google Ads
   const scopes = [

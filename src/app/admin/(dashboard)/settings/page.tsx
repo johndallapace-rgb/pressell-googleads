@@ -96,6 +96,36 @@ export default function SettingsPage() {
             </div>
         )}
 
+        {/* Helper Info for OAuth Configuration */}
+        <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6 text-sm">
+            <h3 className="font-bold text-gray-700 mb-2">⚙️ OAuth Configuration Help</h3>
+            <p className="mb-2">
+                If you see a <strong>redirect_uri_mismatch</strong> error, add this URI to your Google Cloud Console (APIs & Services {'>'} Credentials {'>'} OAuth 2.0 Client IDs):
+            </p>
+            <code className="block bg-white p-2 rounded border border-gray-300 mb-4 select-all font-mono">
+                {typeof window !== 'undefined' ? `${window.location.origin}/api/admin/oauth/callback` : 'https://your-domain.com/api/admin/oauth/callback'}
+            </code>
+            
+            <div className="border-t border-gray-200 pt-3 mt-3">
+                <p className="mb-2 font-bold text-gray-600">Alternative: Manual Token Generation</p>
+                <p className="mb-2">
+                    If you cannot update the console immediately, use the <strong>OAuth Playground</strong> with your Client ID/Secret to get a Refresh Token manually:
+                </p>
+                <a 
+                    href="https://developers.google.com/oauthplayground/?scope=https://www.googleapis.com/auth/adwords&response_type=code&access_type=offline&approval_prompt=force"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-medium flex items-center gap-1"
+                >
+                    Open Google OAuth Playground 
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                </a>
+                <p className="text-xs text-gray-500 mt-1">
+                    (Click "Settings" icon ⚙️ inside Playground {'>'} check "Use your own OAuth credentials" {'>'} Paste your Client ID/Secret)
+                </p>
+            </div>
+        </div>
+
         {/* Action Button */}
         <div className="border-t pt-4">
             <p className="text-sm text-gray-600 mb-4">
