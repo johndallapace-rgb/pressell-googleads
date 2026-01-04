@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function SettingsPage() {
+function SettingsContent() {
   const searchParams = useSearchParams();
   const newRefreshToken = searchParams.get('refresh_token');
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -193,5 +193,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading settings...</div>}>
+      <SettingsContent />
+    </Suspense>
   );
 }

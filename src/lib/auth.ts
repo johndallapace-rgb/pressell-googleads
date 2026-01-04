@@ -29,10 +29,10 @@ export async function getSession() {
   return await verifyToken(token);
 }
 
-export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.delete('admin_token');
-}
+// export async function logout() {
+//   const cookieStore = await cookies();
+//   cookieStore.delete('admin_token');
+// }
 
 export async function updateSession(request: NextRequest) {
   const token = request.cookies.get('admin_token')?.value;
