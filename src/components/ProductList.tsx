@@ -12,12 +12,20 @@ export default function ProductList({ products }: ProductListProps) {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
         <h2 className="text-lg font-medium text-gray-900">All Products</h2>
-        <Link 
-          href="/admin/products/new" 
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
-        >
-          + Add Product
-        </Link>
+        <div className="flex gap-2">
+            <button 
+                onClick={() => window.open('/admin/import', '_self')}
+                className="bg-purple-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-purple-700 flex items-center gap-2 shadow-sm"
+            >
+                ✨ Generate with AI
+            </button>
+            <Link 
+              href="/admin/products/new" 
+              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50"
+            >
+              + Manual Add
+            </Link>
+        </div>
       </div>
       
       {products.length === 0 ? (

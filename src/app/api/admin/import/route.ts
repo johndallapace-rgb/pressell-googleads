@@ -77,37 +77,44 @@ export async function POST(request: NextRequest) {
 
     // AI Analysis
     const prompt = `
-      You are a Direct Response Copywriter. Analyze the following HTML/Text from a sales page.
-      
-      EXTRACT THE FOLLOWING:
-      1. Product Name
-      2. Main Headline (The big promise)
-      3. Subheadline (The hook/support)
-      4. 5 Key Benefits (Bullets)
-      5. 3 Major Pain Points the product solves
-      6. The "Unique Mechanism" (How it works/Secret ingredient)
-      7. SEO Title & Description
-      8. Determine Vertical (Choose one: health, diy, pets, dating, finance, other)
-      9. Write 3 Google Ads Headlines (Max 30 chars each, persuasive, relevant)
-      10. Write 2 Google Ads Descriptions (Max 90 chars each)
+      Você é um Copywriter Sênior especializado em VSL (Video Sales Letters) e Pre-sells de alta conversão para tráfego direto no Google Ads. Sua missão é analisar o conteúdo de um site oficial e criar uma Pre-sell no formato Review Vertical.
+
+      A estrutura da resposta deve seguir rigorosamente estes blocos e retornar um JSON válido:
+
+      1. Headline Matadora (headline_suggestions): Um título que desperte curiosidade e prometa um benefício claro (ex: 'O segredo revelado para [benefício do produto]').
+      2. Gancho/Lead (subheadline_suggestions): 3 frases curtas que confirmam a dor do usuário e prometem a solução encontrada no vídeo/produto.
+      3. Review do Especialista:
+         - Como funciona/Mecanismo Único (unique_mechanism): Explicação simples do produto e do seu diferencial.
+         - Pontos Positivos (bullets_suggestions): Lista com 3 a 5 benefícios reais. Adicione um item extra com Prova Social (ex: "Mais de 10.000 clientes satisfeitos").
+         - Dores que resolve (pain_points): 3 maiores problemas que o produto ataca.
+      4. Vertical (vertical): Identifique o nicho (health, diy, pets, dating, finance, other).
+      5. Google Ads (google_ads):
+         - 3 Títulos (headlines): Max 30 chars.
+         - 2 Descrições (descriptions): Max 90 chars.
+
+      Diretrizes de Estilo:
+      - Use linguagem informal, mas confiável (tom de indicação de amigo).
+      - Mantenha o foco em benefícios, não apenas em características técnicas.
+      - Adapte o vocabulário ao Nicho/Vertical identificado.
+      - Responda em Português (ou na língua nativa do produto se for muito específica, mas prefira PT-BR se for genérico).
 
       Return ONLY valid JSON:
       {
-        "name": "Product Name",
+        "name": "Nome do Produto",
         "vertical": "health",
-        "headline_suggestions": ["Headline 1"],
-        "subheadline_suggestions": ["Subhead 1"],
-        "bullets_suggestions": ["Benefit 1", ...],
-        "pain_points": ["Pain 1", ...],
-        "unique_mechanism": "Description...",
-        "seo": { "title": "...", "description": "..." },
+        "headline_suggestions": ["Headline Matadora"],
+        "subheadline_suggestions": ["Gancho (Lead)"],
+        "bullets_suggestions": ["Benefício 1", "Benefício 2", "Prova Social"],
+        "pain_points": ["Dor 1", "Dor 2", "Dor 3"],
+        "unique_mechanism": "Explicação do Mecanismo...",
+        "seo": { "title": "SEO Title", "description": "SEO Desc" },
         "google_ads": {
-            "headlines": ["Ad Headline 1", "Ad Headline 2", "Ad Headline 3"],
-            "descriptions": ["Ad Description 1", "Ad Description 2"]
+            "headlines": ["Ad 1", "Ad 2", "Ad 3"],
+            "descriptions": ["Desc 1", "Desc 2"]
         }
       }
 
-      CONTENT:
+      CONTENT TO ANALYZE:
       ${cleanText}
     `;
 

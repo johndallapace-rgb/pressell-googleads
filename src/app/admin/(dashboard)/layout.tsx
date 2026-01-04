@@ -37,7 +37,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             Dashboard
           </Link>
           <Link href="/admin/settings" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md">
-            Settings
+            API Connection
+          </Link>
+          <Link href="/admin/products" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+            Products
           </Link>
           <Link href="/admin/diagnostics" className="block px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-md">
             Diagnostics
