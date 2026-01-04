@@ -12,19 +12,19 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Attempting 'gemini-1.5-flash-latest' on v1beta as 'latest' aliases often live there.
-    // If this fails, consider 'gemini-pro' (1.0) which is universally available on v1.
+    // Use the stable 'gemini-1.5-flash' model on the v1 API.
+    // This is the most compatible configuration for standard Google Cloud projects.
     const model = genAI.getGenerativeModel(
         { 
-            model: 'gemini-1.5-flash-latest',
+            model: 'gemini-1.5-flash',
             generationConfig: {
                 temperature: 0.8
             }
         },
-        { apiVersion: 'v1beta' }
+        { apiVersion: 'v1' }
     );
     
-    console.log('[Gemini] Requesting model:', model.model, 'API Version: v1beta');
+    console.log('[Gemini] Requesting model:', model.model, 'API Version: v1');
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
