@@ -12,14 +12,17 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Use the simple 'gemini-1.5-flash' model name which is generally more stable across regions.
-    // We are also logging the full error to the console for debugging.
-    const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-            temperature: 0.8
-        }
-    });
+    // Use the simple 'gemini-1.5-flash' model name.
+    // Explicitly set apiVersion to 'v1' to avoid beta issues.
+    const model = genAI.getGenerativeModel(
+        { 
+            model: 'gemini-1.5-flash',
+            generationConfig: {
+                temperature: 0.8
+            }
+        },
+        { apiVersion: 'v1' }
+    );
     
     const result = await model.generateContent(prompt);
     const response = await result.response;
