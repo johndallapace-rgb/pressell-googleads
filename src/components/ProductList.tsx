@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { ProductConfig } from '@/lib/config';
 
 interface ProductListProps {
@@ -8,6 +10,33 @@ interface ProductListProps {
 }
 
 export default function ProductList({ products }: ProductListProps) {
+  const router = useRouter();
+  const [cloning, setCloning] = useState<string | null>(null);
+
+  const handleClone = async (slug: string) => {
+      if (!confirm(`Clone product "${slug}"?`)) return;
+      
+      setCloning(slug);
+      try {
+          const res = await fetch('/api/admin/products/clone', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slug })
+          });
+          const data = await res.json();
+          if (data.success) {
+              alert(`Product cloned! New slug: ${data.newSlug}`);
+              router.refresh();
+          } else {
+              throw new Error(data.error);
+          }
+      } catch (e: any) {
+          alert('Clone failed: ' + e.message);
+      } finally {
+          setCloning(null);
+      }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
@@ -63,8 +92,16 @@ export default function ProductList({ products }: ProductListProps) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">
                   {product.language}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link href={`/admin/products/${product.slug}`} className="text-blue-600 hover:text-blue-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-3">
+                  <button 
+                    onClick={() => handleClone(product.slug)}
+                    disabled={cloning === product.slug}
+                    className="text-gray-500 hover:text-gray-900 font-bold disabled:opacity-50"
+                    title="Clone Product"
+                  >
+                    {cloning === product.slug ? '...' : '📋 Clone'}
+                  </button>
+                  <Link href={`/admin/products/${product.slug}`} className="text-blue-600 hover:text-blue-900 font-bold">
                     Edit
                   </Link>
                 </td>

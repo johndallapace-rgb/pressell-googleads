@@ -11,12 +11,22 @@ export default async function AdminDashboard() {
       <h2 className="text-2xl font-bold mb-6 text-gray-800">🚀 Mission Control</h2>
       
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-gray-500 text-sm font-medium uppercase">Active Campaign</h3>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{productName}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-2 truncate" title={productName}>{productName}</p>
           <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-1 rounded mt-2 inline-block">LIVE</span>
         </div>
+        
+        {/* Last Spy Widget */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-gray-500 text-sm font-medium uppercase flex items-center gap-2">
+             🕵️ Last Spy
+          </h3>
+          <p className="text-2xl font-bold text-gray-900 mt-2">Mitolyn</p>
+          <span className="text-xs text-gray-400">Just now</span>
+        </div>
+
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-gray-500 text-sm font-medium uppercase">Total Conversions</h3>
           <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
