@@ -182,10 +182,10 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
     }
 }
 
-export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<boolean> {
+export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
   if (!process.env.VERCEL_API_TOKEN || !process.env.EDGE_CONFIG_ID) {
     console.error('Missing VERCEL_API_TOKEN or EDGE_CONFIG_ID');
-    return false;
+    return { success: false, error: 'Missing VERCEL_API_TOKEN or EDGE_CONFIG_ID in Vercel Environment Variables.' };
   }
 
   try {
@@ -216,12 +216,12 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<b
         statusText: response.statusText,
         body: errorText
       });
-      return false;
+      return { success: false, error: `Vercel API Error: ${response.statusText} - ${errorText}` };
     }
 
-    return true;
-  } catch (error) {
+    return { success: true };
+  } catch (error: any) {
     console.error('Error updating Edge Config:', error);
-    return false;
+    return { success: false, error: error.message };
   }
 }

@@ -148,10 +148,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Save to Edge Config (Upsert)
-    const success = await updateCampaignConfig(currentConfig);
+    const result = await updateCampaignConfig(currentConfig);
 
-    if (!success) {
-      return NextResponse.json({ error: 'Failed to save to Edge Config' }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || 'Failed to save to Edge Config' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, slug: finalSlug });

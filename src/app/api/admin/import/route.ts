@@ -77,15 +77,22 @@ export async function POST(request: NextRequest) {
 
     // AI Analysis
     const prompt = `
-      Você é um Copywriter Sênior especializado em VSL (Video Sales Letters) e Pre-sells de alta conversão para tráfego direto no Google Ads. Sua missão é analisar o conteúdo de um site oficial e criar uma Pre-sell no formato Review Vertical.
+      Aja como um especialista em Neurovendas e Marketing de Resposta Direta. Sua tarefa é analisar a URL oficial fornecida e criar uma Pre-sell (página de pré-venda) de alta conversão.
+
+      IMPORTANTE: Use o conteúdo fornecido abaixo como a ÚNICA fonte de verdade. Não invente fatos ou alucine informações que não estejam no texto.
+
+      Siga estes Princípios de Neurovendas:
+      1. Ativação do Cérebro Reptiliano: Foque na sobrevivência, prazer imediato ou alívio de uma dor latente. Use frases curtas e de forte impacto emocional.
+      2. O Mecanismo Único: Identifique e destaque o 'segredo' ou a 'descoberta' que faz este produto ser diferente de tudo o que o usuário já tentou.
+      3. Contraste de Cenários: Pinte o quadro do 'Antes' (dor e frustração) versus o 'Depois' (alívio e sucesso).
 
       A estrutura da resposta deve seguir rigorosamente estes blocos e retornar um JSON válido:
 
-      1. Headline Matadora (headline_suggestions): Um título que desperte curiosidade e prometa um benefício claro (ex: 'O segredo revelado para [benefício do produto]').
-      2. Gancho/Lead (subheadline_suggestions): 3 frases curtas que confirmam a dor do usuário e prometem a solução encontrada no vídeo/produto.
+      1. Headline Magnética (headline_suggestions): Um título que pare o scroll do usuário e use um gatilho de curiosidade ou benefício extremo.
+      2. Lead de Conexão (subheadline_suggestions): 3 frases curtas que confirmam a dor do usuário e prometem a solução encontrada no vídeo/produto. (Ex: "Eu sei como é passar por [DOR]...")
       3. Review do Especialista:
-         - Como funciona/Mecanismo Único (unique_mechanism): Explicação simples do produto e do seu diferencial.
-         - Pontos Positivos (bullets_suggestions): Lista com 3 a 5 benefícios reais. Adicione um item extra com Prova Social (ex: "Mais de 10.000 clientes satisfeitos").
+         - A Revelação/Mecanismo Único (unique_mechanism): Apresente o produto como a solução definitiva, baseada na análise da URL oficial.
+         - 3 Provas de Autoridade (bullets_suggestions): Extraia fatos, números ou depoimentos reais que estão no site oficial.
          - Dores que resolve (pain_points): 3 maiores problemas que o produto ataca.
       4. Vertical (vertical): Identifique o nicho (health, diy, pets, dating, finance, other).
       5. Google Ads (google_ads):
@@ -93,20 +100,19 @@ export async function POST(request: NextRequest) {
          - 2 Descrições (descriptions): Max 90 chars.
 
       Diretrizes de Estilo:
-      - Use linguagem informal, mas confiável (tom de indicação de amigo).
-      - Mantenha o foco em benefícios, não apenas em características técnicas.
-      - Adapte o vocabulário ao Nicho/Vertical identificado.
-      - Responda em Português (ou na língua nativa do produto se for muito específica, mas prefira PT-BR se for genérico).
+      - Linguagem natural e humana (evite termos robóticos como 'revolucionário' ou 'inovador').
+      - Mantenha o tom de uma indicação pessoal e imparcial (Review).
+      - Responda em Português.
 
       Return ONLY valid JSON:
       {
         "name": "Nome do Produto",
         "vertical": "health",
-        "headline_suggestions": ["Headline Matadora"],
-        "subheadline_suggestions": ["Gancho (Lead)"],
-        "bullets_suggestions": ["Benefício 1", "Benefício 2", "Prova Social"],
+        "headline_suggestions": ["Headline Magnética"],
+        "subheadline_suggestions": ["Lead de Conexão"],
+        "bullets_suggestions": ["Prova 1", "Prova 2", "Prova 3"],
         "pain_points": ["Dor 1", "Dor 2", "Dor 3"],
-        "unique_mechanism": "Explicação do Mecanismo...",
+        "unique_mechanism": "A Revelação...",
         "seo": { "title": "SEO Title", "description": "SEO Desc" },
         "google_ads": {
             "headlines": ["Ad 1", "Ad 2", "Ad 3"],
