@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import ProductForm from '@/components/ProductForm';
 import { ProductConfig } from '@/lib/config';
 
-export default function EditProductClient({ product, readOnly = false }: { product: ProductConfig, readOnly?: boolean }) {
+export default function EditProductClient({ product }: { product: ProductConfig }) {
   const router = useRouter();
 
   const handleSave = async (updatedProduct: ProductConfig) => {
@@ -15,7 +15,7 @@ export default function EditProductClient({ product, readOnly = false }: { produ
     });
 
     if (!res.ok) {
-      throw new Error('Failed to update product');
+      throw new Error('Failed to update product. Check Vercel API Token.');
     }
 
     router.push('/admin/products');
@@ -25,7 +25,7 @@ export default function EditProductClient({ product, readOnly = false }: { produ
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Edit Product: {product.name}</h1>
-      <ProductForm initialProduct={product} onSubmit={handleSave} />
+      <ProductForm initialProduct={product} onSubmit={handleSave} readOnly={false} />
     </div>
   );
 }
