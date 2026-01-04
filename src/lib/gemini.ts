@@ -12,18 +12,20 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Use the simple 'gemini-1.5-flash' model name.
-    // Explicitly set apiVersion to 'v1' to avoid beta issues.
+    // Attempting 'gemini-1.5-flash-latest' on v1beta as 'latest' aliases often live there.
+    // If this fails, consider 'gemini-pro' (1.0) which is universally available on v1.
     const model = genAI.getGenerativeModel(
         { 
-            model: 'gemini-1.5-flash',
+            model: 'gemini-1.5-flash-latest',
             generationConfig: {
                 temperature: 0.8
             }
         },
-        { apiVersion: 'v1' }
+        { apiVersion: 'v1beta' }
     );
     
+    console.log('[Gemini] Requesting model:', model.model, 'API Version: v1beta');
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
