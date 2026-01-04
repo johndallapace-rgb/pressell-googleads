@@ -4,7 +4,8 @@ import { verifyToken } from '@/lib/auth';
 import { CampaignConfig } from '@/lib/config';
 import { getVerticalFromHost } from '@/lib/host';
 import HealthCheckRunner from '@/components/admin/HealthCheckRunner'; // Import component
-import GeminiTestButton from '@/components/admin/GeminiTestButton'; // New component
+import GeminiTestButton from '@/components/admin/GeminiTestButton'; // Import component
+import ListModelsButton from '@/components/admin/ListModelsButton'; // New component
 
 export const dynamic = 'force-dynamic';
 
@@ -120,6 +121,7 @@ export default async function DiagnosticsPage() {
               <p className="text-sm font-bold text-gray-500 uppercase">Gemini Connection</p>
               <div className="mt-2">
                   <GeminiTestButton />
+                  <ListModelsButton />
               </div>
             </div>
 

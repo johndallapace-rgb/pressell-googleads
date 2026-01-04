@@ -12,13 +12,13 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Fallback to 'gemini-pro' (1.0) on v1beta for maximum compatibility during billing activation.
-    // 'gemini-1.5-flash' requires active Pay-as-you-go billing in some regions.
+    // Strategic Downgrade to 'gemini-1.0-pro' on v1beta.
+    // This combination is historically the most permissive for new accounts.
     const model = genAI.getGenerativeModel(
         { 
-            model: 'gemini-pro',
+            model: 'gemini-1.0-pro',
             generationConfig: {
-                temperature: 0.8
+                temperature: 0.7
             }
         },
         { apiVersion: 'v1beta' }
