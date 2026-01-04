@@ -76,15 +76,24 @@ async function googleAdsRequest(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  const data = await res.json();
-
   if (!res.ok) {
-    // Enhanced error handling for Google Ads API errors
-    const errorMessage = data.error?.message || JSON.stringify(data.error) || 'Unknown Google Ads API Error';
+    const errorText = await res.text();
+    let errorMessage = 'Unknown Google Ads API Error';
+    
+    // Check if response is JSON
+    try {
+        const data = JSON.parse(errorText);
+        errorMessage = data.error?.message || JSON.stringify(data.error) || errorMessage;
+    } catch (e) {
+        // Response is likely HTML (DOCTYPE) or plain text
+        console.error('[GoogleAds] Non-JSON Error Response:', errorText.substring(0, 500));
+        errorMessage = `Non-JSON Error (${res.status}): ${errorText.substring(0, 200)}...`;
+    }
+
     throw new Error(`Google Ads API Error: ${errorMessage}`);
   }
 
-  return data;
+  return res.json();
 }
 
 export const GoogleAds = {

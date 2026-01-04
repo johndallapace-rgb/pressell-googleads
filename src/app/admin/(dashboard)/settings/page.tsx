@@ -11,7 +11,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch('/api/admin/verify-google-ads')
-      .then(res => res.json())
+      .then(async res => {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+              return res.json();
+          } else {
+              const text = await res.text();
+              throw new Error(`Invalid JSON response: ${text.substring(0, 100)}...`);
+          }
+      })
       .then(data => {
         if (data.error) {
           setStatus('error');
@@ -23,7 +31,7 @@ export default function SettingsPage() {
       })
       .catch(err => {
         setStatus('error');
-        setDetails({ error: 'Network Error', details: err.message });
+        setDetails({ error: 'Connection Error', details: err.message });
       });
   }, []);
 
@@ -151,17 +159,37 @@ export default function SettingsPage() {
         </div>
 
         {/* Action Button */}
-        <div className="border-t pt-4">
-            <p className="text-sm text-gray-600 mb-4">
-                If the connection is failing or the token has expired, you can generate a new one.
-                Make sure you have added your <code>GOOGLE_ADS_CLIENT_ID</code> and <code>GOOGLE_ADS_CLIENT_SECRET</code> to Vercel first.
-            </p>
+        <div className="border-t pt-4 flex gap-4">
             <a 
                 href="/api/admin/oauth/google"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150"
             >
                 🔄 Generate New Refresh Token
             </a>
+            
+            <button 
+                onClick={() => {
+                    setStatus('loading');
+                    fetch('/api/admin/verify-google-ads', { cache: 'no-store' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.error) {
+                                setStatus('error');
+                                setDetails(data);
+                            } else {
+                                setStatus('ok');
+                                setDetails(data);
+                            }
+                        })
+                        .catch(err => {
+                            setStatus('error');
+                            setDetails({ error: 'Retry Failed', details: err.message });
+                        });
+                }}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:text-gray-800 active:bg-gray-50 transition ease-in-out duration-150"
+            >
+                ⚡ Force API Reconnect
+            </button>
         </div>
       </div>
     </div>
