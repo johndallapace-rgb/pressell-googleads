@@ -37,9 +37,12 @@ export async function POST(request: NextRequest) {
       seo
     } = body;
 
-    // 2. Basic Validation
-    if (!name || !vertical || !affiliate_url || !official_url) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // 2. Basic Validation & Safety Lock
+    // Explicitly require Affiliate URL and YouTube Review for revenue/conversion safety
+    if (!name || !vertical || !affiliate_url || !official_url || !youtube_review_url) {
+      return NextResponse.json({ 
+          error: 'Missing required fields: Name, Vertical, Affiliate URL, Official URL, and YouTube Review are mandatory.' 
+      }, { status: 400 });
     }
 
     // 3. Generate/Normalize Slug
@@ -110,7 +113,24 @@ export async function POST(request: NextRequest) {
       prosCons: {
         pros: ['Easy to use', 'Transparent ingredients', 'Good feedback'],
         cons: ['Online availability only', 'Limited stock']
-      }
+      },
+
+      // Auto-Generated Ads Storage
+      ads: (body.google_ads_headlines && body.google_ads_headlines.length > 0) ? {
+          status: 'ready',
+          campaigns: [{
+              campaignName: `${name} - Search - ${vertical.toUpperCase()}`,
+              adGroups: [{
+                  name: 'General Interest',
+                  keywords: [`${name} reviews`, `buy ${name}`, `${name} price`],
+                  ads: [{
+                      headlines: body.google_ads_headlines,
+                      descriptions: body.google_ads_descriptions || [],
+                      finalUrl: official_url
+                  }]
+              }]
+          }]
+      } : undefined
     };
 
     // 6. Fetch Current Config & Merge

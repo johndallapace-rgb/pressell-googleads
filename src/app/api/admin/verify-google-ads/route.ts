@@ -8,6 +8,11 @@ export async function GET(request: NextRequest) {
   try {
     const customerId = '338-031-9096';
     
+    // Check Env Vars
+    if (!process.env.GOOGLE_ADS_REFRESH_TOKEN || !process.env.GOOGLE_ADS_CLIENT_ID) {
+        throw new Error('Missing Environment Variables (GOOGLE_ADS_REFRESH_TOKEN)');
+    }
+
     // Check conversions
     const conversions = await GoogleAds.listConversionActions(customerId);
     
@@ -23,8 +28,10 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
+    console.error('[VerifyGoogleAds] Error:', error);
     return NextResponse.json({ 
-        error: error.message,
+        error: error.message || 'Unknown Error',
+        details: JSON.stringify(error),
         hint: 'Check GOOGLE_ADS_REFRESH_TOKEN and permissions for account 338-031-9096'
     }, { status: 500 });
   }
