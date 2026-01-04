@@ -41,6 +41,10 @@ export default function CreateProductForm() {
 
   const handleImport = async () => {
       if (!importUrl) return;
+      
+      // Sync immediately so user doesn't lose the URL if import fails
+      setFormData(prev => ({ ...prev, official_url: importUrl }));
+      
       setImporting(true);
       setMessage(null);
       try {
@@ -56,7 +60,7 @@ export default function CreateProductForm() {
               ...prev,
               name: data.name || prev.name,
               vertical: data.vertical || prev.vertical,
-              official_url: importUrl,
+              official_url: importUrl, // Ensure it stays set
               headline: data.headline_suggestions?.[0] || '',
               subheadline: data.subheadline_suggestions?.[0] || '',
               bullets: data.bullets_suggestions || [],
@@ -69,6 +73,7 @@ export default function CreateProductForm() {
           }));
           setMessage({ type: 'success', text: '✨ Analyzed, Vertical Detected & Ads Generated!' });
       } catch (e: any) {
+          console.error(e);
           setMessage({ type: 'error', text: 'Import failed: ' + e.message });
       } finally {
           setImporting(false);
