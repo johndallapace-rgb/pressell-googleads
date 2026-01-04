@@ -39,6 +39,13 @@ export default function CreateProductForm() {
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
 
+  // Sync import URL to Official URL automatically
+  const handleImportUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const url = e.target.value;
+      setImportUrl(url);
+      setFormData(prev => ({ ...prev, official_url: url }));
+  };
+
   const handleImport = async () => {
       if (!importUrl) return;
       
@@ -176,7 +183,7 @@ export default function CreateProductForm() {
               <input 
                 type="url" 
                 value={importUrl}
-                onChange={(e) => setImportUrl(e.target.value)}
+                onChange={handleImportUrlChange}
                 placeholder="https://official-product-site.com"
                 className="flex-1 border rounded px-3 py-2 text-sm"
               />

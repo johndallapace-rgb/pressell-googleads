@@ -12,9 +12,9 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Use 'gemini-1.5-flash' which is the latest efficient model. 
-    // If you encounter 404s, ensure your API Key has access to this model in Google AI Studio.
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Switch to 'gemini-pro' as requested for stability.
+    // Ensure your API Key has access to 'gemini-pro' in Google AI Studio.
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -24,7 +24,7 @@ export async function generateContent(prompt: string) {
     
     // Enhance Error Message
     if (error.message?.includes('404')) {
-        throw new Error('Model not found (404). Check if "gemini-1.5-flash" is enabled in your API Key or try "gemini-pro".');
+        throw new Error('Model not found (404). Check if "gemini-pro" is enabled in your API Key.');
     }
     if (error.message?.includes('401') || error.message?.includes('API key')) {
         throw new Error('Invalid API Key (401). Please check your GEMINI_API_KEY in Vercel.');
