@@ -224,5 +224,44 @@ export const GoogleAds = {
         type: row.conversion_action.type,
         status: row.conversion_action.status
     })) || [];
+  },
+
+  /**
+   * Get Campaign Metrics (Impressions, Clicks, Cost, Conversions)
+   */
+  async getCampaignMetrics(customerId: string) {
+    // Note: We use 'segments.date DURING LAST_30_DAYS' or similar usually.
+    // For simplicity, we get ALL_TIME or specific date range if provided.
+    // Querying 'campaign' resource with metrics.
+    
+    const query = `
+      SELECT 
+        campaign.id, 
+        campaign.name, 
+        campaign.status,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.average_cpc
+      FROM campaign 
+      WHERE campaign.status != 'REMOVED'
+    `;
+
+    const response = await googleAdsRequest(customerId, 'googleAds:search', 'POST', {
+        query,
+        pageSize: 1000
+    });
+
+    return response.results?.map((row: any) => ({
+        id: row.campaign.id,
+        name: row.campaign.name,
+        status: row.campaign.status,
+        impressions: row.metrics.impressions,
+        clicks: row.metrics.clicks,
+        cost: (row.metrics.cost_micros / 1000000).toFixed(2), // Convert micros to currency
+        conversions: row.metrics.conversions,
+        avgCpc: (row.metrics.average_cpc / 1000000).toFixed(2)
+    })) || [];
   }
 };

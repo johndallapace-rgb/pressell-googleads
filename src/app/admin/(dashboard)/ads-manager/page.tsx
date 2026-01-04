@@ -1,16 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Mock Data for MVP
-const LOGS = [
+const MOCK_LOGS = [
   { id: 1, date: '2024-05-20 10:00', campaign: 'Mitolyn - Search', type: 'Conversion', details: 'Purchase (Value: $120)', cost: 1.50 },
-  { id: 2, date: '2024-05-20 09:45', campaign: 'Mitolyn - Search', type: 'Click', details: 'Keyword: "mitolyn reviews"', cost: 1.20 },
-  { id: 3, date: '2024-05-20 09:30', campaign: 'Woodworking - DIY', type: 'Click', details: 'Keyword: "wood projects"', cost: 0.80 },
 ];
 
 export default function AdsManagerPage() {
-  const [logs, setLogs] = useState(LOGS);
+  const [logs, setLogs] = useState(MOCK_LOGS);
+  const [metrics, setMetrics] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+        try {
+            const res = await fetch('/api/admin/ads/metrics');
+            const data = await res.json();
+            if (data.success) {
+                setMetrics(data.metrics);
+            }
+        } catch (e) {
+            console.error('Failed to fetch metrics', e);
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchData();
+  }, []);
+
+  const totalSpend = metrics.reduce((acc, m) => acc + parseFloat(m.cost || '0'), 0);
+  const totalClicks = metrics.reduce((acc, m) => acc + parseInt(m.clicks || '0'), 0);
+  const totalConversions = metrics.reduce((acc, m) => acc + parseFloat(m.conversions || '0'), 0);
+  const avgCpc = totalClicks > 0 ? (totalSpend / totalClicks) : 0;
 
   const handleExportGemini = () => {
       const summary = logs.map(l => 
@@ -104,21 +126,64 @@ export default function AdsManagerPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded shadow-sm border-l-4 border-blue-500">
-              <p className="text-xs text-gray-500 uppercase">Total Spend</p>
-              <p className="text-2xl font-bold">$345.20</p>
+              <p className="text-xs text-gray-500 uppercase">Total Spend (Live)</p>
+              <p className="text-2xl font-bold">${totalSpend.toFixed(2)}</p>
           </div>
           <div className="bg-white p-4 rounded shadow-sm border-l-4 border-green-500">
-              <p className="text-xs text-gray-500 uppercase">Conversions</p>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-xs text-gray-500 uppercase">Conversions (Ads)</p>
+              <p className="text-2xl font-bold">{totalConversions}</p>
           </div>
           <div className="bg-white p-4 rounded shadow-sm border-l-4 border-yellow-500">
               <p className="text-xs text-gray-500 uppercase">Clicks</p>
-              <p className="text-2xl font-bold">450</p>
+              <p className="text-2xl font-bold">{totalClicks}</p>
           </div>
           <div className="bg-white p-4 rounded shadow-sm border-l-4 border-purple-500">
               <p className="text-xs text-gray-500 uppercase">Avg CPC</p>
-              <p className="text-2xl font-bold">$0.76</p>
+              <p className="text-2xl font-bold">${avgCpc.toFixed(2)}</p>
           </div>
+      </div>
+
+      {/* Ads Campaigns Table */}
+      <div className="bg-white rounded shadow-sm overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b bg-gray-50">
+              <h3 className="font-bold text-gray-700">📢 Active Google Ads Campaigns</h3>
+          </div>
+          {loading ? (
+              <div className="p-6 text-center text-gray-500">Loading metrics from Google Ads...</div>
+          ) : metrics.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">No active campaigns found in account 338-031-9096.</div>
+          ) : (
+              <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                      <tr>
+                          <th className="px-6 py-3">Campaign</th>
+                          <th className="px-6 py-3">Status</th>
+                          <th className="px-6 py-3">Impressions</th>
+                          <th className="px-6 py-3">Clicks</th>
+                          <th className="px-6 py-3">Cost</th>
+                          <th className="px-6 py-3">Conv.</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {metrics.map(m => (
+                          <tr key={m.id} className="bg-white border-b hover:bg-gray-50">
+                              <td className="px-6 py-4 font-medium text-gray-900">{m.name}</td>
+                              <td className="px-6 py-4">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                      m.status === 'ENABLED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                      {m.status}
+                                  </span>
+                              </td>
+                              <td className="px-6 py-4">{m.impressions}</td>
+                              <td className="px-6 py-4">{m.clicks}</td>
+                              <td className="px-6 py-4">${m.cost}</td>
+                              <td className="px-6 py-4">{m.conversions}</td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
+          )}
       </div>
 
       {/* Logs Table */}
