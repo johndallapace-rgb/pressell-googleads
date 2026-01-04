@@ -38,6 +38,7 @@ export default function CreateProductForm() {
 
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
+  const [variantStrategy, setVariantStrategy] = useState<'standard' | 'pain' | 'dream'>('standard');
 
   // Sync import URL to Official URL automatically
   const handleImportUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +59,10 @@ export default function CreateProductForm() {
           const res = await fetch('/api/admin/import', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ official_url: importUrl })
+              body: JSON.stringify({ 
+                  official_url: importUrl,
+                  strategy: variantStrategy 
+              })
           });
           const data = await res.json();
           if (data.error) throw new Error(data.error);
@@ -189,7 +193,7 @@ export default function CreateProductForm() {
           <p className="text-sm text-purple-600 mb-3">
              Paste the official sales page URL below. Gemini will analyze the copy, extract pain points, find images, and auto-configure the presell + Google Ads.
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-3">
               <input 
                 type="url" 
                 value={importUrl}
@@ -216,6 +220,40 @@ export default function CreateProductForm() {
                     </>
                 )}
               </button>
+          </div>
+          
+          {/* Strategy Selector */}
+          <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                      type="radio" 
+                      name="strategy" 
+                      checked={variantStrategy === 'standard'}
+                      onChange={() => setVariantStrategy('standard')}
+                      className="text-purple-600 focus:ring-purple-500"
+                  />
+                  <span>Standard</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                      type="radio" 
+                      name="strategy" 
+                      checked={variantStrategy === 'pain'}
+                      onChange={() => setVariantStrategy('pain')}
+                      className="text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-red-800 font-medium">Focus: Pain (A)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                      type="radio" 
+                      name="strategy" 
+                      checked={variantStrategy === 'dream'}
+                      onChange={() => setVariantStrategy('dream')}
+                      className="text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-green-800 font-medium">Focus: Dream (B)</span>
+              </label>
           </div>
       </div>
 

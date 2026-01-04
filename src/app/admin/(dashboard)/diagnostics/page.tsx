@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth';
 import { CampaignConfig } from '@/lib/config';
 import { getVerticalFromHost } from '@/lib/host';
+import HealthCheckRunner from '@/components/admin/HealthCheckRunner'; // Import component
 
 export const dynamic = 'force-dynamic';
+
 
 type Product = {
   name?: string;
@@ -215,6 +217,15 @@ export default async function DiagnosticsPage() {
             </div>
           )}
         </section>
+
+        {/* Smart Health Check Runner */}
+        <HealthCheckRunner 
+            products={productRows.map(p => ({
+                slug: p.slug,
+                name: p.name,
+                affiliate_url: p.affiliate_url
+            }))} 
+        />
 
         {/* Raw Config Dump (Debug) */}
         <details className="bg-gray-50 p-4 rounded border border-gray-200">

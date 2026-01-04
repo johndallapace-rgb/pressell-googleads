@@ -34,15 +34,35 @@ export default function AdsManagerPage() {
   const totalConversions = metrics.reduce((acc, m) => acc + parseFloat(m.conversions || '0'), 0);
   const avgCpc = totalClicks > 0 ? (totalSpend / totalClicks) : 0;
 
-  const handleExportGemini = () => {
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const handleAnalyzeLogs = async () => {
       const summary = logs.map(l => 
           `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`
       ).join('\n');
       
-      const prompt = `Analyze these Google Ads logs and suggest optimizations for higher ROI:\n\n${summary}`;
-      
-      navigator.clipboard.writeText(prompt);
-      alert('📋 Log copied to clipboard! Paste into Gemini chat.');
+      setAnalyzing(true);
+      setAnalysisResult(null);
+
+      try {
+          const res = await fetch('/api/admin/ads/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ logs: summary })
+          });
+          const data = await res.json();
+          if (data.analysis) {
+              setAnalysisResult(data.analysis);
+          } else {
+              alert('Analysis failed: ' + (data.error || 'Unknown error'));
+          }
+      } catch (e) {
+          console.error(e);
+          alert('Failed to connect to analyzer.');
+      } finally {
+          setAnalyzing(false);
+      }
   };
 
   return (
@@ -67,25 +87,37 @@ export default function AdsManagerPage() {
                    🤖 Gemini Log Analyzer
                 </h3>
                 <p className="text-sm text-purple-700 mt-1">
-                   Paste your raw Google Ads CSV or text logs here. We'll generate a prompt to find optimization opportunities.
+                   Paste your raw Google Ads CSV or text logs here. We'll generate actionable optimization advice.
                 </p>
               </div>
               <button 
-                onClick={handleExportGemini}
-                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-bold shadow-md"
+                onClick={handleAnalyzeLogs}
+                disabled={analyzing}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 flex items-center gap-2 text-sm font-bold shadow-md disabled:opacity-50"
               >
-                ✨ Analyze with Gemini
+                {analyzing ? 'Analyzing...' : '✨ Analyze with Gemini'}
               </button>
           </div>
-          <textarea 
-            className="w-full h-32 p-3 text-xs font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
-            placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
-            value={logs.map(l => `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`).join('\n')}
-            onChange={(e) => {
-                // In a real app, we would parse this. For now, we just update the visual mock or ignore
-                // to show the UI capability
-            }}
-          />
+          
+          <div className="grid md:grid-cols-2 gap-6">
+              <textarea 
+                className="w-full h-48 p-3 text-xs font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
+                defaultValue={logs.map(l => `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`).join('\n')}
+                onChange={(e) => {
+                    // Update logs state or just use value for analysis
+                }}
+              />
+              
+              {analysisResult && (
+                  <div className="bg-white p-4 rounded border border-purple-200 h-48 overflow-y-auto shadow-inner">
+                      <h4 className="font-bold text-purple-800 mb-2 text-sm uppercase">Optimization Plan</h4>
+                      <div className="prose prose-sm text-gray-700 whitespace-pre-wrap">
+                          {analysisResult}
+                      </div>
+                  </div>
+              )}
+          </div>
       </div>
 
       {/* Product List Status */}

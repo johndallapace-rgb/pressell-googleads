@@ -30,12 +30,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { official_url } = await request.json();
+    const { official_url, strategy } = await request.json(); // Read strategy
 
     if (!official_url || !official_url.startsWith('http')) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
+    // ... (Fetch logic remains same) ...
     // Fetch with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
@@ -75,9 +76,35 @@ export async function POST(request: NextRequest) {
     const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
     if (ogImageMatch) imageUrl = ogImageMatch[1];
 
+    // Define Strategy Context
+    let strategyContext = "";
+    if (strategy === 'pain') {
+        strategyContext = `
+        FOCO: DOR INTENSA (Pain-Agitate-Solution).
+        - A Headline deve tocar na ferida mais profunda do cliente.
+        - O Lead deve validar a frustração de já ter tentado de tudo.
+        - Use linguagem emocional de urgência e medo de perder a chance.
+        `;
+    } else if (strategy === 'dream') {
+        strategyContext = `
+        FOCO: SONHO E TRANSFORMAÇÃO (Future Pacing).
+        - A Headline deve vender o resultado final desejado (o "corpo dos sonhos", a "liberdade financeira").
+        - O Lead deve fazer o usuário imaginar como será a vida após usar o produto.
+        - Use linguagem inspiradora e positiva.
+        `;
+    } else {
+        strategyContext = `
+        FOCO: EQUILÍBRIO (Neurovendas Padrão).
+        - Balanceie a dor do problema com a esperança da solução.
+        - Siga os princípios de contraste (Antes vs Depois).
+        `;
+    }
+
     // AI Analysis
     const prompt = `
       Aja como um especialista em Neurovendas e Marketing de Resposta Direta. Sua tarefa é analisar a URL oficial fornecida e criar uma Pre-sell (página de pré-venda) de alta conversão.
+      
+      ESTRATÉGIA SELECIONADA: ${strategyContext}
 
       IMPORTANTE: Use o conteúdo fornecido abaixo como a ÚNICA fonte de verdade. Não invente fatos ou alucine informações que não estejam no texto.
 
