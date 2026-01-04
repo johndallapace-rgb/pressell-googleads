@@ -12,10 +12,10 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Attempt to use the latest stable pro model alias with high creativity (0.8).
+    // Attempt to use the latest stable flash model alias.
     // If this fails, the API Key likely needs "Generative Language API" enabled in Google Cloud Console.
     const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-pro-latest',
+        model: 'gemini-1.5-flash-latest',
         generationConfig: {
             temperature: 0.8
         }
@@ -29,15 +29,11 @@ export async function generateContent(prompt: string) {
     
     // Detailed Diagnostics
     if (error.message?.includes('404')) {
-        throw new Error('Model not found (404). Action: Enable "Generative Language API" in Google Cloud Console for this API Key project. Also check if "gemini-1.5-pro-latest" is supported in your region.');
+        throw new Error('Model not found (404). Action: Enable "Generative Language API" in Google Cloud Console for this API Key project. Also check if "gemini-1.5-flash-latest" is supported in your region.');
     }
     if (error.message?.includes('400')) {
         throw new Error('Bad Request (400). Action: Check if your API Key has restricted quotas or regions.');
     }
-    
-    throw error;
-  }
-}
     if (error.message?.includes('401') || error.message?.includes('API key')) {
         throw new Error('Invalid API Key (401). Please check your GEMINI_API_KEY in Vercel.');
     }
