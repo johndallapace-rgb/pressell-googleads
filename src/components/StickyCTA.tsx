@@ -20,8 +20,13 @@ export function StickyCTA({ href, label, trackingData, googleAdsId, googleAdsLab
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show after scrolling down 300px
-      if (window.scrollY > 300) {
+      // Calculate scroll percentage
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+
+      // Show after 50% scroll
+      if (scrollPercent > 50) {
         setIsVisible(true);
       } else {
         setIsVisible(false);

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 export interface VideoReviewType {
-  provider: 'youtube';
+  provider: 'youtube' | 'vimeo';
   id: string;
   thumbnailUrl?: string;
   title?: string;
@@ -17,12 +17,32 @@ interface Props {
 export function VideoReview({ video, disclaimer }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  if (video.provider !== 'youtube') return null; // Only YouTube supported for now
+  // Helper to construct embed URL
+  const getEmbedUrl = () => {
+      if (video.provider === 'youtube') {
+          return `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
+      }
+      if (video.provider === 'vimeo') {
+          return `https://player.vimeo.com/video/${video.id}?autoplay=1`;
+      }
+      return '';
+  };
+
+  // Helper for thumbnail
+  const getThumbnail = () => {
+      if (video.thumbnailUrl) return video.thumbnailUrl;
+      if (video.provider === 'youtube') return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+      // Vimeo requires API for thumb, so we'd need a placeholder or passed prop. 
+      // Fallback to a generic placeholder if no URL provided for Vimeo.
+      return '/images/video-placeholder.jpg'; 
+  };
+
+  if (!['youtube', 'vimeo'].includes(video.provider)) return null;
 
   return (
     <div className="w-full max-w-3xl mx-auto mb-8">
       <div 
-        className="relative w-full aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-lg border border-gray-200 cursor-pointer group"
+        className="relative w-full aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-200 cursor-pointer group"
         onClick={() => setIsPlaying(true)}
       >
         {!isPlaying ? (
@@ -30,9 +50,9 @@ export function VideoReview({ video, disclaimer }: Props) {
             {/* Thumbnail */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src={video.thumbnailUrl || `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`} 
+              src={getThumbnail()} 
               alt={video.title || 'Video Review'}
-              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
             />
             
             {/* Play Button Overlay */}
@@ -45,21 +65,21 @@ export function VideoReview({ video, disclaimer }: Props) {
             </div>
             
             {/* Title Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
               <p className="text-white font-bold text-lg">{video.title || 'Watch Review'}</p>
             </div>
           </>
         ) : (
           <iframe
             className="w-full h-full"
-            src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`}
+            src={getEmbedUrl()}
             title={video.title || 'Video Review'}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
         )}
       </div>
-      <p className="text-xs text-gray-400 text-center mt-2">{disclaimer}</p>
+      <p className="text-xs text-gray-500 text-center mt-2">{disclaimer}</p>
     </div>
   );
 }
