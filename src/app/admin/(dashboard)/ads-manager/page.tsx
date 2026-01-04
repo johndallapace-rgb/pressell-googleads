@@ -101,7 +101,7 @@ export default function AdsManagerPage() {
           
           <div className="grid md:grid-cols-2 gap-6">
               <textarea 
-                className="w-full h-48 p-3 text-xs font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                className="w-full h-48 p-4 text-base font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black"
                 placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
                 defaultValue={logs.map(l => `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`).join('\n')}
                 onChange={(e) => {
@@ -112,7 +112,7 @@ export default function AdsManagerPage() {
               {analysisResult && (
                   <div className="bg-white p-4 rounded border border-purple-200 h-48 overflow-y-auto shadow-inner">
                       <h4 className="font-bold text-purple-800 mb-2 text-sm uppercase">Optimization Plan</h4>
-                      <div className="prose prose-sm text-gray-700 whitespace-pre-wrap">
+                      <div className="prose prose-base text-black whitespace-pre-wrap selection:bg-purple-200 selection:text-black">
                           {analysisResult}
                       </div>
                   </div>
