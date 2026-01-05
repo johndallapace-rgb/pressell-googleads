@@ -34,9 +34,22 @@ export async function generateContent(prompt: string) {
         console.error('[Gemini] CRITICAL: API Key is empty/undefined during request!');
     }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    } catch (firstError: any) {
+        // Retry logic for 404 (Model Not Found / Propagation Delay)
+        if (firstError.message?.includes('404')) {
+            console.warn('[Gemini] 404 encountered. Retrying in 2 seconds to allow for API propagation...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const retryResult = await model.generateContent(prompt);
+            const retryResponse = await retryResult.response;
+            return retryResponse.text();
+        }
+        throw firstError;
+    }
   } catch (error: any) {
     console.error('Gemini API Error Full:', JSON.stringify(error, null, 2));
     
