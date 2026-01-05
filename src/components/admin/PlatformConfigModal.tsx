@@ -15,11 +15,14 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
     apiKey: '',
     // ClickBank Specific
     devKey: '',
-    clerkKey: ''
+    clerkKey: '',
+    // Digistore24 Specific
+    multiCurrency: false
   });
   const [loading, setLoading] = useState(false);
 
   const isClickBank = platform === 'ClickBank';
+  const isDigistore = platform === 'Digistore24';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +126,21 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
                     placeholder="••••••••••••"
                     />
                 </div>
+
+                {isDigistore && (
+                    <div className="flex items-center gap-2 mt-4 bg-gray-50 p-3 rounded border border-gray-200">
+                        <input 
+                            type="checkbox" 
+                            id="multiCurrency"
+                            checked={formData.multiCurrency}
+                            onChange={(e) => setFormData({...formData, multiCurrency: e.target.checked})}
+                            className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <label htmlFor="multiCurrency" className="text-sm font-medium text-gray-700">
+                            Enable Multi-Currency Tracking (USD, EUR, GBP)
+                        </label>
+                    </div>
+                )}
             </>
           )}
 

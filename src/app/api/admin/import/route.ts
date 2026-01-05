@@ -13,6 +13,7 @@ interface ImportResult {
   bullets_suggestions: string[];
   pain_points?: string[];
   unique_mechanism?: string;
+  detected_language?: string; // New field
   seo: {
     title: string;
     description: string;
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Use unified scraper logic
     const cleanText = await scrapeAndClean(official_url);
 
-    // Define Strategy Context
+      // Define Strategy Context
     let strategyContext = "";
     if (strategy === 'pain') {
         strategyContext = `
@@ -66,21 +67,25 @@ export async function POST(request: NextRequest) {
 
     // AI Analysis
     const prompt = `
-      Aja como um especialista em Neurovendas e Marketing de Resposta Direta. Sua tarefa é analisar a URL oficial fornecida e criar uma Pre-sell (página de pré-venda) de alta conversão.
+      Aja como um especialista em Neurovendas e Marketing de Resposta Direta (Direct Response) de nível mundial. 
+      Sua tarefa é analisar a URL oficial fornecida e criar uma Pre-sell (página de pré-venda) de alta conversão.
       
       ESTRATÉGIA SELECIONADA: ${strategyContext}
 
-      IMPORTANTE: Use o conteúdo fornecido abaixo como a ÚNICA fonte de verdade. Não invente fatos ou alucine informações que não estejam no texto.
+      IMPORTANTE - DETECÇÃO DE IDIOMA E MERCADO:
+      1. Analise o conteúdo fornecido para identificar o idioma predominante e o mercado alvo (ex: Inglês/EUA, Alemão/DE, Português/BR).
+      2. GERE TODO O CONTEÚDO DE SAÍDA NO IDIOMA NATIVO DETECTADO. Se o site for em Alemão, a resposta deve ser em Alemão fluente e persuasivo.
+      3. Se o site for em Inglês mas parecer focado em UK/AU, ajuste a ortografia (ex: colour vs color).
 
       Siga estes Princípios de Neurovendas:
       1. Ativação do Cérebro Reptiliano: Foque na sobrevivência, prazer imediato ou alívio de uma dor latente. Use frases curtas e de forte impacto emocional.
       2. O Mecanismo Único: Identifique e destaque o 'segredo' ou a 'descoberta' que faz este produto ser diferente de tudo o que o usuário já tentou.
       3. Contraste de Cenários: Pinte o quadro do 'Antes' (dor e frustração) versus o 'Depois' (alívio e sucesso).
 
-      A estrutura da resposta deve seguir rigorosamente estes blocos e retornar um JSON válido:
+      A estrutura da resposta deve seguir rigorosamente estes blocos e retornar um JSON válido (UTF-8 supported):
 
       1. Headline Magnética (headline_suggestions): Um título que pare o scroll do usuário e use um gatilho de curiosidade ou benefício extremo.
-      2. Lead de Conexão (subheadline_suggestions): 3 frases curtas que confirmam a dor do usuário e prometem a solução encontrada no vídeo/produto. (Ex: "Eu sei como é passar por [DOR]...")
+      2. Lead de Conexão (subheadline_suggestions): 3 frases curtas que confirmam a dor do usuário e prometem a solução encontrada no vídeo/produto.
       3. Review do Especialista:
          - A Revelação/Mecanismo Único (unique_mechanism): Apresente o produto como a solução definitiva, baseada na análise da URL oficial.
          - 3 Provas de Autoridade (bullets_suggestions): Extraia fatos, números ou depoimentos reais que estão no site oficial.
@@ -93,12 +98,13 @@ export async function POST(request: NextRequest) {
       Diretrizes de Estilo:
       - Linguagem natural e humana (evite termos robóticos como 'revolucionário' ou 'inovador').
       - Mantenha o tom de uma indicação pessoal e imparcial (Review).
-      - Responda em Português.
+      - Use caracteres especiais (acentos, cedilhas, tremas) corretamente.
 
       Return ONLY valid JSON:
       {
         "name": "Nome do Produto",
         "vertical": "health",
+        "detected_language": "en", // code (en, de, pt, es, fr, it)
         "headline_suggestions": ["Headline Magnética"],
         "subheadline_suggestions": ["Lead de Conexão"],
         "bullets_suggestions": ["Prova 1", "Prova 2", "Prova 3"],

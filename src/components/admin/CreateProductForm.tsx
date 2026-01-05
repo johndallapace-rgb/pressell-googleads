@@ -71,6 +71,7 @@ export default function CreateProductForm() {
               ...prev,
               name: data.name || prev.name,
               vertical: data.vertical || prev.vertical,
+              language: data.detected_language || prev.language, // Auto-set language
               official_url: importUrl, // Ensure it stays set
               headline: data.headline_suggestions?.[0] || '',
               subheadline: data.subheadline_suggestions?.[0] || '',
@@ -82,7 +83,13 @@ export default function CreateProductForm() {
               google_ads_headlines: data.google_ads?.headlines || [],
               google_ads_descriptions: data.google_ads?.descriptions || []
           }));
-          setMessage({ type: 'success', text: '✨ Analyzed, Vertical Detected & Ads Generated!' });
+          
+          const langName = data.detected_language === 'pt' ? 'Portuguese' : 
+                           data.detected_language === 'de' ? 'German' : 
+                           data.detected_language === 'es' ? 'Spanish' : 
+                           data.detected_language === 'fr' ? 'French' : 'English';
+
+          setMessage({ type: 'success', text: `✨ Analyzed! Detected Market: ${langName.toUpperCase()}. Content generated natively.` });
       } catch (e: any) {
           console.error(e);
           setMessage({ type: 'error', text: 'Import failed: ' + e.message });

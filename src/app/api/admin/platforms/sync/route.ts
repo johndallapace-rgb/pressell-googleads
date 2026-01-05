@@ -27,17 +27,20 @@ export async function POST(request: NextRequest) {
     const prompt = `
         Analyze the following text scraped from a ${platform} marketplace feed.
         
-        STRICT FILTERS FOR "BEST CHOICE":
-        1. Gravity Score: Must be > 80 (if detected).
-        2. Avg $/Sale: Prioritize offers above $100.
-        3. Vertical Mapping: 
+        STRICT FILTERS FOR "BEST CHOICE" (GLOBAL SCALE):
+        1. Gravity/Popularity Score: Must be > 80 (if detected).
+        2. Avg $/Sale: Prioritize offers above $100 (or equivalent in EUR/GBP).
+        3. Geography: Identify if product is trending in US, UK, DE, or FR.
+        
+        4. Vertical Mapping & Language: 
            - If Health/Fitness -> Suggest "health.topproductofficial.com"
            - If Woodworking/Home -> Suggest "diy.topproductofficial.com"
            - If Dating/Relationships -> Suggest "dating.topproductofficial.com"
-           - Else -> "default"
+           
+           - **Multilingual Support**: If the product targets non-US markets (e.g., Germany), suggest the appropriate language code (de, fr, es) for the pre-sell.
 
         AI INSIGHT RULE:
-        - Write ONE concise sentence explaining why this product wins based on the filters (e.g., "High Gravity (120) and $140 avg payout make this a safe scale.").
+        - Write ONE concise sentence explaining why this product wins based on the filters (e.g., "Top seller in Germany with €120 avg payout, suggested DE language.").
 
         Return a JSON object with a list of "products":
         {
@@ -46,8 +49,10 @@ export async function POST(request: NextRequest) {
                     "name": "Product Name",
                     "vertical": "Health",
                     "suggested_subdomain": "health.topproductofficial.com",
+                    "suggested_language": "en", // or de, fr, es
                     "gravity": 123,
                     "avg_payout": 150,
+                    "currency": "USD", // or EUR, GBP
                     "rank": 1,
                     "ai_insight": "Reason why it is a winner...",
                     "url": "Original URL or placeholder"
