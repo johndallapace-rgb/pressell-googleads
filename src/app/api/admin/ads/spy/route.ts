@@ -69,6 +69,10 @@ export async function POST(request: NextRequest) {
       - Identifique os Gatilhos Mentais usados (Escassez, Autoridade, Prova Social).
       - Encontre o "Ponto Cego": O que eles NÃO disseram que podemos usar como arma?
 
+      Passo de Segurança (Compliance Check):
+      - Antes de gerar qualquer texto, verifique se o conteúdo extraído ou a sua sugestão viola as políticas do Google Ads (ex: promessas de cura milagrosa, perda de peso irrealista, declarações falsas).
+      - Se encontrar violações graves, suavize a promessa nas variações para focar no benefício seguro (ex: "Support Weight Loss" em vez de "Lose 10kg in 2 days").
+
       Passo 2: Criação do Anúncio Matador (The Outperformer):
       Gere 3 variações de anúncios seguindo estas regras de ouro:
       

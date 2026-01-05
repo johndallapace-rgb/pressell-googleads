@@ -153,15 +153,42 @@ export default function AdSpyPage() {
             {/* Competitor URL Input */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Competitor Landing Page URL</label>
-                <input 
-                    type="url"
-                    value={competitorUrl}
-                    onChange={(e) => setCompetitorUrl(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black mb-4"
-                    placeholder="https://competitor-offer.com"
-                />
+                <div className="flex gap-2">
+                    <input 
+                        type="url"
+                        value={competitorUrl}
+                        onChange={(e) => setCompetitorUrl(e.target.value)}
+                        className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black mb-4"
+                        placeholder="https://competitor-offer.com"
+                    />
+                    <button
+                        onClick={async () => {
+                            if (!competitorUrl) return alert('Please enter a URL first');
+                            setLoading(true);
+                            try {
+                                const res = await fetch('/api/admin/scrape', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ url: competitorUrl })
+                                });
+                                const data = await res.json();
+                                if (data.error) throw new Error(data.error);
+                                setCompetitorCopy(prev => (prev ? prev + "\n\n" : "") + "=== SCRAPED CONTENT ===\n" + data.content);
+                                alert('✅ Content scraped and added to analysis field!');
+                            } catch (e: any) {
+                                alert('Scraping failed: ' + e.message);
+                            } finally {
+                                setLoading(false);
+                            }
+                        }}
+                        disabled={loading || !competitorUrl}
+                        className="bg-purple-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-purple-700 transition-all shadow-md disabled:opacity-50 mb-4 whitespace-nowrap"
+                    >
+                        🕷️ Scrape & Feed AI
+                    </button>
+                </div>
                 <p className="text-xs text-gray-500">
-                    If provided, we will fetch the page content to analyze their "blind spots" and landing page hooks.
+                    If provided, use the button to fetch and clean the page content automatically.
                 </p>
             </div>
         </div>

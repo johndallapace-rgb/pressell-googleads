@@ -81,6 +81,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Rewrite to /subdomain if it exists to allow automatic product loading
+  // e.g. mitolyn.topproductofficial.com -> /mitolyn
+  if (subdomain) {
+      const url = request.nextUrl.clone();
+      // Only rewrite if we are at root, to avoid loops or breaking assets
+      if (url.pathname === '/') {
+          url.pathname = `/${subdomain}`;
+          return NextResponse.rewrite(url);
+      }
+  }
+
   // Pass subdomain as header instead of rewriting path
   const response = NextResponse.next();
   if (subdomain) {
