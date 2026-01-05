@@ -28,8 +28,27 @@ interface Props {
 }
 
 export function EditorialTemplate({ product }: Props) {
-  const ctaUrl = product.affiliate_url; // Direct Affiliate Link (Bridged by CTAButton)
+  const ctaUrl = product.affiliate_url;
   
+  // Formatters for localization
+  const locale = (product as any).activeLocale || 'en';
+  
+  const formatDate = (date: Date) => {
+      return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+  };
+
+  const formatCurrency = (amount: number, currency = 'USD') => {
+      // Map locale to currency if needed, or use product config
+      // Default to USD if not specified
+      return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+  };
+  
+  // Example usage in dynamic text: "Updated on {date}"
+  const today = new Date();
+  const updatedText = locale === 'de' ? `Aktualisiert am ${formatDate(today)}` : 
+                      locale === 'fr' ? `Mis à jour le ${formatDate(today)}` :
+                      `Updated on ${formatDate(today)}`;
+
   const videoObj = product.youtube_review_id ? {
     provider: 'youtube' as const,
     id: product.youtube_review_id,
@@ -112,6 +131,10 @@ export function EditorialTemplate({ product }: Props) {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         
         {/* Hero Section */}
+        <div className="mb-2 text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center gap-2">
+            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{product.vertical.toUpperCase()}</span>
+            <span>{updatedText}</span>
+        </div>
         <ProductHero 
             product={{
                 ...product, 
