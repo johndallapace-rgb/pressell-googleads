@@ -21,10 +21,25 @@ export async function generateMetadata({ params }: PageProps) {
   const config = await getCampaignConfig();
   if (!config || !config.products) return {};
 
+  const headerList = await headers();
+  const locale = headerList.get('x-locale') || 'en';
+
+  // Logic to find the correct product version based on locale if needed
+  // For now, standard behavior: slug is already rewritten to "slug-de" by middleware if in folder
+  // So we just fetch by slug.
+  
   const product = config.products[slug];
   if (!product || product.status !== 'active') return {};
   
-  return generateSeoMetadata({ product, path: `/${slug}` });
+  // Pass locale-aware path for canonical
+  // Reconstruct path: if slug ends with -de, and locale is de, path is /de/slug-base
+  let path = `/${slug}`;
+  if (locale !== 'en' && slug.endsWith(`-${locale}`)) {
+      const baseSlug = slug.replace(`-${locale}`, '');
+      path = `/${locale}/${baseSlug}`;
+  }
+
+  return generateSeoMetadata({ product, path }, 'landing');
 }
 
 export default async function DynamicProductPage({ params }: PageProps) {
@@ -37,15 +52,17 @@ export default async function DynamicProductPage({ params }: PageProps) {
     // Normalize Slug
     slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug;
 
-    // Debug Logs
+    // Debug Logs & Locale Detection
     const headerList = await headers();
     const host = headerList.get('host') || 'unknown';
     const detectedVertical = getVerticalFromHost(host);
+    const locale = headerList.get('x-locale') || 'en'; // Received from Middleware
     
     console.log('[DynamicPage] Init', { 
         slug, 
         host, 
-        detectedVertical 
+        detectedVertical,
+        locale
     });
 
     if (!slug) {
@@ -62,9 +79,6 @@ export default async function DynamicProductPage({ params }: PageProps) {
       notFound();
     }
     
-    // Log available keys
-    console.log('[DynamicPage] Available Keys:', Object.keys(config.products));
-
     // 2. Resolve Product directly from products object
     // Safe access using ?.
     // TRY: Exact Slug match first
@@ -83,45 +97,36 @@ export default async function DynamicProductPage({ params }: PageProps) {
         }
     }
     
-    // Log Product Status
-    if (product) {
-        console.log('[DynamicPage] Found Product:', {
-            slug: product.slug,
-            status: product.status,
-            vertical: product.vertical,
-            name: product.name,
-            bulletsCount: product.bullets?.length || 0
-        });
-    } else {
-        console.warn(`[DynamicPage] Product NOT found for slug: ${slug}`);
-    }
-
     // 3. Validate Product Existence & Status
     if (!product || product.status !== 'active') {
       console.log(`[DynamicPage] Product not found or inactive: ${slug} (Status: ${product?.status})`);
-      
-      // FALLBACK: If vertical is null/undefined (Main Domain) or product not found,
-      // instead of 404, we could redirect to Home or show a generic landing.
-      // But 404 is technically correct for a missing product URL.
-      // However, if the slug is something weird like 'favicon.ico' or 'pressell-googleads...' (from host), ignore.
-      
       const ignoredSlugs = ['favicon.ico', 'robots.txt', 'sitemap.xml'];
       if (ignoredSlugs.includes(slug) || slug.startsWith('pressell-googleads')) {
           return notFound();
       }
-
-      // If we are here, it's a real user visiting a dead link.
       notFound();
     }
 
-    // 4. Safe Defaults (Defensive Programming)
-    // Most defaults are now handled in normalizeConfig, but we keep this as extra safety
+    // 4. Localization Logic (Language Override)
+    // If the URL has a locale (e.g. /de/amino), we override the product content if available.
+    // In a real scenario, product config would have 'translations' object.
+    // For now, we simulate basic overrides or just ensure the product language matches if strict.
+    // Or we rely on the product being created specifically FOR that language (e.g. slug 'amino-de').
+    // But John wants ONE product config serving multiple languages via folders?
+    // "Gere as Pre-sells do Advanced Amino Formula... nos seguintes caminhos" implies generating UNIQUE pages/slugs or using one product with translations.
+    // Given the previous instructions "Create Pre-sell... Language: German", it seems we create separate product configs or a single one adapted.
+    // Simpler approach for scale: Use the 'locale' to pick the right text if we support i18n inside product config.
+    // OR, if we created 'advanced-amino-formula' as German-only (as per previous turn), then accessing it via /de/ makes sense.
+    // If accessing via /fr/, we might need to fallback or check if we have FR content.
+    
+    // Let's pass the locale to the Template so it can format dates/currency at least.
+    const productWithLocale = { ...product, activeLocale: locale };
+
+    // 5. Safe Defaults (Defensive Programming)
     const name = product.name ?? 'Product';
     // Ensure vertical is set. Prioritize product config, fallback to detected vertical, then default.
     const vertical = product.vertical || detectedVertical || 'general';
 
-    const image = product.image_url ?? '/images/default.svg';
-    // Use 'editorial' as safe default if template is missing or invalid
     const templateType = product.template ?? 'editorial'; 
 
     // A/B Test Logic (Simplified - Client Side Only for Tracking)
@@ -141,6 +146,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
             body: JSON.stringify({ 
                 slug: '${slug}', 
                 variant: '${activeVariantId}', 
+                locale: '${locale}',
                 event: 'view',
                 ts: Date.now()
             })
@@ -157,6 +163,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
                     body: JSON.stringify({ 
                         slug: '${slug}', 
                         variant: '${activeVariantId}', 
+                        locale: '${locale}',
                         event: 'click',
                         ts: Date.now(),
                         dest: 'go'
@@ -181,7 +188,7 @@ export default async function DynamicProductPage({ params }: PageProps) {
     `;
 
     return (
-      <LayoutShell vertical={vertical} supportEmail={product.support_email}>
+      <LayoutShell vertical={vertical} supportEmail={product.support_email} locale={locale}>
         {/* Google Ads Global Tag */}
         {googleAdsId && (
             <>
@@ -204,12 +211,12 @@ export default async function DynamicProductPage({ params }: PageProps) {
         {(() => {
           switch (templateType) {
               case 'story':
-                  return <StoryTemplate product={product} />;
+                  return <StoryTemplate product={productWithLocale} />;
               case 'comparison':
-                  return <ComparisonTemplate product={product} />;
+                  return <ComparisonTemplate product={productWithLocale} />;
               case 'editorial':
               default:
-                  return <EditorialTemplate product={product} />;
+                  return <EditorialTemplate product={productWithLocale} />;
           }
         })()}
       </LayoutShell>

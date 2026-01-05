@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { getAffiliateId } from '@/lib/affiliate-mapping';
 
 export default function CreateProductForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Platform Context
+  const importedPlatform = searchParams.get('platform');
+  const [platformId, setPlatformId] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +46,17 @@ export default function CreateProductForm() {
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [variantStrategy, setVariantStrategy] = useState<'standard' | 'pain' | 'dream'>('standard');
+
+  // Auto-fill Affiliate ID if Platform detected
+  useEffect(() => {
+      if (importedPlatform) {
+          const defaultId = getAffiliateId(importedPlatform);
+          if (defaultId) {
+              setPlatformId(defaultId);
+              setMessage({ type: 'success', text: `✅ ${importedPlatform} Detected. Affiliate ID: ${defaultId} (Auto-filled)` });
+          }
+      }
+  }, [importedPlatform]);
 
   // Sync import URL to Official URL automatically
   const handleImportUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,12 +374,19 @@ export default function CreateProductForm() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate URL *</label>
-              <input 
-                type="url" name="affiliate_url" required
-                value={formData.affiliate_url} onChange={handleChange}
-                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
-                placeholder="https://hop.clickbank.net/..."
-              />
+              <div className="relative">
+                <input 
+                    type="url" name="affiliate_url" required
+                    value={formData.affiliate_url} onChange={handleChange}
+                    className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+                    placeholder={importedPlatform === 'Digistore24' ? `https://www.digistore24.com/redir/PRODUCT_ID/${platformId || 'AFFILIATE_ID'}` : "https://hop.clickbank.net/..."}
+                />
+                {importedPlatform === 'Digistore24' && (
+                    <span className="absolute right-3 top-3 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border">
+                        ID: {platformId || 'Loading...'}
+                    </span>
+                )}
+              </div>
               {!formData.affiliate_url && <p className="text-xs text-red-600 mt-1 font-bold">⚠️ Commission Link Missing!</p>}
             </div>
 

@@ -15,17 +15,32 @@ export function generateSeoMetadata({ product, title, description, path }: SeoPr
   let finalDescription = description || 'Independent product reviews.';
 
   if (product) {
-    switch (pageType) {
-      case 'landing':
-        finalTitle = product.headline;
-        break;
-      default:
-        finalTitle = `${product.name} - Info`;
+    // Priority: Explicit SEO config -> Template Logic -> Fallbacks
+    if (product.seo?.title) {
+        finalTitle = product.seo.title;
+    } else {
+        // Fallback logic
+        switch (pageType) {
+            case 'landing':
+                finalTitle = product.headline;
+                break;
+            default:
+                finalTitle = `${product.name} - Info`;
+        }
     }
-    finalDescription = product.subheadline || product.headline;
+
+    if (product.seo?.description) {
+        finalDescription = product.seo.description;
+    } else {
+        finalDescription = product.subheadline || product.headline;
+    }
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  // Handle Multi-language Canonical
+  // If we are in a subfolder (e.g. /de/amino), the path passed in should reflect that.
+  // The caller (page.tsx) is responsible for passing the public path, not the internal rewritten one.
+  
+  const baseUrl = 'https://health.topproductofficial.com'; // Enforce production domain for SEO consistency
   const cleanPath = path?.startsWith('/') ? path : `/${path || ''}`;
   
   return {

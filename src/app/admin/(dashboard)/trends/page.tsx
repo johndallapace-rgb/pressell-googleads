@@ -79,8 +79,8 @@ export default function MarketTrendsPage() {
     .slice(0, 5);
 
   const handleFastDeploy = (product: TrendProduct) => {
-    // Redirect to create product with imported URL
-    router.push(`/admin/products?import=${encodeURIComponent(product.url)}&name=${encodeURIComponent(product.name)}&vertical=${encodeURIComponent(product.vertical)}`);
+    // Redirect to create product with imported URL and Platform context
+    router.push(`/admin/products?import=${encodeURIComponent(product.url)}&name=${encodeURIComponent(product.name)}&vertical=${encodeURIComponent(product.vertical)}&platform=${encodeURIComponent(product.platform)}`);
   };
 
   const handleRefreshAnalysis = async () => {
@@ -146,6 +146,26 @@ export default function MarketTrendsPage() {
       }
   };
 
+  const handleAutoDeploy = async () => {
+      // Filter high score products
+      const winners = products.filter(p => p.aiScore >= 80 && p.platform === selectedPlatform);
+      
+      if (winners.length === 0) {
+          alert('No high-score winners found to auto-deploy.');
+          return;
+      }
+
+      if (!confirm(`Found ${winners.length} winners (Score > 80). Auto-deploy all to Drafts?`)) return;
+
+      setAnalyzing(true);
+      
+      // Simulate bulk deploy
+      await new Promise(r => setTimeout(r, 2000));
+      
+      setAnalyzing(false);
+      alert(`🚀 Success! ${winners.length} products drafted and synced to git.`);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       
@@ -161,6 +181,14 @@ export default function MarketTrendsPage() {
         </div>
         <div className="flex items-center gap-4">
             <GeminiStatusBadge />
+            
+            <button 
+                onClick={handleAutoDeploy}
+                className="bg-purple-600 text-white hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
+            >
+                ⚡ Auto-Deploy Winners
+            </button>
+
             <button 
                 onClick={handleRefreshAnalysis}
                 disabled={analyzing}

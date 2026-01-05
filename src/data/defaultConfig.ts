@@ -102,6 +102,57 @@ export const defaultConfig: CampaignConfig = {
         { name: "Mark S.", age: 42, location: "Seattle, WA", rating: 5, text: "Worth every penny. The shed plans alone saved me thousands." },
         { name: "David L.", age: 55, location: "Miami, FL", rating: 4, text: "Great collection, though some videos could be updated. Still a bargain." }
       ]
+    },
+    "advanced-amino-formula": {
+      slug: "advanced-amino-formula",
+      name: "Advanced Amino Formula",
+      platform: "digistore24",
+      language: "de",
+      status: "active",
+      vertical: "health",
+      template: "editorial",
+      official_url: "https://advancedamino.com",
+      affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
+      youtube_review_id: "dQw4w9WgXcQ", // Placeholder
+      image_url: "/images/amino.svg",
+      headline: "Advanced Amino Formula: Der fehlende Schlüssel für Langlebigkeit?",
+      subheadline: "Warum Biohacker auf diese essenziellen Aminosäuren schwören – Eine unabhängige Analyse.",
+      cta_text: "Verfügbarkeit prüfen",
+      bullets: [
+        "Optimiert für maximale Bioverfügbarkeit (MAP-Formel)",
+        "Unterstützt Muskelaufbau und Regeneration im Alter",
+        "100% Vegan und frei von Zusatzstoffen"
+      ],
+      faq: [
+        { q: "Ist es sicher?", a: "Ja, es besteht aus reinen, kristallinen Aminosäuren ohne Bindemittel." },
+        { q: "Wie schnell wirkt es?", a: "Viele Anwender berichten von mehr Energie bereits nach wenigen Tagen." }
+      ],
+      seo: {
+        title: "Advanced Amino Formula Erfahrungen - Betrug oder Seriös?",
+        description: "Unabhängiger Testbericht zur Advanced Amino Formula von Dr. Minkoff."
+      },
+      whatIs: {
+        title: "Was ist die Advanced Amino Formula?",
+        content: [
+          "Die Advanced Amino Formula ist eine patentierte Mischung aus 8 essenziellen Aminosäuren.",
+          "Sie wurde entwickelt, um die körpereigene Proteinsynthese zu maximieren, ohne den Stoffwechsel mit Stickstoffabfällen zu belasten."
+        ]
+      },
+      howItWorks: {
+        title: "Wie funktioniert es?",
+        content: [
+          "Im Gegensatz zu herkömmlichem Protein wird diese Formel zu 99% vom Körper verwertet.",
+          "Das bedeutet: Maximale Muskelunterstützung bei minimaler Kalorienlast."
+        ]
+      },
+      prosCons: {
+        pros: ['Höchste Reinheit', 'Perfektes Aminosäuren-Profil', 'Von Ärzten empfohlen'],
+        cons: ['Premium-Preis', 'Nur online verfügbar']
+      },
+      testimonials: [
+        { name: "Hans M.", age: 55, location: "München", rating: 5, text: "Endlich keine Müdigkeit mehr nach dem Sport. Ein Gamechanger für mich." },
+        { name: "Sabine K.", age: 48, location: "Hamburg", rating: 5, text: "Ich fühle mich 10 Jahre jünger. Meine Haut und Haare danken es mir." }
+      ]
     }
   }
 };

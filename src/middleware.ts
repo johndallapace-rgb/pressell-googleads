@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 3. Vertical Logic (Subdomains)
+  // 3. Vertical Logic (Subdomains & Locales)
   // Only process if NOT admin (which is handled above and returns)
   
   const hostnameParts = hostname.split('.');
@@ -71,28 +71,63 @@ export async function middleware(request: NextRequest) {
   
   if (!hostname.includes('localhost')) {
     // Check if subdomain exists and is NOT www
-    // e.g. [health, topproductofficial, com]
     if (hostnameParts.length >= 3) {
       const sub = hostnameParts[0];
-      // Explicitly ignore 'www' as requested
       if (sub !== 'www') {
         subdomain = sub;
       }
     }
   }
 
-  // Rewrite to /subdomain if it exists to allow automatic product loading
-  // e.g. mitolyn.topproductofficial.com -> /mitolyn
-  if (subdomain) {
-      const url = request.nextUrl.clone();
-      // Only rewrite if we are at root, to avoid loops or breaking assets
-      if (url.pathname === '/') {
-          url.pathname = `/${subdomain}`;
-          return NextResponse.rewrite(url);
-      }
+  // 4. Folder Strategy: Detect Language/Locale from path
+  // health.topproductofficial.com/de/amino -> subdomain=health, locale=de, slug=amino
+  
+  const pathParts = pathname.split('/').filter(Boolean); // Remove empty
+  // Check if first part is a supported locale code
+  const supportedLocales = ['de', 'fr', 'it', 'uk', 'es', 'pt'];
+  const potentialLocale = pathParts[0];
+  
+  let locale = 'en'; // Default
+  let realSlug = pathname; // Default
+  
+  if (supportedLocales.includes(potentialLocale)) {
+      locale = potentialLocale;
+      // The real slug is everything AFTER the locale
+      // e.g. /de/amino -> /amino
+      // If path is just /de, maybe redirect to home? For now, we assume product slug follows.
+      const slugPart = pathParts.slice(1).join('/');
+      realSlug = slugPart ? `/${slugPart}` : '/';
   }
 
-  // Pass subdomain as header instead of rewriting path
+  // Rewrite Logic
+  if (subdomain || locale !== 'en') {
+      const url = request.nextUrl.clone();
+      
+      // Strategy: Map /de/slug -> /slug-de
+      // This allows distinct product configs for each language (e.g. amino-de, amino-fr)
+      
+      if (locale !== 'en') {
+          // Remove the leading slash from realSlug which comes from pathname (e.g. "/amino")
+          const cleanSlug = realSlug.startsWith('/') ? realSlug.substring(1) : realSlug;
+          
+          // If the cleanSlug is empty (root), we might handle differently, but assuming product pages:
+          if (cleanSlug) {
+              url.pathname = `/${cleanSlug}-${locale}`;
+          }
+      } else if (subdomain && url.pathname === '/') {
+          // Subdomain root rewrite (legacy support)
+          url.pathname = `/${subdomain}`;
+      }
+      
+      const response = NextResponse.rewrite(url);
+      
+      if (subdomain) response.headers.set('x-vertical', subdomain);
+      if (locale) response.headers.set('x-locale', locale);
+      
+      return response;
+  }
+
+  // Pass subdomain as header for normal requests
   const response = NextResponse.next();
   if (subdomain) {
     response.headers.set('x-vertical', subdomain);

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "monitor": "node scripts/health-check.js",
+    "validate-europe": "node scripts/validate-europe.js",
+    "ship": "git add . && git commit -m \"Auto-deploy: Updates\" && git push origin main"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
