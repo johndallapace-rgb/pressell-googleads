@@ -13,11 +13,11 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Use 'gemini-1.5-flash' on v1 (stable).
+    // Use 'gemini-2.0-flash' on v1 (stable).
     // The Google Cloud Generative Language API is now fully active.
     const model = genAI.getGenerativeModel(
         { 
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.0-flash',
             generationConfig: {
                 temperature: 0.7
             }

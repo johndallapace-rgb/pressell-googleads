@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
 
   try {
     // Manually fetch models list using the REST API to bypass SDK strictness
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    // Changed to v1 as per user request for stability
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
     
     if (!res.ok) {
         const errText = await res.text();
