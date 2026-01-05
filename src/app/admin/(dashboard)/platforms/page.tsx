@@ -1,12 +1,35 @@
 'use client';
 
+import { useState } from 'react';
+import PlatformConfigModal from '@/components/admin/PlatformConfigModal';
+
 export default function PlatformsPage() {
-  const platforms = [
+  const [platforms, setPlatforms] = useState([
     { name: 'ClickBank', status: 'Active', products: 12 },
     { name: 'Digistore24', status: 'Connected', products: 5 },
     { name: 'MaxWeb', status: 'Pending', products: 0 },
     { name: 'BuyGoods', status: 'Disconnected', products: 0 },
-  ];
+  ]);
+
+  const [configuring, setConfiguring] = useState<string | null>(null);
+
+  const handleSaveConfig = async (data: any) => {
+      // Call API to save and trigger sync
+      const res = await fetch('/api/admin/platforms/sync', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ platform: configuring, ...data })
+      });
+      
+      if (!res.ok) throw new Error('Failed to sync');
+
+      // Update local status
+      setPlatforms(prev => prev.map(p => 
+          p.name === configuring ? { ...p, status: 'Connected' } : p
+      ));
+      
+      alert(`✅ ${configuring} connected! Scraper is running in background.`);
+  };
 
   return (
     <div className="space-y-6">
@@ -44,7 +67,10 @@ export default function PlatformsPage() {
                 </td>
                 <td className="px-6 py-4 text-gray-600">{p.products}</td>
                 <td className="px-6 py-4">
-                  <button className="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                  <button 
+                    onClick={() => setConfiguring(p.name)}
+                    className="text-blue-600 hover:text-blue-800 font-medium text-xs"
+                  >
                     Configure
                   </button>
                 </td>
@@ -53,6 +79,14 @@ export default function PlatformsPage() {
           </tbody>
         </table>
       </div>
+
+      {configuring && (
+          <PlatformConfigModal 
+            platform={configuring} 
+            onClose={() => setConfiguring(null)}
+            onSave={handleSaveConfig}
+          />
+      )}
     </div>
   );
 }

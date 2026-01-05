@@ -15,6 +15,13 @@ interface TrendProduct {
   aiReason: string;
   platform: Platform;
   url: string;
+  
+  // New Metrics
+  deltaGravity: number; // % change 7d
+  competitionDensity: 'Low' | 'Medium' | 'High' | 'Very High';
+  conversionStability: 'Stable' | 'Volatile';
+  safetyScore: 'Safe' | 'Moderate' | 'Risky';
+  trendDirection: 'up' | 'down' | 'flat';
 }
 
 // Mock Data - In a real scenario, this would come from a daily scraper job
@@ -22,32 +29,38 @@ const MOCK_DATA: TrendProduct[] = [
   { 
     id: '1', name: 'Mitolyn', vertical: 'Health', gravity: 120, 
     aiScore: 98, aiReason: 'High search volume + Low competition keywords detected.', 
-    platform: 'ClickBank', url: 'https://mitolyn.com/video.php' 
+    platform: 'ClickBank', url: 'https://mitolyn.com/video.php',
+    deltaGravity: 15.5, competitionDensity: 'Low', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
   },
   { 
     id: '2', name: 'Ted\'s Woodworking', vertical: 'DIY', gravity: 85, 
     aiScore: 92, aiReason: 'Evergreen niche, high conversion on cold traffic.', 
-    platform: 'ClickBank', url: 'https://tedswoodworking.com' 
+    platform: 'ClickBank', url: 'https://tedswoodworking.com',
+    deltaGravity: 5.2, competitionDensity: 'Medium', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
   },
   { 
     id: '3', name: 'Puravive', vertical: 'Health', gravity: 450, 
     aiScore: 88, aiReason: 'Saturated but massive volume. Needs unique angle.', 
-    platform: 'ClickBank', url: 'https://puravive.com' 
+    platform: 'ClickBank', url: 'https://puravive.com',
+    deltaGravity: -2.1, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Moderate', trendDirection: 'down'
   },
   { 
     id: '4', name: 'Genius Wave', vertical: 'Spirituality', gravity: 300, 
     aiScore: 85, aiReason: 'Trending on TikTok. VSL is converting well.', 
-    platform: 'Digistore24', url: 'https://thegeniuswave.com' 
+    platform: 'Digistore24', url: 'https://thegeniuswave.com',
+    deltaGravity: 45.0, competitionDensity: 'Medium', conversionStability: 'Volatile', safetyScore: 'Moderate', trendDirection: 'up'
   },
   { 
     id: '5', name: 'ProDentim', vertical: 'Health', gravity: 210, 
     aiScore: 78, aiReason: 'Steady performer. Dental niche is stable.', 
-    platform: 'ClickBank', url: 'https://prodentim.com' 
+    platform: 'ClickBank', url: 'https://prodentim.com',
+    deltaGravity: 0.5, competitionDensity: 'High', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'flat'
   },
   { 
     id: '6', name: 'Sugar Defender', vertical: 'Health', gravity: 500, 
     aiScore: 75, aiReason: 'Very high competition. CPA rising.', 
-    platform: 'BuyGoods', url: 'https://sugardefender.com' 
+    platform: 'BuyGoods', url: 'https://sugardefender.com',
+    deltaGravity: -10.0, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Risky', trendDirection: 'down'
   },
 ];
 
@@ -158,8 +171,20 @@ export default function MarketTrendsPage() {
                                   <span className="text-xs font-bold text-purple-700">AI Score</span>
                                   <span className="text-sm font-black text-purple-800">{product.aiScore}/100</span>
                               </div>
-                              <div className="w-full bg-purple-200 rounded-full h-1.5">
+                              <div className="w-full bg-purple-200 rounded-full h-1.5 mb-2">
                                   <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${product.aiScore}%` }}></div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 text-[10px] text-purple-800 opacity-80">
+                                <div>
+                                    <span className="block font-bold">Safety</span>
+                                    <span className={`${product.safetyScore === 'Safe' ? 'text-green-600' : product.safetyScore === 'Moderate' ? 'text-yellow-600' : 'text-red-600'}`}>
+                                        {product.safetyScore}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="block font-bold">Comp.</span>
+                                    <span>{product.competitionDensity}</span>
+                                </div>
                               </div>
                           </div>
 
@@ -202,15 +227,41 @@ export default function MarketTrendsPage() {
                   <tbody className="divide-y divide-gray-100">
                       {filteredProducts.map((product) => (
                           <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
+                              <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-2">
+                                  {product.trendDirection === 'up' && <span className="text-green-500 font-bold">↑</span>}
+                                  {product.trendDirection === 'down' && <span className="text-red-500 font-bold">↓</span>}
+                                  {product.trendDirection === 'flat' && <span className="text-gray-400 font-bold">→</span>}
+                                  {product.name}
+                              </td>
                               <td className="px-6 py-4">
                                   <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">
                                       {product.vertical}
                                   </span>
                               </td>
-                              <td className="px-6 py-4 text-gray-600">{product.gravity}</td>
-                              <td className="px-6 py-4 max-w-xs truncate text-gray-500" title={product.aiReason}>
-                                  {product.aiReason}
+                              <td className="px-6 py-4 text-gray-600">
+                                  <div className="flex flex-col">
+                                      <span className="font-bold">{product.gravity}</span>
+                                      <span className={`text-xs ${product.deltaGravity >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {product.deltaGravity > 0 ? '+' : ''}{product.deltaGravity}% (7d)
+                                      </span>
+                                  </div>
+                              </td>
+                              <td className="px-6 py-4 max-w-xs text-gray-500">
+                                  <div className="flex flex-col gap-1">
+                                      <span className="truncate" title={product.aiReason}>{product.aiReason}</span>
+                                      <div className="flex gap-2 text-xs">
+                                          <span className={`px-1.5 py-0.5 rounded border ${
+                                              product.safetyScore === 'Safe' ? 'bg-green-50 border-green-200 text-green-700' :
+                                              product.safetyScore === 'Moderate' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                                              'bg-red-50 border-red-200 text-red-700'
+                                          }`}>
+                                              {product.safetyScore === 'Safe' ? '🛡️ Safe' : product.safetyScore === 'Moderate' ? '⚠️ Moderate' : '⛔ Risky'}
+                                          </span>
+                                          <span className="px-1.5 py-0.5 rounded border bg-gray-50 border-gray-200 text-gray-600">
+                                              {product.conversionStability === 'Stable' ? '⚖️ Stable' : '🌊 Volatile'}
+                                          </span>
+                                      </div>
+                                  </div>
                               </td>
                               <td className="px-6 py-4 text-right">
                                   <button 
