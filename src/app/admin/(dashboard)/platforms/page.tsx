@@ -14,21 +14,33 @@ export default function PlatformsPage() {
   const [configuring, setConfiguring] = useState<string | null>(null);
 
   const handleSaveConfig = async (data: any) => {
+      let endpoint = '/api/admin/platforms/sync';
+      
+      // Use specific endpoint for ClickBank validation
+      if (configuring === 'ClickBank') {
+          endpoint = '/api/admin/platforms/clickbank/test';
+      }
+
       // Call API to save and trigger sync
-      const res = await fetch('/api/admin/platforms/sync', {
+      const res = await fetch(endpoint, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ platform: configuring, ...data })
       });
       
-      if (!res.ok) throw new Error('Failed to sync');
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to sync');
 
       // Update local status
       setPlatforms(prev => prev.map(p => 
           p.name === configuring ? { ...p, status: 'Connected' } : p
       ));
       
-      alert(`✅ ${configuring} connected! Scraper is running in background.`);
+      const msg = configuring === 'ClickBank' 
+        ? `✅ ClickBank Connected! Keys validated successfully.` 
+        : `✅ ${configuring} connected! Scraper is running in background.`;
+        
+      alert(msg);
   };
 
   return (

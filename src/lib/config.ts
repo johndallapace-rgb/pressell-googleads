@@ -102,10 +102,24 @@ export type ProductConfig = {
   ads?: AdsConfig;
 };
 
+// Platform Configurations
+export type PlatformConfig = {
+    name: string;
+    status: 'Active' | 'Connected' | 'Pending' | 'Disconnected';
+    credentials: {
+        affiliate_id?: string;
+        api_key?: string; // Generic
+        dev_key?: string; // CB
+        clerk_key?: string; // CB
+        marketplace_url?: string;
+    }
+};
+
 export interface CampaignConfig {
   active_product_slug: string;
   default_lang: string;
   products: Record<string, ProductConfig>;
+  platforms?: Record<string, PlatformConfig>; // New field for storing keys
 }
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {

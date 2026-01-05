@@ -12,9 +12,14 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
   const [formData, setFormData] = useState({
     marketplaceUrl: '',
     affiliateId: '',
-    apiKey: ''
+    apiKey: '',
+    // ClickBank Specific
+    devKey: '',
+    clerkKey: ''
   });
   const [loading, setLoading] = useState(false);
+
+  const isClickBank = platform === 'ClickBank';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +29,7 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
         onClose();
     } catch (e) {
         console.error(e);
-        alert('Failed to save config');
+        // Alert handled in parent usually, but good to have safety
     } finally {
         setLoading(false);
     }
@@ -41,42 +46,85 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Marketplace Feed URL *</label>
-            <input 
-              type="url" 
-              required
-              value={formData.marketplaceUrl}
-              onChange={(e) => setFormData({...formData, marketplaceUrl: e.target.value})}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
-              placeholder={`https://${platform.toLowerCase()}.com/marketplace/feed`}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-               We will scrape this URL to find top products, Gravity, and Rank.
-            </p>
-          </div>
+          
+          {isClickBank ? (
+            <>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Nickname *</label>
+                    <input 
+                        type="text" 
+                        required
+                        value={formData.affiliateId}
+                        onChange={(e) => setFormData({...formData, affiliateId: e.target.value})}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                        placeholder="e.g. nickname123"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer API Key *</label>
+                    <input 
+                        type="password" 
+                        required
+                        value={formData.devKey}
+                        onChange={(e) => setFormData({...formData, devKey: e.target.value})}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                        placeholder="DEV-..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Found in Account Settings -{'>'} My Account -{'>'} Developer API Keys</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Clerk API Key *</label>
+                    <input 
+                        type="password" 
+                        required
+                        value={formData.clerkKey}
+                        onChange={(e) => setFormData({...formData, clerkKey: e.target.value})}
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                        placeholder="API-..."
+                    />
+                     <p className="text-xs text-gray-500 mt-1">Required for Orders/Sales data validation.</p>
+                </div>
+            </>
+          ) : (
+            <>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Marketplace Feed URL *</label>
+                    <input 
+                    type="url" 
+                    required
+                    value={formData.marketplaceUrl}
+                    onChange={(e) => setFormData({...formData, marketplaceUrl: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                    placeholder={`https://${platform.toLowerCase()}.com/marketplace/feed`}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                    We will scrape this URL to find top products, Gravity, and Rank.
+                    </p>
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate ID / Nickname</label>
-            <input 
-              type="text" 
-              value={formData.affiliateId}
-              onChange={(e) => setFormData({...formData, affiliateId: e.target.value})}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
-              placeholder="e.g. john123"
-            />
-          </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate ID / Nickname</label>
+                    <input 
+                    type="text" 
+                    value={formData.affiliateId}
+                    onChange={(e) => setFormData({...formData, affiliateId: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                    placeholder="e.g. john123"
+                    />
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">API Key (Optional)</label>
-            <input 
-              type="password" 
-              value={formData.apiKey}
-              onChange={(e) => setFormData({...formData, apiKey: e.target.value})}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
-              placeholder="••••••••••••"
-            />
-          </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">API Key (Optional)</label>
+                    <input 
+                    type="password" 
+                    value={formData.apiKey}
+                    onChange={(e) => setFormData({...formData, apiKey: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
+                    placeholder="••••••••••••"
+                    />
+                </div>
+            </>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <button 
@@ -91,7 +139,7 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
-              {loading ? 'Syncing...' : 'Save & Sync Scraper'}
+              {loading ? (isClickBank ? 'Validating Keys...' : 'Syncing...') : (isClickBank ? 'Validate & Connect' : 'Save & Sync Scraper')}
             </button>
           </div>
         </form>

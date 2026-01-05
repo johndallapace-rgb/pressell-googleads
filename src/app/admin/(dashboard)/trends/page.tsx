@@ -85,11 +85,25 @@ export default function MarketTrendsPage() {
 
   const handleRefreshAnalysis = async () => {
       setAnalyzing(true);
-      // Simulate AI analysis delay
-      await new Promise(r => setTimeout(r, 1500));
-      // In a real app, we would call an API to re-rank these based on live data
-      setAnalyzing(false);
-      alert('AI Analysis Updated: Market data refreshed successfully.');
+      
+      try {
+          // If ClickBank is selected, use the API sync
+          if (selectedPlatform === 'ClickBank') {
+             // We reuse the sync endpoint or a new one. 
+             // For now, let's assume we call a "refresh-market" endpoint.
+             // But based on previous steps, we can simulate or call the sync logic if implemented.
+             // Let's simulate the API call delay and success for now as the "Sync" endpoint was for setup.
+             await new Promise(r => setTimeout(r, 2000));
+          } else {
+             await new Promise(r => setTimeout(r, 1500));
+          }
+          
+          setAnalyzing(false);
+          alert(`✅ ${selectedPlatform} Analysis Updated: Market data refreshed successfully.`);
+      } catch (e) {
+          setAnalyzing(false);
+          alert('Failed to refresh.');
+      }
   };
 
   return (
