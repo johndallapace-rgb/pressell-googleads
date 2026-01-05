@@ -20,6 +20,11 @@ export default function PlatformsPage() {
       if (configuring === 'ClickBank') {
           endpoint = '/api/admin/platforms/clickbank/test';
       }
+      
+      // Use specific endpoint for Digistore validation (NEW)
+      if (configuring === 'Digistore24') {
+          endpoint = '/api/admin/platforms/digistore/test';
+      }
 
       // Call API to save and trigger sync
       const res = await fetch(endpoint, {
@@ -36,9 +41,13 @@ export default function PlatformsPage() {
           p.name === configuring ? { ...p, status: 'Connected' } : p
       ));
       
-      const msg = configuring === 'ClickBank' 
-        ? `✅ ClickBank Connected! Keys validated successfully.` 
-        : `✅ ${configuring} connected! Scraper is running in background.`;
+      let msg = `✅ ${configuring} connected! Scraper is running in background.`;
+      
+      if (configuring === 'ClickBank') {
+          msg = `✅ ClickBank Connected! Keys validated successfully.`;
+      } else if (configuring === 'Digistore24') {
+          msg = `✅ Digistore24 Connected! Keys validated successfully.`;
+      }
         
       alert(msg);
   };

@@ -28,9 +28,12 @@ export default async function AdminDashboard() {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-gray-500 text-sm font-medium uppercase">Total Conversions</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
-          <span className="text-xs text-gray-400">Last 24h</span>
+          <h3 className="text-gray-500 text-sm font-medium uppercase">Total Revenue</h3>
+          <div className="flex flex-col mt-2">
+             <span className="text-2xl font-bold text-gray-900">$1,240.50</span>
+             <span className="text-sm font-bold text-blue-600">€320.00</span>
+          </div>
+          <span className="text-xs text-gray-400">Combined (USD/EUR)</span>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-gray-500 text-sm font-medium uppercase">System Health</h3>

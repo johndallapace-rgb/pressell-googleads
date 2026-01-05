@@ -38,6 +38,11 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
     }
   };
 
+  // Only show validation for ClickBank specifically, others are direct sync
+  const buttonText = loading 
+    ? (isClickBank ? 'Validating Keys...' : 'Syncing...') 
+    : (isClickBank ? 'Validate & Connect' : 'Save & Sync Scraper');
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -157,7 +162,7 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
-              {loading ? (isClickBank ? 'Validating Keys...' : 'Syncing...') : (isClickBank ? 'Validate & Connect' : 'Save & Sync Scraper')}
+              {buttonText}
             </button>
           </div>
         </form>
