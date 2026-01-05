@@ -204,6 +204,108 @@ export const defaultConfig: CampaignConfig = {
         { name: "James B.", age: 52, location: "London", rating: 5, text: "Finally, no more fatigue after the gym. A game changer for me." },
         { name: "Sarah P.", age: 45, location: "Manchester", rating: 5, text: "I feel 10 years younger. My skin and hair are thanking me." }
       ]
+    },
+    "tube-mastery": {
+      slug: "tube-mastery",
+      name: "Tube Mastery and Monetization",
+      platform: "digistore24",
+      language: "en",
+      status: "active",
+      vertical: "finance",
+      template: "editorial",
+      official_url: "https://tubemastery.com",
+      affiliate_url: "https://www.digistore24.com/redir/299134/JohnPace",
+      youtube_review_id: "dQw4w9WgXcQ", // Placeholder
+      image_url: "/images/tube.svg",
+      headline: "Tube Mastery & Monetization: Can You Really Make Money on YouTube Without Showing Your Face?",
+      subheadline: "Matt Par's controversial course explained. Is it a legit business model or just hype?",
+      cta_text: "Watch Free Training",
+      bullets: [
+        "Proven system for faceless channels",
+        "Updated for 2026 YouTube algorithm",
+        "Includes list of profitable niches"
+      ],
+      faq: [
+        { q: "Do I need a camera?", a: "No, the entire course focuses on 'faceless' content creation." },
+        { q: "Is it suitable for beginners?", a: "Yes, it starts from setting up your Gmail account to advanced scaling." }
+      ],
+      seo: {
+        title: "Tube Mastery Review 2026 - Matt Par Scam or Legit?",
+        description: "Honest review of Tube Mastery and Monetization by Matt Par."
+      },
+      whatIs: {
+        title: "What Is Tube Mastery?",
+        content: [
+          "Tube Mastery is a comprehensive training program by Matt Par.",
+          "It teaches how to build profitable YouTube channels without recording videos yourself."
+        ]
+      },
+      howItWorks: {
+        title: "How It Works",
+        content: [
+          "You learn to identify high-CPM niches (like finance or health).",
+          "Then, you outsource or create simple content using stock footage and voiceovers."
+        ]
+      },
+      prosCons: {
+        pros: ['Step-by-step blueprint', 'Active community support', 'Real case studies'],
+        cons: ['Requires consistency', 'Not a get-rich-quick scheme']
+      },
+      testimonials: [
+        { name: "Michael R.", age: 24, location: "New York", rating: 5, text: "I hit monetization in 3 months. The module on SEO is gold." },
+        { name: "Lisa K.", age: 31, location: "Toronto", rating: 4, text: "Great content, but you have to put in the work. It's a real business." }
+      ]
+    },
+    "tube-fr": {
+      slug: "tube-fr",
+      name: "Tube Mastery and Monetization",
+      platform: "digistore24",
+      language: "fr",
+      status: "active",
+      vertical: "finance",
+      template: "editorial",
+      official_url: "https://tubemastery.com",
+      affiliate_url: "https://www.digistore24.com/redir/299134/JohnPace",
+      youtube_review_id: "dQw4w9WgXcQ",
+      image_url: "/images/tube.svg",
+      headline: "Tube Mastery : Gagner sa vie sur YouTube sans montrer son visage ?",
+      subheadline: "Analyse du système de Matt Par. Est-ce une opportunité réelle pour 2026 ?",
+      cta_text: "Voir la Formation Gratuite",
+      bullets: [
+        "Système prouvé pour les chaînes sans visage",
+        "Mis à jour pour l'algorithme YouTube 2026",
+        "Liste des niches les plus rentables incluse"
+      ],
+      faq: [
+        { q: "Faut-il une caméra ?", a: "Non, tout le cours se concentre sur la création de contenu 'anonyme'." },
+        { q: "Est-ce adapté aux débutants ?", a: "Oui, cela commence par la création du compte Gmail jusqu'à l'automatisation." }
+      ],
+      seo: {
+        title: "Avis Tube Mastery 2026 - Arnaque ou Opportunité ?",
+        description: "Critique complète de la formation Tube Mastery de Matt Par pour le marché francophone."
+      },
+      whatIs: {
+        title: "Qu'est-ce que Tube Mastery ?",
+        content: [
+          "Tube Mastery est un programme de formation complet créé par Matt Par.",
+          "Il enseigne comment construire des chaînes YouTube rentables sans s'enregistrer soi-même."
+        ]
+      },
+      howItWorks: {
+        title: "Comment ça marche ?",
+        content: [
+          "Vous apprenez à identifier des niches à fort CPM (comme la finance ou la santé).",
+          "Ensuite, vous externalisez ou créez du contenu simple en utilisant des vidéos libres de droits."
+        ]
+      },
+      prosCons: {
+        pros: ['Plan étape par étape', 'Communauté active', 'Études de cas réelles'],
+        cons: ['Demande de la régularité', "Ce n'est pas une méthode miracle"]
+      },
+      testimonials: [
+        { name: "Julien D.", age: 28, location: "Paris", rating: 5, text: "J'ai monétisé ma chaîne en 3 mois. Le module sur le SEO vaut de l'or." },
+        { name: "Sophie M.", age: 34, location: "Lyon", rating: 4, text: "Très bon contenu, mais il faut bosser. C'est un vrai business." }
+      ]
     }
   }
 };
