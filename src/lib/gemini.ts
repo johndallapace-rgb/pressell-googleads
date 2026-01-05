@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize the Google Generative AI client
 // Ensure process.env.GEMINI_API_KEY is set in your .env.local
+// IMPORTANT: Use standard API Key (starts with 'AIza...'), NOT Service Account JSON.
 const apiKey = process.env.GEMINI_API_KEY;
 
 export const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -12,19 +13,26 @@ export async function generateContent(prompt: string) {
   }
 
   try {
-    // Strategic Downgrade to 'gemini-1.0-pro' on v1beta.
-    // This combination is historically the most permissive for new accounts.
+    // Use 'gemini-1.5-flash' on v1 (stable).
+    // The Google Cloud Generative Language API is now fully active.
     const model = genAI.getGenerativeModel(
         { 
-            model: 'gemini-1.0-pro',
+            model: 'gemini-1.5-flash',
             generationConfig: {
                 temperature: 0.7
             }
         },
-        { apiVersion: 'v1beta' }
+        { apiVersion: 'v1' }
     );
     
-    console.log('[Gemini] Requesting model:', model.model, 'API Version: v1beta');
+    console.log('[Gemini] Requesting model:', model.model, 'API Version: v1');
+    
+    // Debug log for key verification (safe partial log)
+    if (apiKey) {
+        console.log('[Gemini] Using API Key starting with:', apiKey.substring(0, 8) + '...');
+    } else {
+        console.error('[Gemini] CRITICAL: API Key is empty/undefined during request!');
+    }
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
