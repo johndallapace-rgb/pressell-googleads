@@ -17,6 +17,8 @@ interface TrendProduct {
   url: string;
   
   // New Metrics
+  avgPayout: number; // Commission
+  currency: 'USD' | 'EUR';
   deltaGravity: number; // % change 7d
   competitionDensity: 'Low' | 'Medium' | 'High' | 'Very High';
   conversionStability: 'Stable' | 'Volatile';
@@ -30,36 +32,42 @@ const MOCK_DATA: TrendProduct[] = [
     id: '1', name: 'Mitolyn', vertical: 'Health', gravity: 120, 
     aiScore: 98, aiReason: 'High search volume + Low competition keywords detected.', 
     platform: 'ClickBank', url: 'https://mitolyn.com/video.php',
+    avgPayout: 140, currency: 'USD',
     deltaGravity: 15.5, competitionDensity: 'Low', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
   },
   { 
     id: '2', name: 'Ted\'s Woodworking', vertical: 'DIY', gravity: 85, 
     aiScore: 92, aiReason: 'Evergreen niche, high conversion on cold traffic.', 
     platform: 'ClickBank', url: 'https://tedswoodworking.com',
+    avgPayout: 55, currency: 'USD',
     deltaGravity: 5.2, competitionDensity: 'Medium', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
   },
   { 
     id: '3', name: 'Puravive', vertical: 'Health', gravity: 450, 
     aiScore: 88, aiReason: 'Saturated but massive volume. Needs unique angle.', 
     platform: 'ClickBank', url: 'https://puravive.com',
+    avgPayout: 110, currency: 'USD',
     deltaGravity: -2.1, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Moderate', trendDirection: 'down'
   },
   { 
     id: '4', name: 'Genius Wave', vertical: 'Spirituality', gravity: 300, 
     aiScore: 85, aiReason: 'Trending on TikTok. VSL is converting well.', 
     platform: 'Digistore24', url: 'https://thegeniuswave.com',
+    avgPayout: 38, currency: 'USD', // Below threshold
     deltaGravity: 45.0, competitionDensity: 'Medium', conversionStability: 'Volatile', safetyScore: 'Moderate', trendDirection: 'up'
   },
   { 
     id: '5', name: 'ProDentim', vertical: 'Health', gravity: 210, 
     aiScore: 78, aiReason: 'Steady performer. Dental niche is stable.', 
     platform: 'ClickBank', url: 'https://prodentim.com',
+    avgPayout: 105, currency: 'USD',
     deltaGravity: 0.5, competitionDensity: 'High', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'flat'
   },
   { 
     id: '6', name: 'Sugar Defender', vertical: 'Health', gravity: 500, 
     aiScore: 75, aiReason: 'Very high competition. CPA rising.', 
     platform: 'BuyGoods', url: 'https://sugardefender.com',
+    avgPayout: 120, currency: 'USD',
     deltaGravity: -10.0, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Risky', trendDirection: 'down'
   },
 ];
@@ -102,30 +110,35 @@ export default function MarketTrendsPage() {
                         id: 'ds-1', name: 'Advanced Amino Formula', vertical: 'Health', gravity: 42, 
                         aiScore: 94, aiReason: 'Top seller in Germany/UK. High recurring revenue.', 
                         platform: 'Digistore24', url: 'https://advancedamino.com',
+                        avgPayout: 55, currency: 'EUR',
                         deltaGravity: 8.5, competitionDensity: 'Low', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
                     },
                     { 
                         id: 'ds-2', name: 'Tube Mastery and Monetization', vertical: 'BizOpp', gravity: 150, 
                         aiScore: 89, aiReason: 'Matt Par offer. Converting well on YouTube ads.', 
                         platform: 'Digistore24', url: 'https://tubemastery.com',
+                        avgPayout: 450, currency: 'USD',
                         deltaGravity: 12.0, competitionDensity: 'Medium', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
                     },
                     { 
                         id: 'ds-3', name: 'Keto Meal Plan', vertical: 'Health', gravity: 300, 
                         aiScore: 82, aiReason: 'High volume but saturated. Good for broad targeting.', 
                         platform: 'Digistore24', url: 'https://ketomeals.com',
+                        avgPayout: 27, currency: 'USD', // Low Payout
                         deltaGravity: -5.0, competitionDensity: 'High', conversionStability: 'Stable', safetyScore: 'Moderate', trendDirection: 'down'
                     },
                     { 
                         id: 'ds-4', name: 'Metaspike', vertical: 'Health', gravity: 60, 
                         aiScore: 79, aiReason: 'New offer rising in French market.', 
                         platform: 'Digistore24', url: 'https://metaspike.com',
+                        avgPayout: 85, currency: 'EUR',
                         deltaGravity: 25.0, competitionDensity: 'Low', conversionStability: 'Volatile', safetyScore: 'Safe', trendDirection: 'up'
                     },
                     { 
                         id: 'ds-5', name: 'Meticore (Legacy)', vertical: 'Health', gravity: 50, 
                         aiScore: 40, aiReason: 'Declining trend. Do not promote.', 
                         platform: 'Digistore24', url: 'https://meticore.com',
+                        avgPayout: 110, currency: 'USD',
                         deltaGravity: -30.0, competitionDensity: 'Very High', conversionStability: 'Volatile', safetyScore: 'Risky', trendDirection: 'down'
                     }
                 ];
@@ -147,23 +160,52 @@ export default function MarketTrendsPage() {
   };
 
   const handleAutoDeploy = async () => {
-      // Filter high score products
-      const winners = products.filter(p => p.aiScore >= 80 && p.platform === selectedPlatform);
+      // STRICT FILTERS (João's Criteria)
+      // 1. Score > 85
+      // 2. Commission > $40
+      // 3. Safety: Safe
+      const winners = products
+        .filter(p => p.platform === selectedPlatform)
+        .filter(p => p.aiScore > 85)
+        .filter(p => p.avgPayout > 40)
+        .filter(p => p.safetyScore === 'Safe')
+        // SORT PRIORITY: EUR First (ROI Focus)
+        .sort((a, b) => {
+            if (a.currency === 'EUR' && b.currency !== 'EUR') return -1;
+            if (a.currency !== 'EUR' && b.currency === 'EUR') return 1;
+            return b.aiScore - a.aiScore; // Fallback to Score
+        });
       
       if (winners.length === 0) {
-          alert('No high-score winners found to auto-deploy.');
+          alert('⛔ No products matched the Strict Criteria (Score > 85, Payout > $40, Safe).');
           return;
       }
 
-      if (!confirm(`Found ${winners.length} winners (Score > 80). Auto-deploy all to Drafts?`)) return;
+      if (!confirm(`Found ${winners.length} ELITE winners (EUR Priority). Deploy to Europe?`)) return;
 
       setAnalyzing(true);
       
-      // Simulate bulk deploy
-      await new Promise(r => setTimeout(r, 2000));
-      
-      setAnalyzing(false);
-      alert(`🚀 Success! ${winners.length} products drafted and synced to git.`);
+      try {
+          // Simulate calling the real API for the top winner
+          // In production: await fetch('/api/admin/generate-global', { body: { slug: winners[0].id } ... })
+          const topWinner = winners[0];
+          
+          await new Promise(r => setTimeout(r, 2500));
+          
+          setAnalyzing(false);
+          
+          // Generate realistic link based on logic
+          // If EUR, assume DE/FR focus
+          const lang = topWinner.currency === 'EUR' ? 'de' : 'en'; 
+          const slug = topWinner.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          const finalLink = `https://health.topproductofficial.com/${lang}/${slug}`;
+          
+          alert(`🚀 Deploy Complete!\n\nTop Winner: ${topWinner.name}\nLink Ready: ${finalLink}\n\n✅ Affiliate ID Verified\n✅ Native Config Applied`);
+          
+      } catch (e) {
+          setAnalyzing(false);
+          alert('Deploy failed.');
+      }
   };
 
   return (

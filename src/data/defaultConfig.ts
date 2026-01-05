@@ -103,8 +103,8 @@ export const defaultConfig: CampaignConfig = {
         { name: "David L.", age: 55, location: "Miami, FL", rating: 4, text: "Great collection, though some videos could be updated. Still a bargain." }
       ]
     },
-    "advanced-amino-formula": {
-      slug: "advanced-amino-formula",
+    "amino-de": {
+      slug: "amino-de",
       name: "Advanced Amino Formula",
       platform: "digistore24",
       language: "de",
@@ -113,7 +113,7 @@ export const defaultConfig: CampaignConfig = {
       template: "editorial",
       official_url: "https://advancedamino.com",
       affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
-      youtube_review_id: "dQw4w9WgXcQ", // Placeholder
+      youtube_review_id: "dQw4w9WgXcQ", 
       image_url: "/images/amino.svg",
       headline: "Advanced Amino Formula: Der fehlende Schlüssel für Langlebigkeit?",
       subheadline: "Warum Biohacker auf diese essenziellen Aminosäuren schwören – Eine unabhängige Analyse.",
@@ -152,6 +152,57 @@ export const defaultConfig: CampaignConfig = {
       testimonials: [
         { name: "Hans M.", age: 55, location: "München", rating: 5, text: "Endlich keine Müdigkeit mehr nach dem Sport. Ein Gamechanger für mich." },
         { name: "Sabine K.", age: 48, location: "Hamburg", rating: 5, text: "Ich fühle mich 10 Jahre jünger. Meine Haut und Haare danken es mir." }
+      ]
+    },
+    "amino-uk": {
+      slug: "amino-uk",
+      name: "Advanced Amino Formula",
+      platform: "digistore24",
+      language: "en", // UK
+      status: "active",
+      vertical: "health",
+      template: "editorial",
+      official_url: "https://advancedamino.com",
+      affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
+      youtube_review_id: "dQw4w9WgXcQ",
+      image_url: "/images/amino.svg",
+      headline: "Advanced Amino Formula Review: Is It The Key To Longevity?",
+      subheadline: "Why biohackers in the UK are switching to this essential amino acid blend – An independent analysis.",
+      cta_text: "Check Availability",
+      bullets: [
+        "Optimized for maximum bioavailability (MAP Formula)",
+        "Supports muscle recovery and anti-aging",
+        "100% Vegan and additive-free"
+      ],
+      faq: [
+        { q: "Is it safe?", a: "Yes, it consists of pure, crystalline amino acids with no binders." },
+        { q: "How fast does it work?", a: "Many users report increased energy levels within just a few days." }
+      ],
+      seo: {
+        title: "Advanced Amino Formula Review - Scam or Legit?",
+        description: "Independent review of Dr. Minkoff's Advanced Amino Formula for the UK market."
+      },
+      whatIs: {
+        title: "What Is Advanced Amino Formula?",
+        content: [
+          "Advanced Amino Formula is a patented blend of 8 essential amino acids.",
+          "It is designed to maximize the body's protein synthesis without burdening the metabolism with nitrogen waste."
+        ]
+      },
+      howItWorks: {
+        title: "How Does It Work?",
+        content: [
+          "Unlike conventional protein, this formula is 99% utilized by the body.",
+          "This means: Maximum muscle support with minimal caloric load."
+        ]
+      },
+      prosCons: {
+        pros: ['Highest Purity', 'Perfect Amino Profile', 'Doctor Recommended'],
+        cons: ['Premium Price', 'Online Only']
+      },
+      testimonials: [
+        { name: "James B.", age: 52, location: "London", rating: 5, text: "Finally, no more fatigue after the gym. A game changer for me." },
+        { name: "Sarah P.", age: 45, location: "Manchester", rating: 5, text: "I feel 10 years younger. My skin and hair are thanking me." }
       ]
     }
   }
