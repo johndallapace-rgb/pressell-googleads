@@ -18,17 +18,31 @@ export function normalizeConfig(raw: any): CampaignConfig {
     // Check for nested structure
     const effectiveConfig = config.campaign_config || config;
 
-    const productsRaw = effectiveConfig.products || {};
+    // Merge products from Edge Config with defaultConfig to ensure new file-based products appear
+    // even if Edge Config is stale.
+    const edgeProducts = effectiveConfig.products || {};
+    const defaultProducts = defaultConfig.products || {};
+    
+    // Union of keys
+    const allKeys = new Set([...Object.keys(edgeProducts), ...Object.keys(defaultProducts)]);
+    
     const normalizedProducts: Record<string, ProductConfig> = {};
 
     // Validate each product
     try {
-        Object.entries(productsRaw).forEach(([key, prod]: [string, any]) => {
-            if (typeof prod === 'object' && prod !== null) {
-                 const slug = (prod.slug || key).trim();
+        allKeys.forEach((key) => {
+            const edgeProd = edgeProducts[key];
+            const defaultProd = defaultProducts[key];
+            
+            // If exists in both, Edge wins (dynamic updates). 
+            // If only in default (new deployment), default wins.
+            const incoming = edgeProd || defaultProd;
+            
+            if (typeof incoming === 'object' && incoming !== null) {
+                 const slug = (incoming.slug || key).trim();
                  
-                 // Get base from defaultConfig if available, otherwise create a safe default base
-                 const base = defaultConfig.products[slug] ?? {
+                 // Base is always defaultProd if available (for structure), or fallback
+                 const base = defaultProd || {
                     slug,
                     name: slug,
                     platform: 'unknown',
@@ -51,12 +65,11 @@ export function normalizeConfig(raw: any): CampaignConfig {
                     prosCons: { pros: [], cons: [] }
                  };
 
-                 const incoming = prod;
-
                  normalizedProducts[slug] = {
                     ...base,
                     ...incoming,
                     slug,
+                    // Ensure critical fields are not overwritten by empty strings if base has them
                     status: String(incoming.status || base.status).toLowerCase().trim() as 'active' | 'paused',
                     vertical: String(incoming.vertical || base.vertical).toLowerCase().trim() as any,
                     template: incoming.template || base.template || 'editorial',

@@ -106,27 +106,20 @@ export async function middleware(request: NextRequest) {
   if (subdomain || locale !== 'en') {
       const url = request.nextUrl.clone();
       
-      // Strategy: Map /de/slug -> /slug-de
-      // This allows distinct product configs for each language (e.g. amino-de, amino-fr)
+      // If we have a locale in path, we DON'T need to rewrite path anymore
+      // because we now have src/app/[lang]/[slug]/page.tsx handling it physically.
+      // We just need to pass headers.
       
-      if (locale !== 'en') {
-          // Remove the leading slash from realSlug which comes from pathname (e.g. "/amino")
-          const cleanSlug = realSlug.startsWith('/') ? realSlug.substring(1) : realSlug;
-          
-          // If the cleanSlug is empty (root), we might handle differently, but assuming product pages:
-          if (cleanSlug) {
-              url.pathname = `/${cleanSlug}-${locale}`;
-          } else {
-              // If it's just /de/, we might want to show a home page or 404 if no slug
-              // For now, let it fall through or rewrite to a locale-specific home if exists
-              // url.pathname = `/${locale}-home`; // Example
-          }
-      } else if (subdomain && url.pathname === '/') {
+      if (subdomain && url.pathname === '/') {
           // Subdomain root rewrite (legacy support)
           url.pathname = `/${subdomain}`;
+          return NextResponse.rewrite(url);
       }
       
-      const response = NextResponse.rewrite(url);
+      // For locale paths, we just let them pass through, BUT we inject headers
+      // The Next.js router will match [lang]/[slug] automatically.
+      
+      const response = NextResponse.next();
       
       if (subdomain) response.headers.set('x-vertical', subdomain);
       if (locale) response.headers.set('x-locale', locale);
