@@ -100,6 +100,14 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
       - **SLUG OPTIMIZATION**: Generate a SHORT, clean slug (max 2-3 words).
         - BAD: "mitolyn-metabolism-support-review-2024"
         - GOOD: "mitolyn", "mitolyn-review", "mitolyn-official"
+      - **VERTICAL CLASSIFICATION**: Analyze the product and assign a vertical.
+        - "health": Supplements, Weight Loss, Skin, Dental, Hearing, Joint Pain.
+        - "diy": Home Improvement, Tools, Energy Savers, Cleaning Gadgets.
+        - "gadgets": Tech, Drones, Heaters, Coolers, Smart Devices.
+        - "finance": Crypto, Investing, Biz Opp.
+        - "dating": Dating Guides, Pheromones.
+        - "pets": Dog Training, Pet Health.
+        - "other": Anything else.
 
       OUTPUT JSON FORMAT (Strict):
       {
@@ -112,7 +120,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         "whatIs": "Short description of what it is",
         "seo_title": "SEO Title",
         "seo_description": "SEO Description",
-        "vertical": "health", // or diy, pets, dating, finance
+        "vertical": "health", // AI must detect this based on content
         "google_ads": {
             "headlines": ["Ad H1", "Ad H2", "Ad H3"],
             "descriptions": ["Ad D1", "Ad D2"]
@@ -204,11 +212,17 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     // Force Vertical from User Input (Priority) -> AI -> 'health' (safest default)
     const finalVertical = (userVertical || data.vertical || 'health').toLowerCase();
 
+    // Map AI Vertical to Subdomain (Simple Logic)
+    let finalSubdomain = finalVertical;
+    if (finalVertical === 'supplements') finalSubdomain = 'health';
+    if (finalVertical === 'tools' || finalVertical === 'home') finalSubdomain = 'diy';
+    if (finalVertical === 'tech') finalSubdomain = 'gadgets';
+
     const newProduct: ProductConfig = {
         slug: finalSlug,
         name: finalName, // Use robust name
-        vertical: finalVertical as any, // This is saved to KV
-        subdomain: finalVertical, // Explicitly save subdomain for routing
+        vertical: finalSubdomain as any, // This is saved to KV
+        subdomain: finalSubdomain, // Explicitly save subdomain for routing
         language: country.toLowerCase(),
         template: 'editorial',
         status: 'active', // FORCE ACTIVE
