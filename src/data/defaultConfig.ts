@@ -112,7 +112,7 @@ export const defaultConfig: CampaignConfig = {
       vertical: "health",
       template: "editorial",
       official_url: "https://advancedamino.com",
-      affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
+      affiliate_url: "https://www.digistore24.com/redir/[INSERT_PRODUCT_ID]/JohnPace",
       youtube_review_id: "dQw4w9WgXcQ", 
       image_url: "/images/amino.svg",
       google_ads_id: "AW-123456789", // Mock ID
@@ -166,7 +166,7 @@ export const defaultConfig: CampaignConfig = {
       vertical: "health",
       template: "editorial",
       official_url: "https://advancedamino.com",
-      affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
+      affiliate_url: "https://www.digistore24.com/redir/[INSERT_PRODUCT_ID]/JohnPace",
       youtube_review_id: "dQw4w9WgXcQ",
       image_url: "/images/amino.svg",
       headline: "Advanced Amino Formula Review: Is It The Key To Longevity?",
