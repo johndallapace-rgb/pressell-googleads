@@ -19,9 +19,31 @@ export function generateExternalTrackId(campaignSource: string, locale: string, 
 export function appendTrackingParams(url: string, trackId: string, locale?: string): string {
   if (!url) return '';
   
-  const separator = url.includes('?') ? '&' : '?';
+  let finalUrl = url;
+  const isDigistore = url.includes('digistore24.com/redir/');
   
-  // Basic Tracking: External Track ID (for postback)
+  // Digistore24 Strategy: Append Campaign Key (Tracking ID) to path
+  // Standard: https://www.digistore24.com/redir/PRODUCT_ID/AFFILIATE_ID/CAMPAIGN_KEY
+  if (isDigistore) {
+      // Ensure we preserve the query params if they exist in the original URL
+      const [baseUrl, existingQuery] = finalUrl.split('?');
+      let cleanBase = baseUrl;
+      
+      // Remove trailing slash if present
+      if (cleanBase.endsWith('/')) cleanBase = cleanBase.slice(0, -1);
+      
+      // Append trackId as the Campaign Key path segment
+      finalUrl = `${cleanBase}/${trackId}`;
+      
+      // Re-attach existing query params if any
+      if (existingQuery) {
+          finalUrl += `?${existingQuery}`;
+      }
+  }
+
+  const separator = finalUrl.includes('?') ? '&' : '?';
+  
+  // Basic Tracking: External Track ID (for postback & fallback)
   let params = `external_track_id=${trackId}&tid=${trackId}`;
   
   // Visual Tracking (John's Request): ?aff_sub=[COUNTRY]
@@ -42,7 +64,7 @@ export function appendTrackingParams(url: string, trackId: string, locale?: stri
       params += `&aff_sub=${country}`;
   }
   
-  return `${url}${separator}${params}`;
+  return `${finalUrl}${separator}${params}`;
 }
 
 /**
