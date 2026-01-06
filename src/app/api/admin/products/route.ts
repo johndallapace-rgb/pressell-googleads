@@ -207,6 +207,7 @@ export async function POST(request: NextRequest) {
               adGroups: [{
                   name: 'General Interest',
                   keywords: [`${name} reviews`, `buy ${name}`, `${name} price`],
+                  negativeKeywords: body.google_ads_negatives || [],
                   ads: [{
                       headlines: body.google_ads_headlines,
                       descriptions: body.google_ads_descriptions || [],

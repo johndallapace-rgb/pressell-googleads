@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAffiliateId } from '@/lib/affiliate-mapping';
 import productCatalog from '@/data/product-catalog.json';
+import negativeKeywords from '@/data/negative-keywords.json';
 
 export default function CreateProductForm() {
   const router = useRouter();
@@ -45,7 +46,8 @@ export default function CreateProductForm() {
     support_email: 'support@topproductofficial.com',
     // Generated Ads
     google_ads_headlines: [] as string[],
-    google_ads_descriptions: [] as string[]
+    google_ads_descriptions: [] as string[],
+    google_ads_negatives: [] as string[]
   });
 
   const [importUrl, setImportUrl] = useState('');
@@ -159,6 +161,24 @@ export default function CreateProductForm() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleLoadNegatives = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const lang = formData.language || 'en';
+      
+      // Determine key based on language (fallback to EN)
+      const key = (lang === 'de' || lang === 'fr' || lang === 'pt' || lang === 'es') ? lang : 'en';
+      
+      // @ts-ignore
+      const list = negativeKeywords[key] || negativeKeywords['en'];
+      
+      setFormData(prev => ({
+          ...prev,
+          google_ads_negatives: list
+      }));
+      
+      setMessage({ type: 'success', text: `✅ Loaded ${list.length} Standard Negative Keywords for ${lang.toUpperCase()}.` });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -353,6 +373,28 @@ export default function CreateProductForm() {
                 <p className="text-xs text-blue-500 mt-2">These will be saved to the Ads Manager automatically.</p>
             </div>
         )}
+
+        {/* Negative Keywords Section */}
+        <div className="bg-gray-50 p-4 rounded border border-gray-200">
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                    ⛔ Negative Keywords
+                </h3>
+                <button 
+                    onClick={handleLoadNegatives}
+                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded font-medium transition-colors"
+                >
+                    📥 Load Standard Negatives
+                </button>
+            </div>
+            <textarea
+                value={formData.google_ads_negatives.join('\n')}
+                onChange={(e) => setFormData(prev => ({ ...prev, google_ads_negatives: e.target.value.split('\n') }))}
+                placeholder="free, login, support, crack..."
+                className="w-full border rounded p-2 text-sm h-24 text-black placeholder:text-gray-400 font-mono"
+            />
+            <p className="text-xs text-gray-500 mt-1">One per line. These prevent wasted spend on bad traffic.</p>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           
