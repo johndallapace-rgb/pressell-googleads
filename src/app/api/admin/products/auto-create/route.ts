@@ -232,34 +232,56 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     // 6. Save
     const currentConfig = await getCampaignConfig();
     
-    // CLEANUP: Optimize Storage (Fix "Edge Config Size Limit")
+    // CLEANUP: AGGRESSIVE SPACE SAVING (Fix "Edge Config Size Limit")
     if (currentConfig.products) {
+        const keepKeys = new Set<string>();
+        
+        // 1. Identify valid keys first
         Object.keys(currentConfig.products).forEach(key => {
+            if (key !== 'undefined' && key !== 'null' && key.trim() !== '') {
+                keepKeys.add(key);
+            }
+        });
+
+        // 2. Filter and Optimize
+        const optimizedProducts: Record<string, ProductConfig> = {};
+        
+        keepKeys.forEach(key => {
             const p = currentConfig.products[key];
-            
-            // 1. Remove bad keys
-            if (key === 'undefined' || key === 'null' || !p || !p.name) {
-                console.log(`[Cleanup] Removing invalid product: ${key}`);
-                delete currentConfig.products[key];
+            if (!p || !p.name) return; // Skip invalid
+
+            // DUPLICATE REMOVAL: Mitolyn
+            // If we have 'mitolyn' and this is 'mitolyn-1', 'mitolyn-copy', etc., skip it
+            if (key.startsWith('mitolyn-') && keepKeys.has('mitolyn')) {
+                console.log(`[Cleanup] Removing duplicate Mitolyn variant: ${key}`);
                 return;
             }
-            
-            // 2. Nuke heavy Base64 images if they slipped in
-            if (p.image_url && p.image_url.startsWith('data:')) {
-                 console.log(`[Cleanup] Removing heavy base64 image from: ${key}`);
-                 p.image_url = ''; 
-            }
-            if (p.image_url && p.image_url.length > 2000) {
-                 console.log(`[Cleanup] Removing oversized image string from: ${key}`);
-                 p.image_url = '';
-            }
 
-            // 3. Remove heavy "competitorAds" or raw "scrape" data if accidentally saved
+            // HEAVY FIELD STRIPPING (Diet Mode)
+            // Remove Ads config (heavy JSON) if it exists - user can regenerate if needed
+            if (p.ads) delete p.ads; 
+            
+            // Remove Scraper/AI leftovers
             // @ts-ignore
             if (p.competitorAds) delete p.competitorAds;
             // @ts-ignore
             if (p.scrapeResult) delete p.scrapeResult;
+            
+            // Optimize Images (Base64 Nuke)
+            if (p.image_url && p.image_url.startsWith('data:')) {
+                 p.image_url = ''; 
+            }
+            if (p.image_url && p.image_url.length > 500) {
+                 // If it's a huge URL but not base64, suspicious. Truncate or kill.
+                 if (!p.image_url.startsWith('http')) p.image_url = '';
+            }
+
+            // Save optimized product
+            optimizedProducts[key] = p;
         });
+
+        // Replace with optimized list
+        currentConfig.products = optimizedProducts;
     }
     
     // Ensure products structure
