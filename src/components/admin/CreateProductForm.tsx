@@ -250,8 +250,16 @@ export default function CreateProductForm() {
 
       setMessage({ type: 'success', text: `Product created successfully! Redirecting to My Products...` });
       
-      // Open Presell in new tab for verification
-      window.open(`/${data.slug}`, '_blank');
+      // Open Presell in new tab with CORRECT Subdomain
+      const rootDomain = 'topproductofficial.com';
+      let finalUrl = `https://${rootDomain}/${data.slug}`;
+      
+      // If we have a vertical and it's not generic, use subdomain
+      if (data.vertical && data.vertical !== 'other' && data.vertical !== 'general') {
+          finalUrl = `https://${data.vertical}.${rootDomain}/${data.slug}`;
+      }
+
+      window.open(finalUrl, '_blank');
       
       // Redirect to My Products List
       setTimeout(() => {

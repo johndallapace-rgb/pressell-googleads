@@ -339,6 +339,10 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         throw new Error(`DB Save Failed: ${saveResult.error}`);
     }
 
-    return NextResponse.json({ success: true, slug: safeSlug });
+    return NextResponse.json({ 
+        success: true, 
+        slug: safeSlug,
+        vertical: newProduct.vertical // Return vertical for frontend routing
+    });
 }
 // Removed the old catch block here since it is now inside POST wrapper

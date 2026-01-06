@@ -48,10 +48,28 @@ export default function ProductList({ products }: ProductListProps) {
   };
 
   const getRealLink = (p: ProductConfig) => {
-      // Assuming localhost for dev, but ideally this comes from env
-      const host = window.location.host; 
-      const protocol = window.location.protocol;
-      return `${protocol}//${host}/${p.slug}`;
+      // Logic for Multi-Domain Routing
+      // If product has a specific vertical (e.g. 'health') and it's not 'other',
+      // we should construct the subdomain URL.
+      const isLocal = typeof window !== 'undefined' && window.location.hostname.includes('localhost');
+      const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+      const rootDomain = 'topproductofficial.com'; // Hardcoded for safety or use env
+
+      if (isLocal) {
+          return `${protocol}//localhost:3000/${p.slug}`;
+      }
+
+      // If vertical is standard (health, finance, etc), use subdomain
+      // But only if we want to enforce it. For now, let's keep it simple:
+      // If we are on main domain, link to main domain/slug.
+      // The Middleware will handle the "Virtual Subdomain" logic if we want to scale later.
+      
+      // FIX: Respect the product's vertical for subdomain routing
+      if (p.vertical && p.vertical !== 'other' && p.vertical !== 'general') {
+          return `https://${p.vertical}.${rootDomain}/${p.slug}`;
+      }
+
+      return `https://${rootDomain}/${p.slug}`;
   };
 
   return (
@@ -110,7 +128,7 @@ export default function ProductList({ products }: ProductListProps) {
                 <td className="px-6 py-5 whitespace-nowrap">
                   <div className="flex flex-col gap-2">
                       <a 
-                        href={`/${product.slug}`} 
+                        href={getRealLink(product)} 
                         target="_blank" 
                         className="group flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-100 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-all w-fit"
                       >
@@ -120,7 +138,7 @@ export default function ProductList({ products }: ProductListProps) {
                         </span>
                         
                         <span className="text-sm font-bold text-blue-900 font-mono group-hover:text-blue-950 underline">
-                            {typeof window !== 'undefined' ? window.location.host : 'topproductofficial.com'}/{product.slug}
+                            {getRealLink(product).replace('https://', '').replace(/\/$/, '')}
                         </span>
                         
                         <svg className="w-5 h-5 text-blue-900 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -150,13 +168,13 @@ export default function ProductList({ products }: ProductListProps) {
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center gap-3">
-                    <Link 
-                        href={`/admin/products/${product.slug}`}
+                    <a 
+                        href={`https://topproductofficial.com/admin/products/${product.slug}`}
                         className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-gray-300 rounded-md text-black font-black hover:bg-gray-100 hover:border-gray-400 hover:text-blue-700 transition-all shadow-sm"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         EDIT
-                    </Link>
+                    </a>
                     
                     <button 
                         onClick={() => handleDelete(product.slug, product.name)}
