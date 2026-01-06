@@ -167,12 +167,31 @@ export async function POST(request: NextRequest) {
 
     // 6. Save
     const currentConfig = await getCampaignConfig();
-    if (!currentConfig.products) currentConfig.products = {};
-    currentConfig.products[newProduct.slug] = newProduct;
     
-    await updateCampaignConfig(currentConfig);
+    // Ensure products structure
+    if (!currentConfig.products) currentConfig.products = {};
+    
+    // Force lowercase slug for consistency
+    const safeSlug = newProduct.slug.toLowerCase().trim();
+    newProduct.slug = safeSlug;
 
-    return NextResponse.json({ success: true, slug: newProduct.slug });
+    // SAVE DIRECTLY TO PRODUCTS KEY (Standard Format)
+    currentConfig.products[safeSlug] = newProduct;
+    
+    // Debug log
+    console.log(`[Auto-Create] Saving product: ${safeSlug}`, { 
+        hasName: !!newProduct.name,
+        hasUrl: !!newProduct.official_url,
+        hasAds: !!newProduct.ads 
+    });
+    
+    const saveResult = await updateCampaignConfig(currentConfig);
+
+    if (!saveResult.success) {
+        throw new Error(`DB Save Failed: ${saveResult.error}`);
+    }
+
+    return NextResponse.json({ success: true, slug: safeSlug });
 
   } catch (error: any) {
     console.error('[Auto-Create] Error:', error);
