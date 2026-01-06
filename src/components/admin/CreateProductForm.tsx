@@ -273,10 +273,10 @@ export default function CreateProductForm() {
       {/* Quick Scale / Import */}
       <div className="mb-8 bg-purple-50 p-4 rounded border border-purple-100">
           <h3 className="font-bold text-purple-800 mb-2 flex items-center gap-2">
-            🚀 Scale New Product with AI (Gemini)
+            🚀 Scale New Product with AI
           </h3>
           <p className="text-sm text-purple-600 mb-3">
-             Paste the official sales page URL below. Gemini will analyze the copy, extract pain points, find images, and auto-configure the presell + Google Ads.
+             Paste the official sales page URL below. The AI will analyze the copy, extract pain points, find images, and auto-configure the presell + Google Ads.
           </p>
           <div className="flex gap-2 mb-3">
               <input 
