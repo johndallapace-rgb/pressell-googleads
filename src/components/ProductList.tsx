@@ -20,8 +20,8 @@ export default function ProductList({ products }: ProductListProps) {
       return map[lang] || '🌐';
   };
 
-  const handleDelete = async (slug: string) => {
-      if (!confirm(`Are you sure you want to PERMANENTLY delete "${slug}"?\nThis will remove the page, config, images, and ads.`)) return;
+  const handleDelete = async (slug: string, name: string) => {
+      if (!confirm(`Are you sure you want to PERMANENTLY delete "${name}"?\nThis will remove the page, config, images, and ads.`)) return;
       
       setDeleting(slug);
       try {
@@ -78,7 +78,7 @@ export default function ProductList({ products }: ProductListProps) {
               <tr key={product.slug} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <span className="text-4xl mr-4 drop-shadow-sm">{getFlag(product.language)}</span>
+                    <span className="text-4xl mr-4 drop-shadow-md opacity-100 filter-none" style={{ filter: 'none' }}>{getFlag(product.language)}</span>
                     <div>
                         <div className="text-base font-bold text-gray-900">{product.name}</div>
                         <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{product.vertical}</div>
@@ -89,11 +89,11 @@ export default function ProductList({ products }: ProductListProps) {
                   <a 
                     href={`/${product.slug}`} 
                     target="_blank" 
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-2 font-mono group"
+                    className="text-sm text-emerald-600 font-bold hover:text-emerald-700 hover:underline flex items-center gap-2 font-mono group bg-emerald-50 px-2 py-1 rounded w-fit"
                   >
                     <span className={`h-2.5 w-2.5 rounded-full ${product.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} title={product.status === 'active' ? 'Online' : 'Offline'}></span>
                     {typeof window !== 'undefined' ? window.location.host : ''}/{product.slug}
-                    <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    <svg className="w-4 h-4 text-emerald-400 group-hover:text-emerald-700 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                   </a>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-3 items-center">
@@ -104,7 +104,7 @@ export default function ProductList({ products }: ProductListProps) {
                     ✏️ Edit
                   </Link>
                   <button 
-                    onClick={() => handleDelete(product.slug)}
+                    onClick={() => handleDelete(product.slug, product.name)}
                     disabled={deleting === product.slug}
                     className="text-red-600 hover:text-red-900 font-bold bg-red-50 px-3 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
                   >
