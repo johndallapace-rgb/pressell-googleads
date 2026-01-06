@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import { randomUUID } from 'crypto';
 
 const streamPipeline = promisify(pipeline);
 
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Construct New Product
     const newProduct: ProductConfig = {
+      id: randomUUID(), // Generate Unique UUID
       slug: finalSlug,
       name,
       vertical: vertical.toLowerCase(),
@@ -200,7 +202,7 @@ export async function POST(request: NextRequest) {
       },
 
       // Auto-Generated Ads Storage
-      ads: (body.google_ads_headlines && body.google_ads_headlines.length > 0) ? {
+      ads: ((body.google_ads_headlines && body.google_ads_headlines.length > 0) || (body.google_ads_negatives && body.google_ads_negatives.length > 0)) ? {
           status: 'ready',
           campaigns: [{
               campaignName: `${name} - Search - ${vertical.toUpperCase()}`,
@@ -208,11 +210,11 @@ export async function POST(request: NextRequest) {
                   name: 'General Interest',
                   keywords: [`${name} reviews`, `buy ${name}`, `${name} price`],
                   negativeKeywords: body.google_ads_negatives || [],
-                  ads: [{
+                  ads: (body.google_ads_headlines && body.google_ads_headlines.length > 0) ? [{
                       headlines: body.google_ads_headlines,
                       descriptions: body.google_ads_descriptions || [],
                       finalUrl: official_url
-                  }]
+                  }] : []
               }]
           }]
       } : undefined

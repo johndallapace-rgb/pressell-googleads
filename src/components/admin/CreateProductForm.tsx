@@ -75,11 +75,7 @@ export default function CreateProductForm() {
     // 2. Handle Import Param (Auto-Scrape)
     if (importUrlParam && !importing && !importUrl) {
         setImportUrl(importUrlParam);
-        // Wait a tick for state to update then trigger
-        setTimeout(() => {
-            const btn = document.getElementById('auto-import-btn');
-            if (btn) btn.click();
-        }, 500);
+        // Removed auto-click to allow manual control as requested
     }
   }, [catalogId, catalogSlug, importUrlParam]);
 
@@ -203,6 +199,16 @@ export default function CreateProductForm() {
     }
 
     try {
+      // Validations
+      // Auto-generate slug if missing
+      const cleanProduct = { ...formData };
+      if (!cleanProduct.slug && cleanProduct.name) {
+          cleanProduct.slug = cleanProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+
+      if (!cleanProduct.slug) throw new Error('Slug is required (or Name to generate it)');
+      if (!/^[a-z0-9-]+$/.test(cleanProduct.slug)) throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
+
       // Get token from localStorage (as per existing admin login logic)
       const token = localStorage.getItem('admin_token');
       if (!token) {
@@ -217,7 +223,7 @@ export default function CreateProductForm() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(cleanProduct)
       });
 
       const data = await res.json();
@@ -226,16 +232,16 @@ export default function CreateProductForm() {
         throw new Error(data.error || 'Failed to create product');
       }
 
-      setMessage({ type: 'success', text: `Product created successfully: ${data.slug}` });
+      setMessage({ type: 'success', text: `Product created successfully! Redirecting to My Products...` });
       
-      // Open Presell in new tab
+      // Open Presell in new tab for verification
       window.open(`/${data.slug}`, '_blank');
       
-      // Refresh router to show update in list (if displayed)
-      router.refresh();
-
-      // Optional: Clear form or redirect
-      // setFormData({ ... });
+      // Redirect to My Products List
+      setTimeout(() => {
+          router.push('/admin/products');
+          router.refresh();
+      }, 1500);
 
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });

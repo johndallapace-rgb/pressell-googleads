@@ -67,6 +67,7 @@ export type QuizConfig = {
 import { AdsConfig } from '@/lib/ads/types';
 
 export type ProductConfig = {
+  id?: string; // Unique UUID
   slug: string;
   name: string;
   platform: string;
