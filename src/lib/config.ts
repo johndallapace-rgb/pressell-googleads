@@ -1,12 +1,15 @@
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import { defaultConfig } from '@/data/defaultConfig';
 
-// Removed Edge Config client
-// export const configClient = process.env.EDGE_CONFIG 
-//   ? createClient(process.env.EDGE_CONFIG) 
-//   : null;
-// We now use 'kv' directly imported from @vercel/kv which auto-configures 
-// using KV_REST_API_URL and KV_REST_API_TOKEN env vars.
+// Initialize KV Client Robustly
+// Support both KV_REST_API_* (Vercel Default) and REDIS_URL (Legacy/Custom)
+const kvUrl = process.env.KV_REST_API_URL || process.env.REDIS_URL;
+const kvToken = process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN;
+
+// Create a safe client or null if envs are missing (Build time)
+const kv = (kvUrl && kvToken) 
+    ? createClient({ url: kvUrl, token: kvToken })
+    : null;
 
 export type SeoConfig = {
   title: string;
@@ -132,7 +135,7 @@ export interface CampaignConfig {
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
   // Safety check for Build Time or Missing Env
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+  if (!kv) {
       // Silent fallback during build to prevent noise/errors
       return defaultConfig;
   }
@@ -214,6 +217,7 @@ export interface CampaignMetrics {
 
 export async function getCampaignMetrics(): Promise<CampaignMetrics> {
     try {
+        if (!kv) return {};
         return await kv.get<CampaignMetrics>('campaign_metrics') || {};
     } catch (error) {
         console.error('Error fetching metrics:', error);
@@ -223,6 +227,7 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 
 export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!kv) throw new Error('KV Database not configured (Check Environment Variables)');
     await kv.set('campaign_config', newConfig);
     return { success: true };
   } catch (error: any) {
