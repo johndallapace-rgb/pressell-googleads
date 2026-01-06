@@ -16,7 +16,9 @@ export default async function EditProductPage({ params }: Props) {
     notFound();
   }
 
-  const readOnly = !process.env.VERCEL_API_TOKEN || !process.env.EDGE_CONFIG_ID;
+  // We are using KV now, so we don't need to check for Edge Config tokens
+  // Assuming KV is configured if we got the product
+  const readOnly = false;
 
   return <EditProductClient product={product} readOnly={readOnly} />;
 }

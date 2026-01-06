@@ -2,13 +2,14 @@ import { createClient } from '@vercel/kv';
 import { defaultConfig } from '@/data/defaultConfig';
 
 // Initialize KV Client Robustly
-// Support both KV_REST_API_* (Vercel Default) and REDIS_URL (Legacy/Custom)
-const kvUrl = process.env.KV_REST_API_URL || process.env.REDIS_URL;
-const kvToken = process.env.KV_REST_API_TOKEN || process.env.REDIS_TOKEN;
+// Support KV_REST_API_* (Vercel Default), REDIS_REST_API_* (Upstash), and REDIS_URL (Legacy/Custom)
+const kvUrl = process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || process.env.REDIS_URL;
+const kvToken = process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_API_TOKEN || process.env.REDIS_TOKEN;
 
-// Create a safe client or null if envs are missing (Build time)
-const kv = (kvUrl && kvToken) 
-    ? createClient({ url: kvUrl, token: kvToken })
+// Create a safe client if ANY URL is present. 
+// We use a fallback token to prevent crash, but requests might fail if auth is required and missing.
+const kv = kvUrl 
+    ? createClient({ url: kvUrl, token: kvToken || 'missing-token' })
     : null;
 
 export type SeoConfig = {
@@ -227,7 +228,12 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 
 export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!kv) throw new Error('KV Database not configured (Check Environment Variables)');
+    // If kv is null, it means NO environment variables were found at all.
+    // However, user might have a local setup or build time.
+    if (!kv) {
+        console.warn('KV Database not configured. Changes will NOT be saved.');
+        return { success: false, error: 'KV Database not configured (Check Environment Variables)' };
+    }
     await kv.set('campaign_config', newConfig);
     return { success: true };
   } catch (error: any) {
