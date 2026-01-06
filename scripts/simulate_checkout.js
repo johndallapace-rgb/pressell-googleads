@@ -26,8 +26,20 @@ function simulate(config) {
     const isDigistore = finalUrl.includes('digistore24.com/redir/');
     
     if (isDigistore) {
-        if (finalUrl.endsWith('/')) finalUrl = finalUrl.slice(0, -1);
-        finalUrl = `${finalUrl}/${trackId}`;
+        // Ensure we preserve the query params if they exist in the original URL
+        const [baseUrl, existingQuery] = finalUrl.split('?');
+        let cleanBase = baseUrl;
+        
+        // Remove trailing slash if present
+        if (cleanBase.endsWith('/')) cleanBase = cleanBase.slice(0, -1);
+        
+        // Append trackId as the Campaign Key path segment
+        finalUrl = `${cleanBase}/${trackId}`;
+        
+        // Re-attach existing query params if any
+        if (existingQuery) {
+            finalUrl += `?${existingQuery}`;
+        }
     }
 
     const separator = finalUrl.includes('?') ? '&' : '?';
