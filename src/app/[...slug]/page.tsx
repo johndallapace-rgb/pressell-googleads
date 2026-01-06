@@ -14,63 +14,96 @@ export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug, lang } = await params;
-  if (!slug) return {};
+  const resolvedParams = await params;
+  const slugParts = resolvedParams?.slug;
   
+  if (!slugParts || !Array.isArray(slugParts) || slugParts.length === 0) return {};
+
+  let lang = 'en';
+  let slug = slugParts[0];
+
+  const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
+  if (slugParts.length >= 2 && validLangs.includes(slugParts[0])) {
+      lang = slugParts[0];
+      slug = slugParts[1];
+  } else if (slugParts.length === 1) {
+      slug = slugParts[0];
+  } else {
+      return {};
+  }
+
   const config = await getCampaignConfig();
   if (!config || !config.products) return {};
 
-  // Construct localized slug: "amino-de"
-  const localizedSlug = `${slug}-${lang}`;
+  // Try localized key first (e.g. "amino-de")
+  let product = config.products[`${slug}-${lang}`];
   
-  // Try localized first, then fall back to base slug
-  let product = config.products[localizedSlug] || config.products[slug];
-  
+  // Fallback to base slug (e.g. "mitolyn")
+  if (!product) {
+      product = config.products[slug];
+  }
+
   if (!product || product.status !== 'active') return {};
   
-  // SEO Path: /de/amino
-  const path = `/${lang}/${slug}`;
+  // Canonical Path
+  const path = lang === 'en' ? `/${slug}` : `/${lang}/${slug}`;
 
   return generateSeoMetadata({ product, path }, 'landing');
 }
 
-export default async function LocalizedProductPage({ params }: PageProps) {
-  let slug: string | undefined;
-  let lang: string | undefined;
-
+export default async function CatchAllProductPage({ params }: PageProps) {
   try {
     const resolvedParams = await params;
-    slug = Array.isArray(resolvedParams?.slug) ? resolvedParams.slug[0] : resolvedParams?.slug;
-    lang = Array.isArray(resolvedParams?.lang) ? resolvedParams.lang[0] : resolvedParams?.lang;
+    const slugParts = resolvedParams?.slug; // Array of strings
 
-    if (!slug || !lang) {
-      notFound();
+    if (!slugParts || !Array.isArray(slugParts)) {
+        notFound();
+    }
+
+    let lang = 'en';
+    let slug = slugParts[0];
+
+    // Detect Locale Strategy
+    const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
+    
+    if (slugParts.length >= 2 && validLangs.includes(slugParts[0])) {
+        // Pattern: /de/amino
+        lang = slugParts[0];
+        slug = slugParts[1];
+    } else if (slugParts.length === 1) {
+        // Pattern: /mitolyn
+        slug = slugParts[0];
+    } else {
+        // Pattern: /de/amino/extra (too deep) -> 404
+        notFound();
     }
 
     const headerList = await headers();
     const host = headerList.get('host') || 'unknown';
     const detectedVertical = getVerticalFromHost(host);
 
-    console.log('[LocalizedPage] Init', { slug, lang, host });
+    console.log('[CatchAllPage] Init', { slug, lang, host });
 
     const config = await getCampaignConfig();
     
-    // Logic: Look for "amino-de"
-    const lookupKey = `${slug}-${lang}`;
-    let product = config.products?.[lookupKey];
+    // 1. Try Localized Key: "amino-de"
+    let product = config.products?.[`${slug}-${lang}`];
 
-    // Fallback: Check if the base slug exists and maybe we adapt it dynamically?
-    // But per current architecture, we generated "amino-de" specifically.
+    // 2. Try Base Key: "mitolyn" (Global Fallback)
     if (!product) {
-        // Try finding by base slug just in case
         product = config.products?.[slug];
-        if (product) {
-            console.log(`[LocalizedPage] Exact match not found for ${lookupKey}, using base ${slug}`);
+        if (product && lang !== 'en') {
+             // If we found a global product but requested a locale,
+             // we can decide to show it (English content in German URL) or 404.
+             // For now, let's show it but maybe log a warning.
+             console.log(`[CatchAllPage] Serving global content for ${lang}/${slug}`);
         }
     }
 
     if (!product || product.status !== 'active') {
-      console.log(`[LocalizedPage] Product not found: ${lookupKey}`);
+      console.log(`[CatchAllPage] Product not found: ${slug} (Lang: ${lang})`);
+      // Ignore system files
+      if (['favicon.ico', 'robots.txt'].includes(slug)) return notFound();
       return notFound();
     }
 
@@ -155,7 +188,7 @@ export default async function LocalizedProductPage({ params }: PageProps) {
     );
 
   } catch (e) {
-      console.error(`[LocalizedPage] Error:`, e);
+      console.error(`[CatchAllPage] Error:`, e);
       notFound();
   }
 }
