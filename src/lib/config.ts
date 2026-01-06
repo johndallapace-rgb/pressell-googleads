@@ -179,14 +179,16 @@ export async function listProducts(): Promise<ProductConfig[]> {
   if (!config.products) return [];
   
   // Robust mapping: Ensure slug is present by using the key if missing in the value
-  return Object.entries(config.products).map(([key, value]) => ({
-    ...value,
-    slug: value.slug || key,
-    // Ensure other critical fields have fallbacks
-    name: value.name || 'Untitled Product',
-    vertical: value.vertical || 'other',
-    language: value.language || 'en'
-  }));
+  return Object.entries(config.products)
+    .map(([key, value]) => ({
+        ...value,
+        slug: value.slug || key,
+        // Ensure other critical fields have fallbacks
+        name: value.name || 'Untitled Product',
+        vertical: value.vertical || 'other',
+        language: value.language || 'en'
+    }))
+    .filter(p => p.slug && p.slug !== 'undefined' && p.slug !== 'null');
 }
 
 export interface CampaignMetrics {

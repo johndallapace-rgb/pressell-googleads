@@ -57,10 +57,19 @@ export default function ProductList({ products }: ProductListProps) {
   return (
     <div className="bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
       <div className="bg-black p-5 border-b border-gray-800 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-white tracking-wide">MY PRODUCTS</h2>
-        <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded border border-gray-700 font-bold">
-            {products.length} Active
-        </span>
+        <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-white tracking-wide">MY PRODUCTS</h2>
+            <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded border border-gray-700 font-bold">
+                {products.length} Active
+            </span>
+        </div>
+        <Link 
+            href="/admin/products/new" 
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded flex items-center gap-2 transition-colors"
+        >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            NEW PRE-SELL
+        </Link>
       </div>
       
       {products.length === 0 ? (
@@ -78,8 +87,8 @@ export default function ProductList({ products }: ProductListProps) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => (
-              <tr key={product.slug} className="hover:bg-blue-50 transition-colors duration-150">
+            {products.filter(p => p.slug && p.slug !== 'undefined').map((product) => (
+              <tr key={product.slug || product.id} className="hover:bg-blue-50 transition-colors duration-150">
                 <td className="px-6 py-5 whitespace-nowrap">
                   <div className="flex items-center gap-4">
                     <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-white rounded-full border border-gray-200 shadow-sm text-2xl" style={{ fontSize: '1.5rem' }}>
