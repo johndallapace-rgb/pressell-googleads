@@ -2,7 +2,7 @@ const { appendTrackingParams, generateExternalTrackId } = require('../src/lib/tr
 
 // Mock the inputs (Simulating what happens in page.tsx)
 const configs = [
-    { name: 'Advanced Amino (DE)', url: 'https://www.digistore24.com/redir/[INSERT_PRODUCT_ID]/JohnPace', locale: 'de', slug: 'amino' },
+    { name: 'Advanced Amino (DE)', url: 'https://www.digistore24.com/redir/472942/JohnPace', locale: 'de', slug: 'amino' },
     { name: 'Tube Mastery (FR)', url: 'https://www.digistore24.com/redir/299134/JohnPace', locale: 'fr', slug: 'tube' },
     { name: 'Tube Mastery (EN)', url: 'https://www.digistore24.com/redir/299134/JohnPace', locale: 'en', slug: 'tube' }
 ];
