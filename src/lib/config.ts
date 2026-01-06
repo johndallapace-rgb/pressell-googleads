@@ -131,6 +131,12 @@ export interface CampaignConfig {
 }
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
+  // Safety check for Build Time or Missing Env
+  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+      // Silent fallback during build to prevent noise/errors
+      return defaultConfig;
+  }
+
   try {
     // Fetch from Vercel KV
     let config = await kv.get<CampaignConfig>('campaign_config');
