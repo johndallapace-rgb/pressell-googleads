@@ -188,6 +188,12 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
 
     // Enforce Short Slug Logic in Code (Double Safety)
     let finalSlug = data.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // Ensure slug is not empty
+    if (!finalSlug || finalSlug === '-') finalSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    // Fallback Name if somehow empty
+    const finalName = name || finalSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
     if (finalSlug.split('-').length > 3) {
          // If slug is too long (> 3 words), truncate to first 2 words or just name
          const parts = finalSlug.split('-');
@@ -195,18 +201,21 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
          console.log(`[Auto-Create] Slug shortened: ${data.slug} -> ${finalSlug}`);
     }
 
+    // Force Vertical from AI or fallback to 'health' (safest default)
+    const finalVertical = (data.vertical || 'health').toLowerCase();
+
     const newProduct: ProductConfig = {
         slug: finalSlug,
-        name: name,
-        vertical: (data.vertical || 'health') as any, // This is saved to KV
-        subdomain: (data.vertical || 'health') as string, // Explicitly save subdomain for routing
+        name: finalName, // Use robust name
+        vertical: finalVertical as any, // This is saved to KV
+        subdomain: finalVertical, // Explicitly save subdomain for routing
         language: country.toLowerCase(),
         template: 'editorial',
-        status: 'active',
+        status: 'active', // FORCE ACTIVE
         platform: 'unknown',
         official_url: importUrl,
         affiliate_url: catalogItem ? `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}` : importUrl, // Fallback if no catalog match
-        image_url: finalImageUrl,
+        image_url: finalImageUrl, // Prioritize scraped/uploaded image
         headline: data.headline,
         subheadline: data.subheadline,
         cta_text: 'Check Availability',

@@ -18,7 +18,7 @@ const defaultProduct: ProductConfig = {
   name: '',
   platform: 'clickbank',
   language: 'en',
-  status: 'paused',
+  status: 'active', // Default to active for less friction
   vertical: 'health',
   template: 'editorial',
   official_url: '',
@@ -250,6 +250,8 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
         setProduct(prev => ({
             ...prev,
             name: aiPromptData.productName, // Ensure name matches
+            vertical: (data.vertical || prev.vertical) as any, // Force vertical from AI
+            status: 'active', // FORCE ACTIVE STATUS
             headline: data.headline || prev.headline,
             subheadline: data.subheadline || prev.subheadline,
             bullets: data.bulletPoints || prev.bullets,
@@ -343,6 +345,7 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             ...prev,
             vertical: data.vertical || prev.vertical,
             slug: data.slug || prev.slug,
+            status: 'active', // FORCE ACTIVE STATUS
             headline: data.headline || prev.headline,
             subheadline: data.subheadline || prev.subheadline,
             bullets: data.bullets || prev.bullets,

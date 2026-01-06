@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         Retorne APENAS um JSON válido com esta estrutura:
         {
           "vertical": "health", // ou outro nicho identificado
-          "slug": "nome-do-produto-exemplo",
+          "slug": "${productName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}",
           "headline": "Headline principal chamativa",
           "subheadline": "Subheadline complementar",
           "content": "Introdução persuasiva para um artigo editorial (2-3 parágrafos). Fale sobre o problema que o produto resolve.",
@@ -127,6 +127,8 @@ export async function POST(request: NextRequest) {
 
       Retorne APENAS um JSON válido com esta estrutura exata:
       {
+        "vertical": "${niche}",
+        "slug": "${productName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}",
         "headline": "Headline de alta conversão (max 60 chars)",
         "subheadline": "Subheadline quebra de objeção (max 100 chars)",
         "content": "Texto persuasivo de presell (3-4 parágrafos). Use HTML básico (<p>, <strong>). Se for Quiz, use este campo para a intro antes do botão 'Começar'.",
