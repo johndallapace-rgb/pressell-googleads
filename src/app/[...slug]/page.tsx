@@ -11,7 +11,6 @@ import { headers } from 'next/headers';
 import { TrackingManager } from '@/components/analytics/TrackingManager';
 import { generateExternalTrackId, appendTrackingParams } from '@/lib/tracking';
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Force live data from KV
 

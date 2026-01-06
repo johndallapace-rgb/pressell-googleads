@@ -38,6 +38,21 @@ export async function middleware(request: NextRequest) {
     // DEBUG: Log admin access
     console.log(`[Middleware] Admin Access: ${pathname} | Host: ${hostname}`);
 
+    // FORCE MAIN DOMAIN FOR ADMIN
+    // If accessing admin via subdomain (e.g. health.site.com/admin), redirect to main domain (site.com/admin)
+    // to prevent 404s and auth issues.
+    if (!hostname.includes('localhost') && hostname.split('.').length >= 3 && hostname.split('.')[0] !== 'www') {
+         const parts = hostname.split('.');
+         // Take last 2 parts (domain.com) or 3 if co.uk etc. (simplified for now to just strip first part)
+         // Better: just remove the subdomain part
+         const mainDomain = parts.slice(1).join('.');
+         const url = request.nextUrl.clone();
+         url.hostname = mainDomain;
+         url.port = ''; // Ensure no port issues
+         console.log(`[Middleware] Redirecting Admin to Main Domain: ${url.toString()}`);
+         return NextResponse.redirect(url);
+    }
+
     // Allow login page unconditionally
     if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
       return NextResponse.next();
