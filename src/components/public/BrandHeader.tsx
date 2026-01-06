@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Inter } from 'next/font/google';
-import brandSettings from '../../../../brand-settings.json';
+import brandSettings from '@/data/brand-settings.json';
 
 const inter = Inter({ subsets: ['latin'] });
 

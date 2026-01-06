@@ -44,3 +44,53 @@ export function appendTrackingParams(url: string, trackId: string, locale?: stri
   
   return `${url}${separator}${params}`;
 }
+
+/**
+ * Builds the outgoing URL for affiliate links.
+ * Currently just a pass-through, but can be enhanced for cloaking or extra params.
+ */
+export function buildOutgoingUrl(url: string): string {
+    return url;
+}
+
+/**
+ * Captures tracking parameters from the URL (e.g. gclid, utm_source)
+ * and stores them (e.g. in localStorage/Cookies) for persistence.
+ */
+export function captureTrackingParams(searchParams: URLSearchParams | any) {
+    if (!searchParams) return;
+    
+    // Example logic:
+    // const gclid = searchParams.get('gclid');
+    // if (gclid) localStorage.setItem('gclid', gclid);
+    
+    // For now, no-op to satisfy build.
+}
+
+type TrackEventData = {
+    url?: string;
+    label?: string;
+    product?: string;
+    variant?: string;
+    lang?: string;
+    [key: string]: any;
+};
+
+/**
+ * Generic event tracker
+ */
+export function trackEvent(eventName: string, data: TrackEventData) {
+    if (typeof window !== 'undefined') {
+        // Console Log for Dev
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[TrackEvent] ${eventName}:`, data);
+        }
+        
+        // Push to GTM / DataLayer
+        const dataLayer = (window as any).dataLayer || [];
+        dataLayer.push({
+            event: eventName,
+            ...data
+        });
+    }
+}
