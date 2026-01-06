@@ -120,7 +120,31 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
 
     // 4. Image Handling
     let finalImageUrl = scrapedImage || '';
-    if (finalImageUrl.startsWith('http')) {
+    
+    // Safety: Handle Base64 Data URLs (Heavy)
+    if (finalImageUrl.startsWith('data:image')) {
+        try {
+             console.log('[Auto-Create] Converting Base64 Image to File...');
+             const matches = finalImageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+             if (matches && matches.length === 3) {
+                const ext = matches[1].split('/')[1].replace('jpeg', 'jpg') || 'jpg';
+                const buffer = Buffer.from(matches[2], 'base64');
+                const fileName = `${data.slug}-${Date.now()}.${ext}`;
+                const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
+                if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+                fs.writeFileSync(path.join(publicDir, fileName), buffer);
+                finalImageUrl = `/images/products/${fileName}`;
+             } else {
+                 console.warn('[Auto-Create] Invalid Base64, discarding.');
+                 finalImageUrl = ''; 
+             }
+        } catch (e) {
+            console.error('[Auto-Create] Failed to save base64 image', e);
+            finalImageUrl = '';
+        }
+    } 
+    // Handle Remote URLs
+    else if (finalImageUrl.startsWith('http')) {
         try {
             console.log(`[Auto-Create] Downloading image: ${finalImageUrl}`);
             const res = await fetch(finalImageUrl);
@@ -145,6 +169,9 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         } catch (e) {
             console.error('Image download failed', e);
         }
+    } else {
+        // Discard weird formats
+        finalImageUrl = '';
     }
 
     // 5. Construct Product Config
@@ -204,6 +231,36 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
 
     // 6. Save
     const currentConfig = await getCampaignConfig();
+    
+    // CLEANUP: Optimize Storage (Fix "Edge Config Size Limit")
+    if (currentConfig.products) {
+        Object.keys(currentConfig.products).forEach(key => {
+            const p = currentConfig.products[key];
+            
+            // 1. Remove bad keys
+            if (key === 'undefined' || key === 'null' || !p || !p.name) {
+                console.log(`[Cleanup] Removing invalid product: ${key}`);
+                delete currentConfig.products[key];
+                return;
+            }
+            
+            // 2. Nuke heavy Base64 images if they slipped in
+            if (p.image_url && p.image_url.startsWith('data:')) {
+                 console.log(`[Cleanup] Removing heavy base64 image from: ${key}`);
+                 p.image_url = ''; 
+            }
+            if (p.image_url && p.image_url.length > 2000) {
+                 console.log(`[Cleanup] Removing oversized image string from: ${key}`);
+                 p.image_url = '';
+            }
+
+            // 3. Remove heavy "competitorAds" or raw "scrape" data if accidentally saved
+            // @ts-ignore
+            if (p.competitorAds) delete p.competitorAds;
+            // @ts-ignore
+            if (p.scrapeResult) delete p.scrapeResult;
+        });
+    }
     
     // Ensure products structure
     if (!currentConfig.products) currentConfig.products = {};
