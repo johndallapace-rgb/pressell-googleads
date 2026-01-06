@@ -26,9 +26,28 @@ export async function POST(request: NextRequest) {
     const { importUrl, name, competitorAds, country } = await request.json();
 
     if (!importUrl || !name) {
+        // Fallback: If name is missing, try to extract from importUrl again (Double Safety)
+        if (importUrl && !name) {
+            try {
+                const u = new URL(importUrl);
+                const hostParts = u.hostname.split('.');
+                const extractedName = hostParts.length > 2 ? hostParts[1] : hostParts[0];
+                console.log(`[Auto-Create] Name missing, auto-extracted: ${extractedName}`);
+                // Proceed with extracted name
+                return await handleCreation(request, importUrl, extractedName, competitorAds, country); 
+            } catch(e) {}
+        }
         return NextResponse.json({ error: 'Missing importUrl or name' }, { status: 400 });
     }
+    
+    return await handleCreation(request, importUrl, name, competitorAds, country);
+  } catch (error: any) {
+    console.error('[Auto-Create] Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
+async function handleCreation(request: NextRequest, importUrl: string, name: string, competitorAds: string, country: string) {
     // 0. URL Validation
     try {
         new URL(importUrl);
@@ -190,7 +209,13 @@ export async function POST(request: NextRequest) {
     if (!currentConfig.products) currentConfig.products = {};
     
     // Force lowercase slug for consistency
-    const safeSlug = newProduct.slug.toLowerCase().trim();
+    let safeSlug = (newProduct.slug || '').toLowerCase().trim();
+    if (!safeSlug || safeSlug.length < 3) {
+         safeSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+    if (!safeSlug) {
+        safeSlug = `product-${Date.now()}`;
+    }
     newProduct.slug = safeSlug;
 
     // SAVE DIRECTLY TO PRODUCTS KEY (Standard Format)
@@ -210,9 +235,5 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, slug: safeSlug });
-
-  } catch (error: any) {
-    console.error('[Auto-Create] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 }
+// Removed the old catch block here since it is now inside POST wrapper

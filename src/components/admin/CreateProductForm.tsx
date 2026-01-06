@@ -180,6 +180,35 @@ export default function CreateProductForm() {
     }
 
     try {
+      // 1. Auto-extract Name if missing
+      let productName = formData.name;
+      if (!productName) {
+          try {
+              const urlObj = new URL(formData.official_url);
+              // Try to guess from hostname or path
+              // ex: prodentim.com -> prodentim
+              // ex: site.com/prodentim -> prodentim
+              let guess = urlObj.hostname.split('.')[0];
+              if (guess === 'www' || guess === 'get' || guess === 'try') {
+                  guess = urlObj.hostname.split('.')[1];
+              }
+              if (guess.length < 3) {
+                  // Fallback to path
+                  const pathPart = urlObj.pathname.split('/')[1];
+                  if (pathPart) guess = pathPart;
+              }
+              productName = guess.charAt(0).toUpperCase() + guess.slice(1);
+          } catch (e) {
+              productName = 'New Product';
+          }
+      }
+
+      console.log('🚀 [Direct Auto-Create] Launching...', { 
+          importUrl: formData.official_url,
+          name: productName,
+          country: formData.language.toUpperCase() 
+      });
+
       // 1. Direct Auto-Create Call (Simplified Flow)
       // This endpoint handles Scraping -> AI -> Image -> Saving in one go
       const res = await fetch('/api/admin/products/auto-create', {
@@ -187,7 +216,7 @@ export default function CreateProductForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             importUrl: formData.official_url,
-            name: formData.name,
+            name: productName,
             competitorAds: competitorAds,
             country: formData.language.toUpperCase() // e.g. "EN" -> "EN"
         })
