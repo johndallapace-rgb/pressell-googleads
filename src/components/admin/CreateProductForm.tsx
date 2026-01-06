@@ -159,44 +159,25 @@ export default function CreateProductForm() {
     }
   };
 
-  const handleLoadNegatives = (e: React.MouseEvent) => {
-      e.preventDefault();
-      const lang = formData.language || 'en';
-      
-      // Determine key based on language (fallback to EN)
-      const key = (lang === 'de' || lang === 'fr' || lang === 'pt' || lang === 'es') ? lang : 'en';
-      
-      // @ts-ignore
-      const list = negativeKeywords[key] || negativeKeywords['en'];
-      
-      setFormData(prev => ({
-          ...prev,
-          google_ads_negatives: list
-      }));
-      
-      setMessage({ type: 'success', text: `✅ Loaded ${list.length} Standard Negative Keywords for ${lang.toUpperCase()}.` });
-  };
+  // Removed unused handlers (handleLoadNegatives, handlePreSubmit)
 
-  const [showChecklist, setShowChecklist] = useState(false);
-  const [checks, setChecks] = useState({
-    affiliate: false,
-    pixel: false,
-    negatives: false
-  });
-
-  const handlePreSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.affiliate_url) {
-         setMessage({ type: 'error', text: '⛔ Critical: Affiliate URL is required!' });
-         return;
-    }
-    setShowChecklist(true);
-  };
-
-  const handleFinalSubmit = async () => {
-    setShowChecklist(false);
     setLoading(true);
     setMessage(null);
+
+    // Direct Validation
+    if (!formData.affiliate_url) {
+         setMessage({ type: 'error', text: '⛔ Critical: Affiliate URL is required!' });
+         setLoading(false);
+         return;
+    }
+    
+    if (!formData.official_url) {
+         setMessage({ type: 'error', text: '⛔ Critical: Official Product URL is required for AI Analysis!' });
+         setLoading(false);
+         return;
+    }
 
     try {
       // 1. Direct Auto-Create Call (Simplified Flow)
@@ -256,92 +237,11 @@ export default function CreateProductForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-     handlePreSubmit(e);
-  };
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-8 relative">
       
-      {/* HEALTH CHECKLIST MODAL */}
-      {showChecklist && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-8 relative border-4 border-blue-600 animate-bounce-in">
-                <button 
-                    onClick={() => setShowChecklist(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-
-                <div className="text-center mb-6">
-                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <h3 className="text-2xl font-black text-gray-900">Health Check Protocol</h3>
-                    <p className="text-gray-500 mt-1">Verify these 3 items to unlock deployment.</p>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                    <label className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${checks.affiliate ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                        <input 
-                            type="checkbox" 
-                            checked={checks.affiliate}
-                            onChange={(e) => setChecks(prev => ({ ...prev, affiliate: e.target.checked }))}
-                            className="w-6 h-6 text-green-600 rounded focus:ring-green-500 mr-4"
-                        />
-                        <div>
-                            <span className="block font-bold text-gray-800">Affiliate Link Verified</span>
-                            <span className="text-xs text-gray-500">Is the JohnPace ID correct?</span>
-                        </div>
-                    </label>
-
-                    <label className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${checks.pixel ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                        <input 
-                            type="checkbox" 
-                            checked={checks.pixel}
-                            onChange={(e) => setChecks(prev => ({ ...prev, pixel: e.target.checked }))}
-                            className="w-6 h-6 text-green-600 rounded focus:ring-green-500 mr-4"
-                        />
-                        <div>
-                            <span className="block font-bold text-gray-800">Pixel ID Active</span>
-                            <span className="text-xs text-gray-500">Is the tracking ID inserted?</span>
-                        </div>
-                    </label>
-
-                    <label className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${checks.negatives ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                        <input 
-                            type="checkbox" 
-                            checked={checks.negatives}
-                            onChange={(e) => setChecks(prev => ({ ...prev, negatives: e.target.checked }))}
-                            className="w-6 h-6 text-green-600 rounded focus:ring-green-500 mr-4"
-                        />
-                        <div>
-                            <span className="block font-bold text-gray-800">Traffic Filter Loaded</span>
-                            <span className="text-xs text-gray-500">Are negative keywords present?</span>
-                        </div>
-                    </label>
-                </div>
-
-                <button 
-                    onClick={handleFinalSubmit}
-                    disabled={!checks.affiliate || !checks.pixel || !checks.negatives}
-                    className="w-full py-4 bg-black text-white font-black text-lg rounded-xl shadow-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-                >
-                    {!checks.affiliate || !checks.pixel || !checks.negatives ? (
-                        <>
-                            <span>🔒</span> LOCKED
-                        </>
-                    ) : (
-                        <>
-                            <span>🚀</span> DEPLOY NOW
-                        </>
-                    )}
-                </button>
-            </div>
-        </div>
-      )}
-
+      {/* NO POPUP - Direct Action */}
+      
       <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Create New Product</h2>
       
       {message && (
