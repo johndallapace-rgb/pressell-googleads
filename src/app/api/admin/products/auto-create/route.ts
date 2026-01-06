@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { importUrl, name, competitorAds, country } = await request.json();
+    const { importUrl, name, competitorAds, country, vertical } = await request.json();
 
     if (!importUrl || !name) {
         // Fallback: If name is missing, try to extract from importUrl again (Double Safety)
@@ -34,20 +34,20 @@ export async function POST(request: NextRequest) {
                 const extractedName = hostParts.length > 2 ? hostParts[1] : hostParts[0];
                 console.log(`[Auto-Create] Name missing, auto-extracted: ${extractedName}`);
                 // Proceed with extracted name
-                return await handleCreation(request, importUrl, extractedName, competitorAds, country); 
+                return await handleCreation(request, importUrl, extractedName, competitorAds, country, vertical); 
             } catch(e) {}
         }
         return NextResponse.json({ error: 'Missing importUrl or name' }, { status: 400 });
     }
     
-    return await handleCreation(request, importUrl, name, competitorAds, country);
+    return await handleCreation(request, importUrl, name, competitorAds, country, vertical);
   } catch (error: any) {
     console.error('[Auto-Create] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-async function handleCreation(request: NextRequest, importUrl: string, name: string, competitorAds: string, country: string) {
+async function handleCreation(request: NextRequest, importUrl: string, name: string, competitorAds: string, country: string, userVertical?: string) {
     // 0. URL Validation
     try {
         new URL(importUrl);
@@ -201,8 +201,8 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
          console.log(`[Auto-Create] Slug shortened: ${data.slug} -> ${finalSlug}`);
     }
 
-    // Force Vertical from AI or fallback to 'health' (safest default)
-    const finalVertical = (data.vertical || 'health').toLowerCase();
+    // Force Vertical from User Input (Priority) -> AI -> 'health' (safest default)
+    const finalVertical = (userVertical || data.vertical || 'health').toLowerCase();
 
     const newProduct: ProductConfig = {
         slug: finalSlug,

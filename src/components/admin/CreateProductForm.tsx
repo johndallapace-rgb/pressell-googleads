@@ -218,7 +218,8 @@ export default function CreateProductForm() {
             importUrl: formData.official_url,
             name: productName,
             competitorAds: competitorAds,
-            country: formData.language.toUpperCase() // e.g. "EN" -> "EN"
+            country: formData.language.toUpperCase(), // e.g. "EN" -> "EN"
+            vertical: formData.vertical // Pass the selected vertical/niche
         })
       });
 
@@ -360,6 +361,40 @@ export default function CreateProductForm() {
                         placeholder="AW-XXXXXXXX"
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm bg-gray-50 focus:bg-white transition-colors"
                     />
+                </div>
+
+                {/* 4. Vertical / Subdomain (Routing) */}
+                <div>
+                    <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <span>🏷️</span> Niche / Subdomain
+                        <span className="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">Routing</span>
+                    </label>
+                    <div className="flex gap-4">
+                        <select
+                            value={formData.vertical}
+                            onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value }))}
+                            className="w-1/3 border-2 border-gray-300 rounded-xl px-4 py-4 text-xl text-black bg-white focus:border-blue-500 outline-none"
+                        >
+                            <option value="health">Health</option>
+                            <option value="diy">DIY / Home</option>
+                            <option value="finance">Finance</option>
+                            <option value="dating">Dating</option>
+                            <option value="pets">Pets</option>
+                            <option value="gadgets">Gadgets</option>
+                            <option value="other">Other / Custom</option>
+                        </select>
+                        <input 
+                            type="text" 
+                            value={formData.vertical === 'other' ? '' : formData.vertical}
+                            onChange={(e) => setFormData(prev => ({ ...prev, vertical: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                            placeholder="custom-niche"
+                            disabled={formData.vertical !== 'other' && ['health', 'diy', 'finance', 'dating', 'pets', 'gadgets'].includes(formData.vertical)}
+                            className={`w-2/3 border-2 border-gray-300 rounded-xl px-5 py-4 text-xl text-black font-mono outline-none transition-all ${formData.vertical !== 'other' && ['health', 'diy', 'finance', 'dating', 'pets', 'gadgets'].includes(formData.vertical) ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white focus:border-blue-500'}`}
+                        />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 ml-1">
+                        Determines the subdomain: <strong>https://{formData.vertical || 'health'}.topproductofficial.com/...</strong>
+                    </p>
                 </div>
 
             </div>
