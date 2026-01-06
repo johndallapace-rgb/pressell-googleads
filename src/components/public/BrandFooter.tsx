@@ -67,11 +67,13 @@ export function BrandFooter({ vertical = 'general', supportEmail, locale = 'en' 
            {isDe && (
                <Link href="/legal/impressum" className="hover:text-white transition-colors">{t.impressum}</Link>
            )}
+        </div>
 
-           {/* MANDATORY SUPPORT EMAIL FOR ADS COMPLIANCE */}
-           <a href={`mailto:${supportEmail || 'support@topproductofficial.com'}`} className="hover:text-white transition-colors">
-               {t.contact}
-           </a>
+        {/* Support Email - Explicitly Below */}
+        <div className="pt-4 text-center">
+             <a href={`mailto:${supportEmail || 'support@topproductofficial.com'}`} className="text-gray-500 hover:text-white transition-colors text-xs font-medium uppercase tracking-widest border-b border-gray-800 pb-1 hover:border-gray-600">
+                 {t.contact}: {supportEmail || 'support@topproductofficial.com'}
+             </a>
         </div>
 
         {/* Copyright */}

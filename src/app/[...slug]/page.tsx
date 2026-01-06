@@ -4,7 +4,7 @@ import { PageProps } from '@/types';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { StoryTemplate } from '@/components/templates/StoryTemplate';
 import { ComparisonTemplate } from '@/components/templates/ComparisonTemplate';
-import { getCampaignConfig } from '@/lib/campaignConfig';
+import { getProduct } from '@/lib/config'; // New Vercel KV Import
 import LayoutShell from '@/components/LayoutShell';
 import { getVerticalFromHost } from '@/lib/host';
 import { headers } from 'next/headers';
@@ -13,6 +13,7 @@ import { generateExternalTrackId, appendTrackingParams } from '@/lib/tracking';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Force live data from KV
 
 export async function generateMetadata({ params }: PageProps) {
   const resolvedParams = await params;
@@ -33,15 +34,10 @@ export async function generateMetadata({ params }: PageProps) {
       return {};
   }
 
-  const config = await getCampaignConfig();
-  if (!config || !config.products) return {};
-
-  // Try localized key first (e.g. "amino-de")
-  let product = config.products[`${slug}-${lang}`];
-  
-  // Fallback to base slug (e.g. "mitolyn")
+  // Use new KV getter
+  let product = await getProduct(`${slug}-${lang}`);
   if (!product) {
-      product = config.products[slug];
+      product = await getProduct(slug);
   }
 
   if (!product || product.status !== 'active') return {};
@@ -85,27 +81,29 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     console.log('[CatchAllPage] Init', { slug, lang, host });
 
-    const config = await getCampaignConfig();
-    
     // 1. Try Localized Key: "amino-de"
-    let product = config.products?.[`${slug}-${lang}`];
+    let product = await getProduct(`${slug}-${lang}`);
 
     // 2. Try Base Key: "mitolyn" (Global Fallback)
     if (!product) {
-        product = config.products?.[slug];
+        product = await getProduct(slug);
         if (product && lang !== 'en') {
-             // If we found a global product but requested a locale,
-             // we can decide to show it (English content in German URL) or 404.
-             // For now, let's show it but maybe log a warning.
              console.log(`[CatchAllPage] Serving global content for ${lang}/${slug}`);
         }
     }
 
     if (!product || product.status !== 'active') {
-      console.log(`[CatchAllPage] Product not found: ${slug} (Lang: ${lang})`);
+      console.log(`[CatchAllPage] Product not found in KV: ${slug} (Lang: ${lang})`);
       // Ignore system files
       if (['favicon.ico', 'robots.txt'].includes(slug)) return notFound();
       return notFound();
+    }
+
+    // STRICT VERTICAL ROUTING (Subdomain Enforcement)
+    // If accessing via health.domain.com, product MUST be health vertical.
+    if (detectedVertical && product.vertical !== detectedVertical) {
+         console.warn(`[Routing] Mismatch: Host Vertical (${detectedVertical}) != Product Vertical (${product.vertical})`);
+         return notFound(); // Or redirect to main domain? notFound is safer for now to avoid loops.
     }
 
     // --- Tracking Setup ---
@@ -126,7 +124,7 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     // Tracking IDs
     const googleAdsId = product.google_ads_id;
     const googleAdsLabel = product.google_ads_label;
-    const metaPixelId = product.meta_pixel_id; // Assuming this field exists or will exist
+    const metaPixelId = product.meta_pixel_id; 
 
     return (
       <LayoutShell vertical={vertical} supportEmail={product.support_email} locale={lang}>
