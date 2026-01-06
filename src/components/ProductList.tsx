@@ -108,22 +108,45 @@ export default function ProductList({ products }: ProductListProps) {
                   </div>
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap">
-                  <a 
-                    href={`/${product.slug}`} 
-                    target="_blank" 
-                    className="group flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-100 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-all w-fit"
-                  >
-                    <span className="relative flex h-3 w-3">
-                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${product.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
-                      <span className={`relative inline-flex rounded-full h-3 w-3 ${product.status === 'active' ? 'bg-green-600' : 'bg-gray-600'}`}></span>
-                    </span>
-                    
-                    <span className="text-sm font-bold text-blue-900 font-mono group-hover:text-blue-950 underline">
-                        {typeof window !== 'undefined' ? window.location.host : 'topproductofficial.com'}/{product.slug}
-                    </span>
-                    
-                    <svg className="w-5 h-5 text-blue-900 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                  </a>
+                  <div className="flex flex-col gap-2">
+                      <a 
+                        href={`/${product.slug}`} 
+                        target="_blank" 
+                        className="group flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-100 border border-blue-200 hover:bg-blue-200 hover:border-blue-300 transition-all w-fit"
+                      >
+                        <span className="relative flex h-3 w-3">
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${product.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                          <span className={`relative inline-flex rounded-full h-3 w-3 ${product.status === 'active' ? 'bg-green-600' : 'bg-gray-600'}`}></span>
+                        </span>
+                        
+                        <span className="text-sm font-bold text-blue-900 font-mono group-hover:text-blue-950 underline">
+                            {typeof window !== 'undefined' ? window.location.host : 'topproductofficial.com'}/{product.slug}
+                        </span>
+                        
+                        <svg className="w-5 h-5 text-blue-900 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      </a>
+
+                      {/* Pixel Validation Badge */}
+                      {product.google_ads_id ? (
+                          <div className="group relative w-fit">
+                              <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full cursor-help">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                  <span className="text-xs font-bold text-green-700 tracking-wide">PIXEL ACTIVE</span>
+                              </div>
+                              {/* Tooltip */}
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
+                                  <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap font-mono">
+                                      ID: {product.google_ads_id}
+                                  </div>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full w-fit">
+                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                              <span className="text-xs font-bold text-yellow-700 tracking-wide">NO PIXEL</span>
+                          </div>
+                      )}
+                  </div>
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center gap-3">
