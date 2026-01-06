@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCampaignConfig, ProductConfig, updateCampaignConfig } from '@/lib/config';
 import { extractYoutubeId } from '@/lib/youtube';
+import { verifyToken } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
@@ -11,35 +12,27 @@ const streamPipeline = promisify(pipeline);
 
 export const runtime = 'nodejs';
 
+async function checkAuth(request: NextRequest) {
+    // 1. Check Cookie (Browser)
+    const cookieToken = request.cookies.get('admin_token')?.value;
+    if (cookieToken && await verifyToken(cookieToken)) return true;
+
+    // 2. Check Header (API)
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        // Support both JWT and raw ADMIN_TOKEN for flexibility
+        if (token === process.env.ADMIN_TOKEN) return true;
+        if (await verifyToken(token)) return true;
+    }
+
+    return false;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // 1. Validate Admin Token
-    // We can use a simpler check or the same verifyToken helper if available in context,
-    // but for GET listing, we might want to ensure it's protected too.
-    // However, the frontend usually sends the token in Authorization header or we rely on cookies if verifyToken reads them.
-    // Let's assume we need to verify token from cookie for GET requests as per other routes.
-    const token = request.cookies.get('admin_token')?.value;
-    // Note: The POST method used Authorization header manually, but verifyToken is better.
-    // Let's use verifyToken from '@/lib/auth' if possible, similar to other routes.
-    // But since I don't want to break existing imports if not present, let's check imports.
-    // I see `import { getCampaignConfig ... } from '@/lib/config';`
-    // I don't see `verifyToken` imported. Let's add it if we want strict security, 
-    // or just rely on the fact that this is an admin route.
-    // For consistency with the POST method which checks `request.headers.get('Authorization')`,
-    // I will use a similar check or the cookie check. 
-    // Actually, looking at the POST method, it checks `process.env.ADMIN_TOKEN`.
-    // Let's do the same for GET for now to be safe, or check cookie if called from browser.
-    
-    // Better: Check cookie for browser access
-    const { verifyToken } = await import('@/lib/auth');
-    if (token && await verifyToken(token)) {
-        // authorized via cookie
-    } else {
-        // fallback to header check (for API calls)
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
-             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    if (!(await checkAuth(request))) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const config = await getCampaignConfig();
@@ -53,8 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // 1. Validate Admin Token
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
+    if (!(await checkAuth(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -251,8 +243,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
+    if (!(await checkAuth(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

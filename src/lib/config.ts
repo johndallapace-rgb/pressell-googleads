@@ -167,7 +167,13 @@ export async function getProduct(slug: string): Promise<ProductConfig | null> {
     // Priority: products object -> root object
     const product = cfgAny.products?.[slug] ?? cfgAny?.[slug];
     
-    return product || null;
+    if (product) {
+        // Polyfill slug if missing
+        if (!product.slug) product.slug = slug;
+        return product;
+    }
+    
+    return null;
   } catch (error) {
     console.error(`Error in getProduct for slug ${slug}:`, error);
     return null;
