@@ -355,12 +355,20 @@ export default function MarketTrendsPage() {
                               "{product.aiReason}"
                           </p>
 
-                          <button 
-                            onClick={() => handleFastDeploy(product)}
-                            className="w-full bg-gray-900 text-white text-xs font-bold py-2 rounded hover:bg-black transition-colors flex items-center justify-center gap-1 group-hover:scale-[1.02]"
-                          >
-                              ⚡ Fast Deploy
-                          </button>
+                          <div className="flex gap-2">
+                            <button 
+                                onClick={() => router.push(`/admin/ad-spy?q=${encodeURIComponent(product.name)}&country=${product.currency === 'EUR' ? 'DE' : 'US'}`)}
+                                className="flex-1 bg-white border border-gray-300 text-gray-700 text-xs font-bold py-2 rounded hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                            >
+                                🕵️ Spy Now
+                            </button>
+                            <button 
+                                onClick={() => handleFastDeploy(product)}
+                                className="flex-1 bg-gray-900 text-white text-xs font-bold py-2 rounded hover:bg-black transition-colors flex items-center justify-center gap-1 group-hover:scale-[1.02]"
+                            >
+                                ⚡ Fast Deploy
+                            </button>
+                          </div>
                       </div>
                   ))}
               </div>
