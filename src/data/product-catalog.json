@@ -4,13 +4,17 @@
             "id": "472942",
             "name": "Advanced Amino Formula",
             "vendor": "JohnPace",
-            "base_url": "https://www.digistore24.com/redir"
+            "base_url": "https://www.digistore24.com/redir",
+            "google_ads_id": "AW-111222333",
+            "google_ads_label": "AminoConversionLabel"
         },
         "tube-mastery": {
             "id": "299134",
             "name": "Tube Mastery and Monetization",
             "vendor": "JohnPace",
-            "base_url": "https://www.digistore24.com/redir"
+            "base_url": "https://www.digistore24.com/redir",
+            "google_ads_id": "AW-444555666",
+            "google_ads_label": "TubeConversionLabel"
         }
     }
 }

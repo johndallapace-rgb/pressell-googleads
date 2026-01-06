@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use unified scraper logic
-    const cleanText = await scrapeAndClean(official_url);
+    const { text: cleanText, image_url: scrapedImage } = await scrapeAndClean(official_url);
 
       // Define Strategy Context
     let strategyContext = "";
@@ -134,9 +134,8 @@ export async function POST(request: NextRequest) {
 
     const result: ImportResult = {
         ...data,
-        // We removed manual image extraction in scraper to save time/complexity, 
-        // rely on AI guess or placeholder.
-        image_url: data.image_url 
+        // Prioritize AI suggestion if valid, otherwise fallback to Scraper found image
+        image_url: (data.image_url && data.image_url.startsWith('http')) ? data.image_url : scrapedImage 
     };
 
     return NextResponse.json(result);

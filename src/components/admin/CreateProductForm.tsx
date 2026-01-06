@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAffiliateId } from '@/lib/affiliate-mapping';
+import productCatalog from '@/data/product-catalog.json';
 
 export default function CreateProductForm() {
   const router = useRouter();
@@ -13,6 +14,10 @@ export default function CreateProductForm() {
 
   // Platform Context
   const importedPlatform = searchParams.get('platform');
+  const importUrlParam = searchParams.get('import');
+  const catalogId = searchParams.get('catalogId');
+  const catalogSlug = searchParams.get('catalogSlug');
+  
   const [platformId, setPlatformId] = useState('');
 
   const [formData, setFormData] = useState({
@@ -46,6 +51,35 @@ export default function CreateProductForm() {
   const [importUrl, setImportUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [variantStrategy, setVariantStrategy] = useState<'standard' | 'pain' | 'dream'>('standard');
+  const [competitorAds, setCompetitorAds] = useState('');
+
+  // Auto-fill from Catalog & Params
+  useEffect(() => {
+    // 1. Auto-fill from Catalog ID if present
+    if (catalogId && catalogSlug) {
+         // @ts-ignore
+         const catalogItem = productCatalog.products[catalogSlug];
+         if (catalogItem) {
+             setFormData(prev => ({
+                 ...prev,
+                 affiliate_url: `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}`,
+                 google_ads_id: catalogItem.google_ads_id || prev.google_ads_id,
+                 google_ads_label: catalogItem.google_ads_label || prev.google_ads_label
+             }));
+             setMessage({ type: 'success', text: `⚡ Industrial Mode: ID ${catalogItem.id} injected from Catalog.` });
+         }
+    }
+
+    // 2. Handle Import Param (Auto-Scrape)
+    if (importUrlParam && !importing && !importUrl) {
+        setImportUrl(importUrlParam);
+        // Wait a tick for state to update then trigger
+        setTimeout(() => {
+            const btn = document.getElementById('auto-import-btn');
+            if (btn) btn.click();
+        }, 500);
+    }
+  }, [catalogId, catalogSlug, importUrlParam]);
 
   // Auto-fill Affiliate ID if Platform detected
   useEffect(() => {
@@ -227,6 +261,7 @@ export default function CreateProductForm() {
                 className="flex-1 border rounded px-3 py-2 text-base text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black"
               />
               <button 
+                id="auto-import-btn"
                 onClick={handleImport}
                 disabled={importing || !importUrl}
                 className="bg-purple-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
@@ -283,6 +318,21 @@ export default function CreateProductForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Competitor Spy Field */}
+        <div className="bg-gray-50 p-4 rounded border border-gray-200">
+            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                🕵️ Competitor Ad Spy (SearchFrom)
+            </h3>
+            <p className="text-xs text-gray-500 mb-2">Paste ads or keywords here to help Gemini generate better copy.</p>
+            <textarea
+                value={competitorAds}
+                onChange={(e) => setCompetitorAds(e.target.value)}
+                placeholder="Paste ad copy, headlines, or keywords from competitors here..."
+                className="w-full border rounded p-2 text-sm h-24 text-black placeholder:text-gray-400"
+            />
+        </div>
+
         {formData.google_ads_headlines.length > 0 && (
             <div className="bg-blue-50 p-4 rounded border border-blue-100 mb-6">
                 <h3 className="font-bold text-blue-800 mb-2">📢 Generated Google Ads Copy</h3>

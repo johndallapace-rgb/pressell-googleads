@@ -2,10 +2,10 @@ import * as cheerio from 'cheerio';
 import { generateContent } from './gemini';
 
 /**
- * Scrapes a URL, cleans the HTML, and extracts relevant text.
+ * Scrapes a URL, cleans the HTML, and extracts relevant text + main image.
  * If the content exceeds 20k characters, it uses Gemini to summarize it.
  */
-export async function scrapeAndClean(url: string): Promise<string> {
+export async function scrapeAndClean(url: string): Promise<{ text: string, image_url: string | null }> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
@@ -28,7 +28,37 @@ export async function scrapeAndClean(url: string): Promise<string> {
     const html = await res.text();
     const $ = cheerio.load(html);
 
-    // 1. Remove unwanted elements
+    // 1. Extract Main Image (Before cleaning)
+    let mainImage: string | null = null;
+    
+    // Priority 1: Open Graph Image
+    const ogImage = $('meta[property="og:image"]').attr('content');
+    if (ogImage && ogImage.startsWith('http')) {
+        mainImage = ogImage;
+    }
+
+    // Priority 2: Twitter Image
+    if (!mainImage) {
+        const twImage = $('meta[name="twitter:image"]').attr('content');
+        if (twImage && twImage.startsWith('http')) {
+            mainImage = twImage;
+        }
+    }
+
+    // Priority 3: First large image in body
+    if (!mainImage) {
+        $('img').each((_, el) => {
+            const src = $(el).attr('src');
+            // Basic filter for size/relevance (skipping small icons/logos usually)
+            // Ideally we'd check dimensions but we can't without downloading.
+            // We look for keywords or assume main product image is early in DOM.
+            if (src && src.startsWith('http') && !src.includes('logo') && !src.includes('icon')) {
+                 if (!mainImage) mainImage = src; // Take first candidate
+            }
+        });
+    }
+
+    // 2. Remove unwanted elements
     $('script').remove();
     $('style').remove();
     $('noscript').remove();
@@ -111,8 +141,8 @@ export async function scrapeAndClean(url: string): Promise<string> {
             cleanedText = cleanedText.substring(0, 20000) + "\n...[TRUNCATED]";
         }
     }
-
-    return cleanedText;
+    
+    return { text: cleanedText, image_url: mainImage };
 
   } catch (error: any) {
     console.error('[Scraper] Error:', error);

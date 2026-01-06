@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCampaignConfig, ProductConfig, updateCampaignConfig } from '@/lib/config';
 import { extractYoutubeId } from '@/lib/youtube';
+import fs from 'fs';
+import path from 'path';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+
+const streamPipeline = promisify(pipeline);
 
 export const runtime = 'nodejs';
 
@@ -102,6 +108,45 @@ export async function POST(request: NextRequest) {
         console.warn('Invalid YouTube URL provided:', youtube_review_url);
     }
 
+    // 4.5 IMAGE DOWNLOAD AUTOMATION
+    let finalImageUrl = image_url || `/images/default-${vertical.toLowerCase()}.svg`;
+    
+    // If image is external URL, download it
+    if (finalImageUrl.startsWith('http')) {
+        try {
+            console.log(`[Auto-Asset] Downloading image from: ${finalImageUrl}`);
+            const res = await fetch(finalImageUrl);
+            if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
+            
+            // Determine extension
+            const contentType = res.headers.get('content-type');
+            let ext = '.jpg';
+            if (contentType === 'image/png') ext = '.png';
+            if (contentType === 'image/webp') ext = '.webp';
+            if (contentType === 'image/svg+xml') ext = '.svg';
+            
+            // Ensure directory exists
+            const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
+            if (!fs.existsSync(publicDir)) {
+                fs.mkdirSync(publicDir, { recursive: true });
+            }
+            
+            const fileName = `${finalSlug}${ext}`;
+            const filePath = path.join(publicDir, fileName);
+            
+            // Save file
+            if (res.body) {
+                // @ts-ignore - ReadableStream mismatch in Next.js types but works in Node runtime
+                await streamPipeline(res.body, fs.createWriteStream(filePath));
+                finalImageUrl = `/images/products/${fileName}`;
+                console.log(`[Auto-Asset] Image saved to: ${finalImageUrl}`);
+            }
+        } catch (e) {
+            console.error('[Auto-Asset] Failed to download image, keeping remote URL.', e);
+            // Fallback: keep remote URL
+        }
+    }
+
     // 5. Construct New Product
     const newProduct: ProductConfig = {
       slug: finalSlug,
@@ -122,7 +167,7 @@ export async function POST(request: NextRequest) {
       support_email: support_email || 'support@topproductofficial.com',
 
        // Content (Prefer passed values, fallback to defaults)
-      image_url: image_url || `/images/default-${vertical.toLowerCase()}.svg`,
+      image_url: finalImageUrl,
       headline: headline || `${name} Review: Key Facts, Benefits, and Who It’s For`,
       subheadline: subheadline || 'Independent-style overview based on official info and user feedback.',
       cta_text: 'Check Availability',
