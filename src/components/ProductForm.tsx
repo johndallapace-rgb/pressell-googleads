@@ -832,15 +832,40 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Image URL</label>
-            <input
-              type="text"
-              value={product.image_url}
-              onChange={e => handleChange('image_url', e.target.value)}
-              disabled={readOnly}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              placeholder="/images/product.svg or https://..."
-            />
+            <label className="block text-sm font-medium text-gray-700">Image URL <span className="text-red-500">*</span></label>
+            <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={product.image_url}
+                  onChange={e => handleChange('image_url', e.target.value)}
+                  disabled={readOnly}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  placeholder="https://... (or use File Upload below)"
+                />
+            </div>
+            {/* Simple File to Data URL Converter */}
+            <div className="mt-2">
+                 <label className="text-xs font-bold text-gray-500 uppercase">Or Upload File (Auto-Converts to URL)</label>
+                 <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            if (file.size > 800000) { // 800KB limit for KV safety
+                                alert('File too large for KV storage. Please use a URL or keep it under 800KB.');
+                                return;
+                            }
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                handleChange('image_url', reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mt-1"
+                 />
+            </div>
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700">AI Image Prompt (Suggestion)</label>

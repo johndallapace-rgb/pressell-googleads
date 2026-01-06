@@ -127,6 +127,13 @@ export function EditorialTemplate({ product }: Props) {
   return (
     <div className={`flex flex-col min-h-screen ${theme.font} ${theme.pageBg} text-gray-800 transition-colors duration-300`}>
       
+        {/* Updated Date - Top Discreet */}
+        <div className="bg-gray-50 border-b border-gray-100 py-1 text-center">
+            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
+                {updatedText}
+            </span>
+        </div>
+
         {/* Content Container */}
         <div className="container mx-auto px-4 py-8 max-w-3xl">
           
@@ -135,7 +142,6 @@ export function EditorialTemplate({ product }: Props) {
                
                <div className="mb-2 text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-2">
                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{product.vertical.toUpperCase()}</span>
-                   <span>{updatedText}</span>
                </div>
 
                <h1 className={`text-3xl md:text-5xl font-black leading-tight ${theme.headingColor} max-w-4xl mx-auto break-words`}>
