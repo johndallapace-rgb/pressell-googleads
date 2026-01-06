@@ -360,266 +360,106 @@ export default function CreateProductForm() {
         </div>
       )}
 
-      {/* Quick Scale / Import */}
-      <div className="mb-8 bg-purple-50 p-4 rounded border border-purple-100">
-          <h3 className="font-bold text-purple-800 mb-2 flex items-center gap-2">
-            🚀 Scale New Product with AI
-          </h3>
-          <p className="text-sm text-purple-600 mb-3">
-             Paste the official sales page URL below. The AI will analyze the copy, extract pain points, find images, and auto-configure the presell + Google Ads.
-          </p>
-          <div className="flex gap-2 mb-3">
-              <input 
-                type="url" 
-                value={importUrl}
-                onChange={handleImportUrlChange}
-                placeholder="https://official-product-site.com"
-                className="flex-1 border rounded px-3 py-2 text-base text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black"
-              />
-              <button 
-                id="auto-import-btn"
-                onClick={handleImport}
-                disabled={importing || !importUrl}
-                className="bg-purple-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {importing ? (
-                    <>
-                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Analyzing...
-                    </>
-                ) : (
-                    <>
-                        <span>✨</span> Generate Pre-sell
-                    </>
-                )}
-              </button>
-          </div>
-          
-          {/* Strategy Selector */}
-          <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                      type="radio" 
-                      name="strategy" 
-                      checked={variantStrategy === 'standard'}
-                      onChange={() => setVariantStrategy('standard')}
-                      className="text-purple-600 focus:ring-purple-500"
-                  />
-                  <span>Standard</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                      type="radio" 
-                      name="strategy" 
-                      checked={variantStrategy === 'pain'}
-                      onChange={() => setVariantStrategy('pain')}
-                      className="text-red-600 focus:ring-red-500"
-                  />
-                  <span className="text-red-800 font-medium">Focus: Pain (A)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                      type="radio" 
-                      name="strategy" 
-                      checked={variantStrategy === 'dream'}
-                      onChange={() => setVariantStrategy('dream')}
-                      className="text-green-600 focus:ring-green-500"
-                  />
-                  <span className="text-green-800 font-medium">Focus: Dream (B)</span>
-              </label>
-          </div>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-8">
         
-        {/* Step 1: Basic Data */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Step 1</span>
-                Basic Identity
-            </h3>
+        {/* Simplified Auto-Pilot Interface */}
+        <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-lg text-center">
             
-            <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Product Name *</label>
-                  <input 
-                    type="text" name="name" required
-                    value={formData.name} onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black text-lg font-medium"
-                    placeholder="Ex: Mitolyn"
-                  />
-                </div>
+            <div className="mb-8">
+                <h3 className="text-3xl font-black text-gray-900 mb-2">🚀 New Pre-sell Auto-Pilot</h3>
+                <p className="text-gray-500 text-lg">Paste the links below and let Gemini build the entire high-converting page for you.</p>
+            </div>
+
+            <div className="max-w-3xl mx-auto space-y-6 text-left">
                 
+                {/* 1. Official URL (Source of Truth) */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Slug (URL ID)</label>
-                  <input 
-                    type="text" name="slug"
-                    value={formData.slug} onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black font-mono text-sm"
-                    placeholder="mitolyn (auto-generated)"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vertical</label>
-                    <select 
-                        name="vertical" value={formData.vertical} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black bg-white"
-                    >
-                        <option value="health">Health</option>
-                        <option value="diy">DIY</option>
-                        <option value="pets">Pets</option>
-                        <option value="dating">Dating</option>
-                        <option value="finance">Finance</option>
-                        <option value="other">Other</option>
-                    </select>
-                   </div>
-                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-                    <select 
-                        name="language" value={formData.language} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black bg-white"
-                    >
-                        <option value="en">English 🇺🇸</option>
-                        <option value="pt">Portuguese 🇧🇷</option>
-                        <option value="es">Spanish 🇪🇸</option>
-                        <option value="fr">French 🇫🇷</option>
-                        <option value="de">German 🇩🇪</option>
-                        <option value="it">Italian 🇮🇹</option>
-                    </select>
-                   </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Step 2: Critical Links */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500"></div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Step 2</span>
-                Money Links (Critical)
-            </h3>
-            
-            <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Affiliate URL (Commission Link) *</label>
-                  <div className="relative">
+                    <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <span>🌐</span> Official Product Page URL
+                        <span className="text-xs font-normal text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100">AI Source</span>
+                    </label>
                     <input 
-                        type="url" name="affiliate_url" required
-                        value={formData.affiliate_url} onChange={handleChange}
-                        className={`w-full border-2 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none text-black font-mono text-sm ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-green-200 bg-green-50'}`}
-                        placeholder={importedPlatform === 'Digistore24' ? `https://www.digistore24.com/redir/PRODUCT_ID/${platformId || 'AFFILIATE_ID'}` : "https://hop.clickbank.net/..."}
-                    />
-                  </div>
-                  {!formData.affiliate_url && <p className="text-xs text-red-600 mt-1 font-bold animate-pulse">⚠️ REQUIRED TO ENABLE CREATION</p>}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Official Site URL</label>
-                      <input 
-                        type="url" name="official_url" required
-                        value={formData.official_url} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
-                        placeholder="https://product.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Review URL</label>
-                      <input 
-                        type="url" name="youtube_review_url" required
-                        value={formData.youtube_review_url} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
-                        placeholder="https://youtube.com/watch?v=..."
-                      />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Step 3: Intelligence & Tracking */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Step 3</span>
-                Intelligence & Safety
-            </h3>
-
-            {/* Competitor Spy Field */}
-            <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6">
-                <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2 text-sm">
-                    🕵️ Competitor Copy (Ad Spy)
-                </h3>
-                <textarea
-                    value={competitorAds}
-                    onChange={(e) => setCompetitorAds(e.target.value)}
-                    placeholder="Paste ad copy, headlines, or keywords from competitors here..."
-                    className="w-full border rounded p-2 text-sm h-20 text-black placeholder:text-gray-400"
-                />
-            </div>
-
-            {/* Negative Keywords Section - Highlighted */}
-            <div className="bg-red-50 p-5 rounded-lg border border-red-100 mb-6">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-red-800 flex items-center gap-2">
-                        ⛔ Negative Keywords (Traffic Filter)
-                    </h3>
-                    <button 
-                        onClick={handleLoadNegatives}
-                        className="text-xs bg-white border border-red-200 hover:bg-red-100 text-red-700 px-3 py-1 rounded font-bold transition-colors shadow-sm"
-                    >
-                        📥 Load Standards
-                    </button>
-                </div>
-                <textarea
-                    value={formData.google_ads_negatives.join('\n')}
-                    onChange={(e) => setFormData(prev => ({ ...prev, google_ads_negatives: e.target.value.split('\n') }))}
-                    placeholder="free, login, support, crack..."
-                    className="w-full border border-red-200 rounded p-2 text-sm h-24 text-black placeholder:text-red-300 font-mono bg-white focus:ring-2 focus:ring-red-500 outline-none"
-                />
-                <p className="text-xs text-red-600 mt-1 font-medium">Filtering these keywords saves 30-40% of budget.</p>
-            </div>
-
-            {/* Tracking */}
-            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Google Ads Pixel ID</label>
-                    <input 
-                        type="text" name="google_ads_id"
-                        value={formData.google_ads_id} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm"
+                        type="url" 
+                        value={formData.official_url}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData(prev => ({ ...prev, official_url: val }));
+                            setImportUrl(val); // Sync for AI
+                        }}
+                        placeholder="https://official-product-site.com"
+                        className="w-full border-2 border-gray-300 rounded-xl px-5 py-4 text-xl text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
                     />
                 </div>
+
+                {/* 2. Affiliate URL (Money Link) */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Conversion Label</label>
+                    <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <span>💰</span> Your Affiliate Link (JohnPace)
+                        <span className="text-xs font-normal text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">Commission Target</span>
+                    </label>
                     <input 
-                        type="text" name="google_ads_label"
-                        value={formData.google_ads_label} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm"
+                        type="url" 
+                        value={formData.affiliate_url}
+                        onChange={(e) => setFormData(prev => ({ ...prev, affiliate_url: e.target.value }))}
+                        placeholder="https://hop.clickbank.net/?affiliate=johnpace..."
+                        className={`w-full border-2 rounded-xl px-5 py-4 text-xl font-mono text-black outline-none transition-all ${!formData.affiliate_url ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-green-300 bg-green-50 focus:border-green-500'}`}
+                    />
+                    {!formData.affiliate_url && (
+                        <p className="text-red-600 font-bold mt-2 animate-pulse flex items-center gap-2">
+                            ⚠️ Required: Paste your commission link to unlock the button.
+                        </p>
+                    )}
+                </div>
+
+                {/* 3. Pixel ID (Tracking) */}
+                <div>
+                    <label className="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">
+                        Google Ads Pixel ID (Optional)
+                    </label>
+                    <input 
+                        type="text" 
+                        value={formData.google_ads_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, google_ads_id: e.target.value }))}
+                        placeholder="AW-XXXXXXXX"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm bg-gray-50 focus:bg-white transition-colors"
                     />
                 </div>
+
             </div>
+
+            {/* Action Area */}
+            <div className="mt-10 pt-8 border-t border-gray-100">
+                <button 
+                    type="submit"
+                    disabled={loading || !formData.affiliate_url || !formData.official_url}
+                    className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-3"
+                >
+                    {loading ? (
+                        <>
+                            <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            BUILDING PRE-SELL...
+                        </>
+                    ) : (
+                        <>
+                            <span>🚀</span> GENERATE PRE-SELL WITH GEMINI
+                        </>
+                    )}
+                </button>
+                <p className="text-gray-400 text-sm mt-4">
+                    AI will auto-detect language, download images, and build the vertical layout.
+                </p>
+            </div>
+
         </div>
 
-        {/* Submit Action */}
-        <div className="pt-4 border-t flex justify-end sticky bottom-0 bg-white/90 p-4 backdrop-blur-sm border-t-gray-200 z-10">
-           <button 
-             type="submit" 
-             disabled={loading || !formData.affiliate_url}
-             className={`px-8 py-4 bg-black text-white font-black text-lg rounded-xl shadow-lg hover:bg-gray-800 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 flex items-center gap-3 ${loading || !formData.affiliate_url ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-           >
-             {loading ? 'Creating Product...' : (
-                <>
-                    <span>🚀</span> CREATE PRODUCT
-                </>
-             )}
-           </button>
+        {/* Hidden Fields for Compatibility */}
+        <div className="hidden">
+            <input type="text" name="name" value={formData.name} readOnly />
         </div>
+
       </form>
     </div>
   );
