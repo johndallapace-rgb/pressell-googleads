@@ -97,10 +97,13 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         - Fix common typos like "Finaly" -> "Finally", "Supercharing" -> "Supercharging".
         - Ensure perfect grammar and capitalization in the Headline.
         - Do not use all-caps for the entire headline.
+      - **SLUG OPTIMIZATION**: Generate a SHORT, clean slug (max 2-3 words).
+        - BAD: "mitolyn-metabolism-support-review-2024"
+        - GOOD: "mitolyn", "mitolyn-review", "mitolyn-official"
 
       OUTPUT JSON FORMAT (Strict):
       {
-        "slug": "kebab-case-slug",
+        "slug": "short-slug",
         "headline": "Main Headline (Correct Spelling)",
         "subheadline": "Subheadline (Persuasive & Clear)",
         "bullets": ["Benefit 1", "Benefit 2", "Benefit 3"],
@@ -183,10 +186,20 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     // @ts-ignore
     const catalogItem = Object.values(productCatalog.products).find((p: any) => p.name === name) as any;
 
+    // Enforce Short Slug Logic in Code (Double Safety)
+    let finalSlug = data.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (finalSlug.split('-').length > 3) {
+         // If slug is too long (> 3 words), truncate to first 2 words or just name
+         const parts = finalSlug.split('-');
+         finalSlug = parts.slice(0, 2).join('-');
+         console.log(`[Auto-Create] Slug shortened: ${data.slug} -> ${finalSlug}`);
+    }
+
     const newProduct: ProductConfig = {
-        slug: data.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        slug: finalSlug,
         name: name,
-        vertical: (data.vertical || 'health') as any,
+        vertical: (data.vertical || 'health') as any, // This is saved to KV
+        subdomain: (data.vertical || 'health') as string, // Explicitly save subdomain for routing
         language: country.toLowerCase(),
         template: 'editorial',
         status: 'active',

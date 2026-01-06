@@ -1,9 +1,12 @@
-import { createClient } from '@vercel/edge-config';
+import { kv } from '@vercel/kv';
 import { defaultConfig } from '@/data/defaultConfig';
 
-export const configClient = process.env.EDGE_CONFIG 
-  ? createClient(process.env.EDGE_CONFIG) 
-  : null;
+// Removed Edge Config client
+// export const configClient = process.env.EDGE_CONFIG 
+//   ? createClient(process.env.EDGE_CONFIG) 
+//   : null;
+// We now use 'kv' directly imported from @vercel/kv which auto-configures 
+// using KV_REST_API_URL and KV_REST_API_TOKEN env vars.
 
 export type SeoConfig = {
   title: string;
@@ -100,6 +103,9 @@ export type ProductConfig = {
   testimonials?: Testimonial[];
   quiz?: QuizConfig;
   
+  // New Fields for Global Scaling
+  subdomain?: string; // e.g. "health", "finance"
+
   // Ads Module Configuration
   ads?: AdsConfig;
 };
@@ -125,15 +131,9 @@ export interface CampaignConfig {
 }
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
-  if (!configClient) {
-    // Only warn if we expect it to work (env var is present)
-    if (process.env.EDGE_CONFIG) console.warn('EDGE_CONFIG client not initialized');
-    return defaultConfig;
-  }
-  
   try {
-    // Fetch as unknown to handle string or object
-    let config = await configClient.get('campaign_config');
+    // Fetch from Vercel KV
+    let config = await kv.get<CampaignConfig>('campaign_config');
 
     // Handle stringified JSON (common issue in Vercel env vars sometimes)
     if (typeof config === 'string') {
@@ -153,7 +153,7 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
     }
     return defaultConfig;
   } catch (error) {
-    console.error('Error fetching Edge Config:', error);
+    console.error('Error fetching Vercel KV:', error);
     return defaultConfig;
   }
 }
@@ -207,9 +207,8 @@ export interface CampaignMetrics {
 }
 
 export async function getCampaignMetrics(): Promise<CampaignMetrics> {
-    if (!configClient) return {};
     try {
-        return await configClient.get<CampaignMetrics>('campaign_metrics') || {};
+        return await kv.get<CampaignMetrics>('campaign_metrics') || {};
     } catch (error) {
         console.error('Error fetching metrics:', error);
         return {};
@@ -217,45 +216,11 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 }
 
 export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.VERCEL_API_TOKEN || !process.env.EDGE_CONFIG_ID) {
-    console.error('Missing VERCEL_API_TOKEN or EDGE_CONFIG_ID');
-    return { success: false, error: 'Missing VERCEL_API_TOKEN or EDGE_CONFIG_ID in Vercel Environment Variables.' };
-  }
-
   try {
-    const response = await fetch(
-      `https://api.vercel.com/v1/edge-config/${process.env.EDGE_CONFIG_ID}/items`,
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${process.env.VERCEL_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              operation: 'upsert',
-              key: 'campaign_config',
-              value: newConfig,
-            },
-          ],
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error updating Edge Config:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-      return { success: false, error: `Vercel API Error: ${response.statusText} - ${errorText}` };
-    }
-
+    await kv.set('campaign_config', newConfig);
     return { success: true };
   } catch (error: any) {
-    console.error('Error updating Edge Config:', error);
+    console.error('Error updating Vercel KV:', error);
     return { success: false, error: error.message };
   }
 }
