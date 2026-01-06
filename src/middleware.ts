@@ -97,6 +97,9 @@ export async function middleware(request: NextRequest) {
       // If path is just /de, maybe redirect to home? For now, we assume product slug follows.
       const slugPart = pathParts.slice(1).join('/');
       realSlug = slugPart ? `/${slugPart}` : '/';
+  } else {
+      // Not a locale, treat as root path slug
+      realSlug = pathname;
   }
 
   // Rewrite Logic
@@ -113,6 +116,10 @@ export async function middleware(request: NextRequest) {
           // If the cleanSlug is empty (root), we might handle differently, but assuming product pages:
           if (cleanSlug) {
               url.pathname = `/${cleanSlug}-${locale}`;
+          } else {
+              // If it's just /de/, we might want to show a home page or 404 if no slug
+              // For now, let it fall through or rewrite to a locale-specific home if exists
+              // url.pathname = `/${locale}-home`; // Example
           }
       } else if (subdomain && url.pathname === '/') {
           // Subdomain root rewrite (legacy support)
