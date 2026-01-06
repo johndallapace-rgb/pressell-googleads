@@ -38,17 +38,24 @@ export default function AdSpyPage() {
     setLoading(true);
 
     try {
-        // 1. Redirect to Create Product with all context
-        // We encode everything to pass to the creation form which will handle the heavy lifting
-        const query = new URLSearchParams({
-            import: targetUrlParam,
-            name: searchQuery, // Best guess
-            competitor_ads: competitorCopy,
-            country: targetCountry,
-            auto_start: 'true' // Signal to start process immediately
-        }).toString();
+        // 1. Call Auto-Create API
+        const res = await fetch('/api/admin/products/auto-create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                importUrl: targetUrlParam,
+                name: searchQuery,
+                competitorAds: competitorCopy,
+                country: targetCountry
+            })
+        });
 
-        router.push(`/admin/products/new?${query}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to auto-create product');
+
+        // 2. Redirect to My Products
+        router.push('/admin/products');
+        router.refresh();
 
     } catch (e: any) {
         alert('Failed: ' + e.message);

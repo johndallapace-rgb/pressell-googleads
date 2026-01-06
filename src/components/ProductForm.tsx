@@ -52,11 +52,103 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
   const [aiPromptData, setAiPromptData] = useState({ productName: '', niche: 'health', competitorText: '', tone: 'persuasive', layout: 'editorial' });
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
+  // New State for Negatives
+  const [negatives, setNegatives] = useState<string[]>([]);
+  const [reGenerating, setReGenerating] = useState(false);
+
   useEffect(() => {
     if (initialProduct?.ab_test?.enabled) {
         setAbTestEnabled(true);
     }
+    // Initialize Negatives from first campaign/adGroup if available
+    if (initialProduct?.ads?.campaigns?.[0]?.adGroups?.[0]?.negativeKeywords) {
+        setNegatives(initialProduct.ads.campaigns[0].adGroups[0].negativeKeywords);
+    }
   }, [initialProduct]);
+
+  // Sync negatives back to product state before submit
+  useEffect(() => {
+      if (negatives.length > 0) {
+          setProduct(prev => {
+              // Deep clone or safe update
+              const newAds = prev.ads ? { ...prev.ads } : {
+                  status: 'ready',
+                  campaigns: [{
+                      campaignName: `${prev.name} - Search`,
+                      adGroups: [{ name: 'General', keywords: [], ads: [], negativeKeywords: [] }]
+                  }]
+              };
+              
+              // Ensure structure exists
+              if (!newAds.campaigns) newAds.campaigns = [];
+              if (!newAds.campaigns[0]) newAds.campaigns[0] = { campaignName: '', adGroups: [] };
+              if (!newAds.campaigns[0].adGroups) newAds.campaigns[0].adGroups = [];
+              if (!newAds.campaigns[0].adGroups[0]) newAds.campaigns[0].adGroups[0] = { name: '', keywords: [], ads: [] };
+
+              newAds.campaigns[0].adGroups[0].negativeKeywords = negatives;
+              
+              return { ...prev, ads: newAds as any };
+          });
+      }
+  }, [negatives]);
+
+  const handleReGenerateMagic = async () => {
+      if (!product.official_url) return alert('Official URL is required.');
+      if (!confirm('⚠️ This will overwrite your Headlines, Bullets, Images, and Ads with a fresh AI analysis. Continue?')) return;
+
+      setReGenerating(true);
+      try {
+        const res = await fetch('/api/admin/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                official_url: product.official_url,
+                strategy: 'standard' // Default for regen
+            })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        // Apply Magic
+        setProduct(prev => ({
+            ...prev,
+            headline: data.headline_suggestions?.[0] || prev.headline,
+            subheadline: data.subheadline_suggestions?.[0] || prev.subheadline,
+            bullets: data.bullets_suggestions || prev.bullets,
+            pain_points: data.pain_points || prev.pain_points,
+            unique_mechanism: data.unique_mechanism || prev.unique_mechanism,
+            image_url: data.image_url || prev.image_url,
+            seo: {
+                title: data.seo?.title || prev.seo.title,
+                description: data.seo?.description || prev.seo.description
+            },
+            // Also update Ads if present
+            ads: data.google_ads ? {
+                ...prev.ads,
+                campaigns: [{
+                    campaignName: `${prev.name} - Search`,
+                    adGroups: [{
+                        name: 'General Interest',
+                        keywords: [`${prev.name} reviews`, `buy ${prev.name}`],
+                        negativeKeywords: negatives, // Keep existing negatives
+                        ads: [{
+                            headlines: data.google_ads.headlines,
+                            descriptions: data.google_ads.descriptions,
+                            finalUrl: prev.official_url
+                        }]
+                    }]
+                }]
+            } : prev.ads
+        }));
+
+        alert('✨ Magic Re-generated! Content updated based on latest analysis.');
+
+      } catch (e: any) {
+        alert('Magic failed: ' + e.message);
+      } finally {
+        setReGenerating(false);
+      }
+  };
 
   const toggleAbTest = () => {
       const newState = !abTestEnabled;
@@ -510,10 +602,18 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                 </button>
                 <button 
                     type="button"
-                    onClick={handleGenerateDraft}
-                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                    onClick={handleReGenerateMagic}
+                    disabled={reGenerating || !product.official_url}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded text-sm font-bold hover:opacity-90 disabled:opacity-50 shadow-md flex items-center gap-2"
                 >
-                    Generate Template Draft
+                    {reGenerating ? (
+                        <>
+                            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Refining...
+                        </>
+                    ) : (
+                        '✨ Re-generate Magic'
+                    )}
                 </button>
             </div>
         </div>
@@ -793,6 +893,23 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
           />
         </div>
+        
+        {/* Negative Keywords Editor */}
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Negative Keywords (One per line)</label>
+            <textarea
+                value={negatives.join('\n')}
+                onChange={(e) => setNegatives(e.target.value.split('\n'))}
+                disabled={readOnly}
+                className="w-full border border-gray-300 rounded-md shadow-sm p-2 font-mono text-sm"
+                rows={5}
+                placeholder="free&#10;scam&#10;login"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+                These keywords prevent ads from showing on irrelevant searches.
+            </p>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Support Email</label>
           <input

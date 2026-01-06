@@ -11,99 +11,86 @@ interface ProductListProps {
 
 export default function ProductList({ products }: ProductListProps) {
   const router = useRouter();
-  const [cloning, setCloning] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  const handleClone = async (slug: string) => {
-      if (!confirm(`Clone product "${slug}"?`)) return;
+  const handleDelete = async (slug: string) => {
+      if (!confirm(`Are you sure you want to PERMANENTLY delete "${slug}"?\nThis will remove the page, config, images, and ads.`)) return;
       
-      setCloning(slug);
+      setDeleting(slug);
       try {
-          const res = await fetch('/api/admin/products/clone', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ slug })
+          const res = await fetch(`/api/admin/products?slug=${slug}`, {
+              method: 'DELETE'
           });
           const data = await res.json();
-          if (data.success) {
-              alert(`Product cloned! New slug: ${data.newSlug}`);
+          if (res.ok) {
               router.refresh();
           } else {
               throw new Error(data.error);
           }
       } catch (e: any) {
-          alert('Clone failed: ' + e.message);
+          alert('Delete failed: ' + e.message);
       } finally {
-          setCloning(null);
+          setDeleting(null);
       }
+  };
+
+  const getRealLink = (p: ProductConfig) => {
+      // Assuming localhost for dev, but ideally this comes from env
+      const host = window.location.host; 
+      const protocol = window.location.protocol;
+      return `${protocol}//${host}/${p.slug}`;
   };
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-        <h2 className="text-lg font-medium text-gray-900">All Products</h2>
-        <div className="flex gap-2">
-            <button 
-                onClick={() => window.open('/admin/import', '_self')}
-                className="bg-purple-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-purple-700 flex items-center gap-2 shadow-sm"
-            >
-                ✨ Generate with AI
-            </button>
-            <Link 
-              href="/admin/products/new" 
-              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50"
-            >
-              + Manual Add
-            </Link>
-        </div>
+      <div className="p-4 border-b border-gray-200 bg-gray-50">
+        <h2 className="text-lg font-bold text-gray-900">My Products</h2>
       </div>
       
       {products.length === 0 ? (
         <div className="p-8 text-center text-gray-500">
-          No products found. Create your first one!
+          No products found. Use "Market Trends" to spy and create one!
         </div>
       ) : (
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product Name</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Live Link (Pre-sell)</th>
+              <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.slug} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                      /{product.slug}
-                    </span>
-                  </div>
+                  <div className="text-sm font-bold text-gray-900">{product.name}</div>
+                  <div className="text-xs text-gray-500 uppercase">{product.vertical} • {product.language}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    product.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {product.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">
-                  {product.language}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-3">
-                  <button 
-                    onClick={() => handleClone(product.slug)}
-                    disabled={cloning === product.slug}
-                    className="text-gray-500 hover:text-gray-900 font-bold disabled:opacity-50"
-                    title="Clone Product"
+                  <a 
+                    href={`/${product.slug}`} 
+                    target="_blank" 
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
                   >
-                    {cloning === product.slug ? '...' : '📋 Clone'}
-                  </button>
-                  <Link href={`/admin/products/${product.slug}`} className="text-blue-600 hover:text-blue-900 font-bold">
-                    Edit
+                    🔗 /{product.slug}
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </a>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-3 items-center">
+                  <Link 
+                    href={`/admin/products/${product.slug}`} 
+                    className="text-indigo-600 hover:text-indigo-900 font-bold bg-indigo-50 px-3 py-1 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                  >
+                    ✏️ Edit
                   </Link>
+                  <button 
+                    onClick={() => handleDelete(product.slug)}
+                    disabled={deleting === product.slug}
+                    className="text-red-600 hover:text-red-900 font-bold bg-red-50 px-3 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                  >
+                    {deleting === product.slug ? 'Deleting...' : '🗑️ Delete'}
+                  </button>
                 </td>
               </tr>
             ))}

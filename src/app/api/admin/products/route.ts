@@ -246,3 +246,62 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const slug = searchParams.get('slug');
+
+    if (!slug) {
+        return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
+    }
+
+    // 1. Get Config
+    const currentConfig = await getCampaignConfig();
+    
+    if (!currentConfig.products || !currentConfig.products[slug]) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
+    // 2. Delete from Config
+    delete currentConfig.products[slug];
+    
+    // If active, unset it
+    if (currentConfig.active_product_slug === slug) {
+        currentConfig.active_product_slug = '';
+    }
+
+    // 3. Save Config
+    const result = await updateCampaignConfig(currentConfig);
+    if (!result.success) {
+        throw new Error(result.error);
+    }
+
+    // 4. Delete Image (Best Effort)
+    try {
+        const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
+        // We don't know the extension, try common ones
+        const extensions = ['.jpg', '.png', '.webp', '.svg'];
+        for (const ext of extensions) {
+            const filePath = path.join(publicDir, `${slug}${ext}`);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log(`[Delete] Removed image: ${filePath}`);
+            }
+        }
+    } catch (e) {
+        console.warn('[Delete] Failed to delete image files:', e);
+    }
+
+    return NextResponse.json({ success: true });
+
+  } catch (error: any) {
+    console.error('[Delete Product API] Error:', error);
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
