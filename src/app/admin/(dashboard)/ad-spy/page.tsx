@@ -1,70 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-
-interface Product {
-  slug: string;
-  name: string;
-  vertical: string;
-}
-
-interface AdVariation {
-  name: string;
-  headlines: string[];
-  descriptions: string[];
-}
-
-interface SpyResult {
-  analysis: string;
-  variations: AdVariation[];
-}
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function AdSpyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // URL Params - Source of Truth
   const queryParam = searchParams.get('q') || '';
   const countryParam = searchParams.get('country') || 'US';
   const targetUrlParam = searchParams.get('targetUrl') || '';
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
+  // Local State
   const [competitorCopy, setCompetitorCopy] = useState('');
-  // Removed manual competitorUrl state, using param
-  
   const [searchQuery, setSearchQuery] = useState(queryParam);
   const [targetCountry, setTargetCountry] = useState(countryParam);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState<string | null>(null);
-  const [result, setResult] = useState<SpyResult | null>(null);
 
-  // Sync params if changed
+  // Sync params if changed (Correction: Handle direct navigation or deep links)
   useEffect(() => {
     if (queryParam) setSearchQuery(queryParam);
     if (countryParam) setTargetCountry(countryParam);
   }, [queryParam, countryParam]);
-
-  // Fetch products for dropdown
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/admin/products');
-        const data = await res.json();
-        if (data.products) {
-            const list = Object.entries(data.products).map(([slug, p]: any) => ({
-                slug,
-                name: p.name,
-                vertical: p.vertical
-            }));
-            setProducts(list);
-        }
-      } catch (e) {
-        console.error('Failed to load products', e);
-      }
-    }
-    fetchProducts();
-  }, []);
 
   const handleGenerateWinner = async () => {
     if (!competitorCopy.trim()) {
@@ -78,7 +36,6 @@ export default function AdSpyPage() {
     }
 
     setLoading(true);
-    setResult(null);
 
     try {
         // 1. Redirect to Create Product with all context
