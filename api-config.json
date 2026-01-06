@@ -1,0 +1,19 @@
+{
+  "google_ads": {
+    "developer_token": "",
+    "client_id": "",
+    "client_secret": "",
+    "refresh_token": "",
+    "login_customer_id": "",
+    "status": "pending_approval"
+  },
+  "tracking": {
+    "enable_server_side": false,
+    "fallback_aff_sub": true,
+    "parameter_map": {
+      "country": "aff_sub",
+      "click_id": "aff_sub2",
+      "source": "aff_sub3"
+    }
+  }
+}

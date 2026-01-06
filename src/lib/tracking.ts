@@ -1,79 +1,46 @@
-'use client';
 
-export const TRACKING_PARAMS = [
-  'gclid', 
-  'gbraid', 
-  'wbraid', 
-  'utm_source', 
-  'utm_medium', 
-  'utm_campaign', 
-  'utm_content', 
-  'utm_term'
-];
-
-export function captureTrackingParams(searchParams: URLSearchParams) {
-  if (typeof window === 'undefined') return;
+/**
+ * Generates the external tracking ID for Digistore24/ClickBank
+ * Format: [campaign]_[language]_[product]
+ * Example: googleads_de_amino
+ */
+export function generateExternalTrackId(campaignSource: string, locale: string, productSlug: string): string {
+  // Clean inputs
+  const source = (campaignSource || 'googleads').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const lang = (locale || 'en').toLowerCase();
+  const slug = (productSlug || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, ''); // simplified slug
   
-  TRACKING_PARAMS.forEach(key => {
-    const value = searchParams.get(key);
-    if (value) {
-      localStorage.setItem(`tracking_${key}`, value);
-    }
-  });
+  return `${source}_${lang}_${slug}`;
 }
 
-export function getStoredTrackingParams(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
+/**
+ * Appends tracking parameters to an affiliate URL
+ */
+export function appendTrackingParams(url: string, trackId: string, locale?: string): string {
+  if (!url) return '';
   
-  const params: Record<string, string> = {};
-  TRACKING_PARAMS.forEach(key => {
-    const value = localStorage.getItem(`tracking_${key}`);
-    if (value) {
-      params[key] = value;
-    }
-  });
-  return params;
-}
-
-export function buildOutgoingUrl(baseUrl: string): string {
-  if (typeof window === 'undefined') return baseUrl;
+  const separator = url.includes('?') ? '&' : '?';
   
-  try {
-    const url = new URL(baseUrl);
-    const storedParams = getStoredTrackingParams();
-    
-    Object.entries(storedParams).forEach(([key, value]) => {
-      // Don't overwrite if the base URL already has it
-      if (!url.searchParams.has(key)) {
-        url.searchParams.set(key, value);
-      }
-    });
-    
-    return url.toString();
-  } catch {
-    console.error('Invalid URL:', baseUrl);
-    return baseUrl;
+  // Basic Tracking: External Track ID (for postback)
+  let params = `external_track_id=${trackId}&tid=${trackId}`;
+  
+  // Visual Tracking (John's Request): ?aff_sub=[COUNTRY]
+  // This allows quick visual check in Digistore dashboard
+  if (locale) {
+      // Map locale to country code (approximate)
+      // de -> DE, uk -> GB, fr -> FR
+      const countryMap: Record<string, string> = {
+          'de': 'DE',
+          'uk': 'GB',
+          'fr': 'FR',
+          'it': 'IT',
+          'es': 'ES',
+          'us': 'US',
+          'en': 'US' // default en to US usually
+      };
+      const country = countryMap[locale.toLowerCase()] || locale.toUpperCase();
+      params += `&aff_sub=${country}`;
   }
-}
-
-export function trackEvent(eventName: string, data: Record<string, unknown> = {}) {
-  if (typeof window !== 'undefined') {
-    window.dataLayer = window.dataLayer || [];
-    
-    // Add path to all events
-    const path = window.location.pathname;
-    
-    window.dataLayer.push({
-      event: eventName,
-      path: path,
-      ...data
-    });
-  }
-}
-
-// Type augmentation for window
-declare global {
-  interface Window {
-    dataLayer: Record<string, unknown>[];
-  }
+  
+  return `${url}${separator}${params}`;
 }

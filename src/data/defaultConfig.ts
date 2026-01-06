@@ -115,6 +115,9 @@ export const defaultConfig: CampaignConfig = {
       affiliate_url: "https://www.digistore24.com/redir/123456/JohnPace",
       youtube_review_id: "dQw4w9WgXcQ", 
       image_url: "/images/amino.svg",
+      google_ads_id: "AW-123456789", // Mock ID
+      google_ads_label: "AbCdEfGhIjKlM",
+      meta_pixel_id: "9876543210", // Mock ID
       headline: "Advanced Amino Formula: Der fehlende Schlüssel für Langlebigkeit?",
       subheadline: "Warum Biohacker auf diese essenziellen Aminosäuren schwören – Eine unabhängige Analyse.",
       cta_text: "Verfügbarkeit prüfen",
@@ -268,6 +271,8 @@ export const defaultConfig: CampaignConfig = {
       affiliate_url: "https://www.digistore24.com/redir/299134/JohnPace",
       youtube_review_id: "dQw4w9WgXcQ",
       image_url: "/images/tube.svg",
+      google_ads_id: "AW-987654321", // Mock ID
+      meta_pixel_id: "1234509876", // Mock ID
       headline: "Tube Mastery : Gagner sa vie sur YouTube sans montrer son visage ?",
       subheadline: "Analyse du système de Matt Par. Est-ce une opportunité réelle pour 2026 ?",
       cta_text: "Voir la Formation Gratuite",

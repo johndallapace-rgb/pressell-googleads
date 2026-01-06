@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import brandSettings from '../../../../brand-settings.json';
 
 interface BrandFooterProps {
   vertical?: string;
@@ -74,7 +75,7 @@ export function BrandFooter({ vertical = 'general', supportEmail, locale = 'en' 
 
         {/* Copyright */}
         <p className="pt-2 text-xs text-gray-600">
-          © {year} TopProductDigest. {t.rights}
+          © {year} {brandSettings.logo_text}. {t.rights}
         </p>
       </div>
     </footer>

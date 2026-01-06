@@ -4,11 +4,12 @@ import { PageProps } from '@/types';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { StoryTemplate } from '@/components/templates/StoryTemplate';
 import { ComparisonTemplate } from '@/components/templates/ComparisonTemplate';
-import Script from 'next/script';
 import { getCampaignConfig } from '@/lib/campaignConfig';
 import LayoutShell from '@/components/LayoutShell';
 import { getVerticalFromHost } from '@/lib/host';
 import { headers } from 'next/headers';
+import { TrackingManager } from '@/components/analytics/TrackingManager';
+import { generateExternalTrackId, appendTrackingParams } from '@/lib/tracking';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -107,76 +108,38 @@ export default async function CatchAllProductPage({ params }: PageProps) {
       return notFound();
     }
 
-    const productWithLocale = { ...product, activeLocale: lang };
+    // --- Tracking Setup ---
+    const externalTrackId = generateExternalTrackId('googleads', lang, slug);
+    // Add locale to appendTrackingParams for visual country tracking (aff_sub)
+    const trackedAffiliateUrl = appendTrackingParams(product.affiliate_url, externalTrackId, lang);
+    
+    const productWithLocale = { 
+        ...product, 
+        activeLocale: lang,
+        affiliate_url: trackedAffiliateUrl // Override with tracked URL
+    };
     
     // Defaults
     const vertical = product.vertical || detectedVertical || 'general';
     const templateType = product.template || 'editorial';
-    const activeVariantId = 'control';
+    
+    // Tracking IDs
     const googleAdsId = product.google_ads_id;
-    const googleAdsLabel = product.google_ads_label || '';
-
-    // Tracking Script
-    const trackingScript = `
-      (function() {
-        fetch('/api/track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                slug: '${slug}', 
-                locale: '${lang}',
-                variant: '${activeVariantId}', 
-                event: 'view',
-                ts: Date.now()
-            })
-        }).catch(console.error);
-        
-        document.addEventListener('click', function(e) {
-            const target = e.target.closest('a');
-            if (target && target.href.includes('/go/${slug}')) {
-                 fetch('/api/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        slug: '${slug}', 
-                        locale: '${lang}',
-                        variant: '${activeVariantId}', 
-                        event: 'click',
-                        ts: Date.now(),
-                        dest: 'go'
-                    })
-                }).catch(console.error);
-
-                if (typeof gtag === 'function' && '${googleAdsId}') {
-                    const label = '${googleAdsLabel}';
-                    const sendTo = '${googleAdsId}' + (label ? '/' + label : '');
-                    gtag('event', 'conversion', { 'send_to': sendTo });
-                }
-            }
-        });
-      })();
-    `;
+    const googleAdsLabel = product.google_ads_label;
+    const metaPixelId = product.meta_pixel_id; // Assuming this field exists or will exist
 
     return (
       <LayoutShell vertical={vertical} supportEmail={product.support_email} locale={lang}>
-        {googleAdsId && (
-            <>
-                <Script 
-                    src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`} 
-                    strategy="afterInteractive" 
-                />
-                <Script id="google-ads-config" strategy="afterInteractive">
-                    {`
-                        window.dataLayer = window.dataLayer || [];
-                        function gtag(){dataLayer.push(arguments);}
-                        gtag('js', new Date());
-                        gtag('config', '${googleAdsId}');
-                    `}
-                </Script>
-            </>
-        )}
+        
+        {/* Centralized Tracking Manager */}
+        <TrackingManager 
+            googleAdsId={googleAdsId}
+            googleAdsLabel={googleAdsLabel}
+            metaPixelId={metaPixelId}
+            slug={slug}
+            locale={lang}
+        />
 
-        <Script id="ab-tracking" dangerouslySetInnerHTML={{ __html: trackingScript }} strategy="afterInteractive" />
         {(() => {
           switch (templateType) {
               case 'story': return <StoryTemplate product={productWithLocale} />;
