@@ -14,8 +14,8 @@ export function Testimonials({ testimonials, productName }: TestimonialsProps) {
   ];
 
   return (
-    <section className="bg-white py-12 rounded-2xl shadow-sm border border-gray-100 my-12">
-      <h2 className="text-2xl font-bold mb-10 text-center text-gray-900">
+    <section className="bg-white py-12 rounded-2xl shadow-sm border border-gray-100 my-12 mx-4 md:mx-0">
+      <h2 className="text-2xl font-bold mb-10 text-center text-gray-900 px-4">
         Real Feedback from Real Users
       </h2>
       <div className="grid md:grid-cols-3 gap-6 px-6">

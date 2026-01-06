@@ -138,20 +138,20 @@ export function EditorialTemplate({ product }: Props) {
                    <span>{updatedText}</span>
                </div>
 
-               <h1 className={`text-3xl md:text-5xl font-black leading-tight ${theme.headingColor}`}>
+               <h1 className={`text-3xl md:text-5xl font-black leading-tight ${theme.headingColor} max-w-4xl mx-auto break-words`}>
                    {product.headline}
                </h1>
                
-               <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+               <p className="text-lg md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-4">
                    {product.subheadline}
                </p>
 
                {/* Centralized Image */}
-               <div className="w-full max-w-lg mx-auto my-6 rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.01] transition-transform duration-500">
+               <div className="w-full max-w-lg mx-auto my-6 rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.01] transition-transform duration-500 bg-gray-100">
                    <img 
                        src={product.image_url || '/images/placeholders/health-default.jpg'} 
                        alt={product.name}
-                       className="w-full h-auto object-cover"
+                       className="w-full h-auto object-cover min-h-[300px]"
                        onError={(e) => {
                            // Fallback if image fails
                            e.currentTarget.src = '/images/placeholders/health-default.jpg';

@@ -93,7 +93,10 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
       - Write in the NATIVE language of the target market.
       - Create a "Shadow Persona" for the review (impartial but persuasive).
       - If Competitor Ads are provided, write headlines that are clearly superior (more specific, higher curiosity).
-      - **CRITICAL**: Proofread all output. Ensure no spelling mistakes in the Headline or Subheadline. Use proper capitalization and grammar.
+      - **CRITICAL**: Perform a strict SPELL-CHECK on all output. 
+        - Fix common typos like "Finaly" -> "Finally", "Supercharing" -> "Supercharging".
+        - Ensure perfect grammar and capitalization in the Headline.
+        - Do not use all-caps for the entire headline.
 
       OUTPUT JSON FORMAT (Strict):
       {
