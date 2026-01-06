@@ -225,7 +225,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         // Tracking
         google_ads_id: catalogItem?.google_ads_id || '17850696537',
         google_ads_label: catalogItem?.google_ads_label,
-        support_email: 'support@topproductofficial.com',
+        support_email: 'support@topproductofficial.com', // FORCE SUPPORT EMAIL
         
         // Ads
         ads: {

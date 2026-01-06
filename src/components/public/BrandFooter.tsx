@@ -68,9 +68,10 @@ export function BrandFooter({ vertical = 'general', supportEmail, locale = 'en' 
                <Link href="/legal/impressum" className="hover:text-white transition-colors">{t.impressum}</Link>
            )}
 
-           {supportEmail && (
-               <a href={`mailto:${supportEmail}`} className="hover:text-white transition-colors">{t.contact}</a>
-           )}
+           {/* MANDATORY SUPPORT EMAIL FOR ADS COMPLIANCE */}
+           <a href={`mailto:${supportEmail || 'support@topproductofficial.com'}`} className="hover:text-white transition-colors">
+               {t.contact}
+           </a>
         </div>
 
         {/* Copyright */}
