@@ -604,15 +604,17 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                     type="button"
                     onClick={handleReGenerateMagic}
                     disabled={reGenerating || !product.official_url}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded text-sm font-bold hover:opacity-90 disabled:opacity-50 shadow-md flex items-center gap-2"
+                    className="bg-black text-white px-6 py-2 rounded text-sm font-black hover:bg-gray-800 disabled:opacity-50 shadow-lg flex items-center gap-2 transform hover:scale-105 transition-all border-2 border-transparent hover:border-purple-500"
                 >
                     {reGenerating ? (
                         <>
                             <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Refining...
+                            RE-GENERATING MAGIC...
                         </>
                     ) : (
-                        '✨ Re-generate Magic'
+                        <>
+                            <span className="text-lg">✨</span> RE-GENERATE AI CONTENT
+                        </>
                     )}
                 </button>
             </div>
