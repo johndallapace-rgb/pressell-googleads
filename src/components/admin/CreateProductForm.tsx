@@ -343,227 +343,191 @@ export default function CreateProductForm() {
           </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         
-        {/* Competitor Spy Field */}
-        <div className="bg-gray-50 p-4 rounded border border-gray-200">
-            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                🕵️ Competitor Ad Spy (SearchFrom)
+        {/* Step 1: Basic Data */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Step 1</span>
+                Basic Identity
             </h3>
-            <p className="text-xs text-gray-500 mb-2">Paste ads or keywords here to help Gemini generate better copy.</p>
-            <textarea
-                value={competitorAds}
-                onChange={(e) => setCompetitorAds(e.target.value)}
-                placeholder="Paste ad copy, headlines, or keywords from competitors here..."
-                className="w-full border rounded p-2 text-sm h-24 text-black placeholder:text-gray-400"
-            />
+            
+            <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Product Name *</label>
+                  <input 
+                    type="text" name="name" required
+                    value={formData.name} onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black text-lg font-medium"
+                    placeholder="Ex: Mitolyn"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Slug (URL ID)</label>
+                  <input 
+                    type="text" name="slug"
+                    value={formData.slug} onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-black font-mono text-sm"
+                    placeholder="mitolyn (auto-generated)"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vertical</label>
+                    <select 
+                        name="vertical" value={formData.vertical} onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black bg-white"
+                    >
+                        <option value="health">Health</option>
+                        <option value="diy">DIY</option>
+                        <option value="pets">Pets</option>
+                        <option value="dating">Dating</option>
+                        <option value="finance">Finance</option>
+                        <option value="other">Other</option>
+                    </select>
+                   </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                    <select 
+                        name="language" value={formData.language} onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black bg-white"
+                    >
+                        <option value="en">English 🇺🇸</option>
+                        <option value="pt">Portuguese 🇧🇷</option>
+                        <option value="es">Spanish 🇪🇸</option>
+                        <option value="fr">French 🇫🇷</option>
+                        <option value="de">German 🇩🇪</option>
+                        <option value="it">Italian 🇮🇹</option>
+                    </select>
+                   </div>
+                </div>
+            </div>
         </div>
 
-        {formData.google_ads_headlines.length > 0 && (
-            <div className="bg-blue-50 p-4 rounded border border-blue-100 mb-6">
-                <h3 className="font-bold text-blue-800 mb-2">📢 Generated Google Ads Copy</h3>
-                <div className="grid grid-cols-2 gap-4">
+        {/* Step 2: Critical Links */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-green-500"></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Step 2</span>
+                Money Links (Critical)
+            </h3>
+            
+            <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Affiliate URL (Commission Link) *</label>
+                  <div className="relative">
+                    <input 
+                        type="url" name="affiliate_url" required
+                        value={formData.affiliate_url} onChange={handleChange}
+                        className={`w-full border-2 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none text-black font-mono text-sm ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-green-200 bg-green-50'}`}
+                        placeholder={importedPlatform === 'Digistore24' ? `https://www.digistore24.com/redir/PRODUCT_ID/${platformId || 'AFFILIATE_ID'}` : "https://hop.clickbank.net/..."}
+                    />
+                  </div>
+                  {!formData.affiliate_url && <p className="text-xs text-red-600 mt-1 font-bold animate-pulse">⚠️ REQUIRED TO ENABLE CREATION</p>}
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h4 className="text-xs font-bold text-blue-600 uppercase mb-1">Headlines</h4>
-                        <ul className="list-disc pl-4 text-sm text-blue-800">
-                            {formData.google_ads_headlines.map((h, i) => <li key={i}>{h}</li>)}
-                        </ul>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Official Site URL</label>
+                      <input 
+                        type="url" name="official_url" required
+                        value={formData.official_url} onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
+                        placeholder="https://product.com"
+                      />
                     </div>
                     <div>
-                        <h4 className="text-xs font-bold text-blue-600 uppercase mb-1">Descriptions</h4>
-                        <ul className="list-disc pl-4 text-sm text-blue-800">
-                            {formData.google_ads_descriptions.map((d, i) => <li key={i}>{d}</li>)}
-                        </ul>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Review URL</label>
+                      <input 
+                        type="url" name="youtube_review_url" required
+                        value={formData.youtube_review_url} onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
+                        placeholder="https://youtube.com/watch?v=..."
+                      />
                     </div>
                 </div>
-                <p className="text-xs text-blue-500 mt-2">These will be saved to the Ads Manager automatically.</p>
             </div>
-        )}
+        </div>
 
-        {/* Negative Keywords Section */}
-        <div className="bg-gray-50 p-4 rounded border border-gray-200">
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                    ⛔ Negative Keywords
+        {/* Step 3: Intelligence & Tracking */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Step 3</span>
+                Intelligence & Safety
+            </h3>
+
+            {/* Competitor Spy Field */}
+            <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6">
+                <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2 text-sm">
+                    🕵️ Competitor Copy (Ad Spy)
                 </h3>
-                <button 
-                    onClick={handleLoadNegatives}
-                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded font-medium transition-colors"
-                >
-                    📥 Load Standard Negatives
-                </button>
-            </div>
-            <textarea
-                value={formData.google_ads_negatives.join('\n')}
-                onChange={(e) => setFormData(prev => ({ ...prev, google_ads_negatives: e.target.value.split('\n') }))}
-                placeholder="free, login, support, crack..."
-                className="w-full border rounded p-2 text-sm h-24 text-black placeholder:text-gray-400 font-mono"
-            />
-            <p className="text-xs text-gray-500 mt-1">One per line. These prevent wasted spend on bad traffic.</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-              <input 
-                type="text" name="name" required
-                value={formData.name} onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                placeholder="Ex: Mitolyn"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug (Optional)</label>
-              <input 
-                type="text" name="slug"
-                value={formData.slug} onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                placeholder="Ex: mitolyn (auto-generated if empty)"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vertical *</label>
-                <select 
-                    name="vertical" value={formData.vertical} onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black bg-white shadow-sm text-base"
-                >
-                    <option value="health">Health</option>
-                    <option value="diy">DIY</option>
-                    <option value="pets">Pets</option>
-                    <option value="dating">Dating</option>
-                    <option value="finance">Finance</option>
-                    <option value="other">Other</option>
-                </select>
-               </div>
-               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Language *</label>
-                <select 
-                    name="language" value={formData.language} onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black bg-white shadow-sm text-base"
-                >
-                    <option value="en">English (en)</option>
-                    <option value="pt">Portuguese (pt)</option>
-                    <option value="es">Spanish (es)</option>
-                    <option value="it">Italian (it)</option>
-                </select>
-               </div>
-            </div>
-
-            <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
-               <select 
-                   name="template" value={formData.template} onChange={handleChange}
-                   className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black bg-white shadow-sm text-base"
-               >
-                   <option value="editorial">Editorial (Recommended)</option>
-                   <option value="story">Story</option>
-                   <option value="comparison">Comparison</option>
-               </select>
-            </div>
-          </div>
-
-          {/* URLs & Media */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate URL *</label>
-              <div className="relative">
-                <input 
-                    type="url" name="affiliate_url" required
-                    value={formData.affiliate_url} onChange={handleChange}
-                    className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black ${!formData.affiliate_url ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
-                    placeholder={importedPlatform === 'Digistore24' ? `https://www.digistore24.com/redir/PRODUCT_ID/${platformId || 'AFFILIATE_ID'}` : "https://hop.clickbank.net/..."}
+                <textarea
+                    value={competitorAds}
+                    onChange={(e) => setCompetitorAds(e.target.value)}
+                    placeholder="Paste ad copy, headlines, or keywords from competitors here..."
+                    className="w-full border rounded p-2 text-sm h-20 text-black placeholder:text-gray-400"
                 />
-                {importedPlatform === 'Digistore24' && (
-                    <span className="absolute right-3 top-3 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border">
-                        ID: {platformId || 'Loading...'}
-                    </span>
-                )}
-              </div>
-              {!formData.affiliate_url && <p className="text-xs text-red-600 mt-1 font-bold">⚠️ Commission Link Missing!</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Official Site URL *</label>
-              <input 
-                type="url" name="official_url" required
-                value={formData.official_url} onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                placeholder="https://product.com"
-              />
+            {/* Negative Keywords Section - Highlighted */}
+            <div className="bg-red-50 p-5 rounded-lg border border-red-100 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-red-800 flex items-center gap-2">
+                        ⛔ Negative Keywords (Traffic Filter)
+                    </h3>
+                    <button 
+                        onClick={handleLoadNegatives}
+                        className="text-xs bg-white border border-red-200 hover:bg-red-100 text-red-700 px-3 py-1 rounded font-bold transition-colors shadow-sm"
+                    >
+                        📥 Load Standards
+                    </button>
+                </div>
+                <textarea
+                    value={formData.google_ads_negatives.join('\n')}
+                    onChange={(e) => setFormData(prev => ({ ...prev, google_ads_negatives: e.target.value.split('\n') }))}
+                    placeholder="free, login, support, crack..."
+                    className="w-full border border-red-200 rounded p-2 text-sm h-24 text-black placeholder:text-red-300 font-mono bg-white focus:ring-2 focus:ring-red-500 outline-none"
+                />
+                <p className="text-xs text-red-600 mt-1 font-medium">Filtering these keywords saves 30-40% of budget.</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Review URL *</label>
-              <input 
-                type="url" name="youtube_review_url" required
-                value={formData.youtube_review_url} onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                placeholder="https://youtube.com/watch?v=..."
-              />
-              <p className="text-xs text-gray-500 mt-1">Required for high conversion. We extract the ID automatically.</p>
-            </div>
-
-            <div className="flex items-center space-x-4 pt-4">
-               <label className="flex items-center space-x-2 cursor-pointer">
-                  <input 
-                    type="checkbox" name="set_as_active"
-                    checked={formData.set_as_active} onChange={handleChange}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                  <span className="text-sm text-gray-700 font-medium">Set as Active Product (Root)</span>
-               </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Tracking Section */}
-        <div className="border-t pt-6">
-            <h3 className="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Tracking Configuration</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+            {/* Tracking */}
+            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Google Ads Pixel ID</label>
                     <input 
                         type="text" name="google_ads_id"
                         value={formData.google_ads_id} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                        placeholder="AW-XXXXXXXX"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Default: 17850696537 (Mitolyn Account)</p>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Conversion Label</label>
                     <input 
                         type="text" name="google_ads_label"
                         value={formData.google_ads_label} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                        placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Support Email (Public)</label>
-                    <input 
-                        type="email" name="support_email"
-                        value={formData.support_email} onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-black placeholder:text-gray-500 bg-white shadow-sm text-base selection:bg-blue-200 selection:text-black"
-                        placeholder="support@topproductofficial.com"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm"
                     />
                 </div>
             </div>
         </div>
 
-        <div className="pt-4 border-t flex justify-end">
+        {/* Submit Action */}
+        <div className="pt-4 border-t flex justify-end sticky bottom-0 bg-white/90 p-4 backdrop-blur-sm border-t-gray-200 z-10">
            <button 
              type="submit" 
-             disabled={loading}
-             className={`px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+             disabled={loading || !formData.affiliate_url}
+             className={`px-8 py-4 bg-black text-white font-black text-lg rounded-xl shadow-lg hover:bg-gray-800 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 flex items-center gap-3 ${loading || !formData.affiliate_url ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
            >
-             {loading ? 'Creating...' : 'Create Product'}
+             {loading ? 'Creating Product...' : (
+                <>
+                    <span>🚀</span> CREATE PRODUCT
+                </>
+             )}
            </button>
         </div>
       </form>

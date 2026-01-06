@@ -217,6 +217,15 @@ export async function POST(request: NextRequest) {
     
     // Ensure products object exists
     if (!currentConfig.products) currentConfig.products = {};
+
+    // CLEANUP: Remove old 'undefined' or null keys to save space
+    if (currentConfig.products) {
+        Object.keys(currentConfig.products).forEach(key => {
+            if (key === 'undefined' || key === 'null' || !currentConfig.products[key]) {
+                delete currentConfig.products[key];
+            }
+        });
+    }
     
     // Add/Overwrite product
     currentConfig.products[finalSlug] = newProduct;
