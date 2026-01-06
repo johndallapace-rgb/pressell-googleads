@@ -29,9 +29,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing importUrl or name' }, { status: 400 });
     }
 
-    // 1. Scrape
+    // 0. URL Validation
+    try {
+        new URL(importUrl);
+    } catch (e) {
+        return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+    }
+
+    // 1. Scrape (With Fallback)
     console.log(`[Auto-Create] Scraping: ${importUrl}`);
-    const { text: cleanText, image_url: scrapedImage } = await scrapeAndClean(importUrl);
+    let cleanText = '';
+    let scrapedImage = '';
+
+    try {
+        const scrapeResult = await scrapeAndClean(importUrl);
+        cleanText = scrapeResult.text;
+        scrapedImage = scrapeResult.image_url;
+    } catch (e: any) {
+        console.warn(`[Auto-Create] Scraping failed for ${importUrl}:`, e.message);
+        // Fallback: Proceed without official content, relying on Competitor Ads
+        cleanText = `[Scraping Failed] Official content unavailable. Please analyze the Competitor Ads and Product Name "${name}" to infer the best copy and angle.`;
+    }
 
     // 2. Prepare Negative Keywords
     // @ts-ignore
