@@ -20,7 +20,12 @@ export async function POST(request: NextRequest) {
     const config = await getCampaignConfig();
     
     // Update or Add product
-    config.products[product.slug] = product;
+    // Merge Strategy: Keep existing fields, only update new ones
+    const existing = config.products[product.slug] || {};
+    config.products[product.slug] = {
+        ...existing,
+        ...product
+    };
 
     const success = await updateCampaignConfig(config);
 

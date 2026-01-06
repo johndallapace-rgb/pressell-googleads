@@ -199,38 +199,43 @@ export default function CreateProductForm() {
     setMessage(null);
 
     try {
-      // Validations
-      // ... (existing validations moved here or reused)
-      // Auto-generate slug if missing
-      const cleanProduct = { ...formData };
-      if (!cleanProduct.slug && cleanProduct.name) {
-          cleanProduct.slug = cleanProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      }
-
-      if (!cleanProduct.slug) throw new Error('Slug is required (or Name to generate it)');
-      if (!/^[a-z0-9-]+$/.test(cleanProduct.slug)) throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
-
-      // Get token from localStorage (as per existing admin login logic)
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        setMessage({ type: 'error', text: 'Unauthorized: Please login again' });
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch('/api/admin/products', {
+      // 1. Direct Auto-Create Call (Simplified Flow)
+      // This endpoint handles Scraping -> AI -> Image -> Saving in one go
+      const res = await fetch('/api/admin/products/auto-create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(cleanProduct)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            importUrl: formData.official_url,
+            name: formData.name,
+            competitorAds: competitorAds,
+            country: formData.language.toUpperCase() // e.g. "EN" -> "EN"
+        })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create product');
+        throw new Error(data.error || 'Failed to auto-create product');
+      }
+
+      // 2. Post-Save Update: Inject Critical Manual Fields
+      // Since auto-create might miss the affiliate link or pixel if not in catalog,
+      // we do a quick patch to ensure they are set.
+      if (data.slug) {
+          const updateRes = await fetch('/api/admin/products/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  product: {
+                      slug: data.slug, // Key to find it
+                      affiliate_url: formData.affiliate_url,
+                      google_ads_id: formData.google_ads_id,
+                      google_ads_label: formData.google_ads_label
+                      // We only send fields we want to merge/overwrite
+                  } 
+              })
+          });
+          if (!updateRes.ok) console.warn('Failed to patch manual fields, but product created.');
       }
 
       setMessage({ type: 'success', text: `Product created successfully! Redirecting to My Products...` });
