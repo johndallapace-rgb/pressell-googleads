@@ -1,10 +1,11 @@
-const { appendTrackingParams, generateExternalTrackId } = require('../src/lib/tracking.ts');
+const { appendTrackingParams } = require('../src/lib/tracking.ts');
+const productCatalog = require('../src/data/product-catalog.json');
 
 // Mock the inputs (Simulating what happens in page.tsx)
 const configs = [
-    { name: 'Advanced Amino (DE)', url: 'https://www.digistore24.com/redir/472942/JohnPace', locale: 'de', slug: 'amino' },
-    { name: 'Tube Mastery (FR)', url: 'https://www.digistore24.com/redir/299134/JohnPace', locale: 'fr', slug: 'tube' },
-    { name: 'Tube Mastery (EN)', url: 'https://www.digistore24.com/redir/299134/JohnPace', locale: 'en', slug: 'tube' }
+    { name: 'Advanced Amino (DE)', url: `${productCatalog.products['advanced-amino'].base_url}/${productCatalog.products['advanced-amino'].id}/${productCatalog.products['advanced-amino'].vendor}`, locale: 'de', slug: 'amino' },
+    { name: 'Tube Mastery (FR)', url: `${productCatalog.products['tube-mastery'].base_url}/${productCatalog.products['tube-mastery'].id}/${productCatalog.products['tube-mastery'].vendor}`, locale: 'fr', slug: 'tube' },
+    { name: 'Tube Mastery (EN)', url: `${productCatalog.products['tube-mastery'].base_url}/${productCatalog.products['tube-mastery'].id}/${productCatalog.products['tube-mastery'].vendor}`, locale: 'en', slug: 'tube' }
 ];
 
 // Mocking the TS file execution in Node (simplified)

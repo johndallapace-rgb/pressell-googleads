@@ -1,0 +1,16 @@
+{
+    "products": {
+        "advanced-amino": {
+            "id": "472942",
+            "name": "Advanced Amino Formula",
+            "vendor": "JohnPace",
+            "base_url": "https://www.digistore24.com/redir"
+        },
+        "tube-mastery": {
+            "id": "299134",
+            "name": "Tube Mastery and Monetization",
+            "vendor": "JohnPace",
+            "base_url": "https://www.digistore24.com/redir"
+        }
+    }
+}

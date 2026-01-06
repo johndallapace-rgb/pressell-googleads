@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GeminiStatusBadge from '@/components/admin/GeminiStatusBadge';
+import productCatalog from '@/data/product-catalog.json';
 
 type Platform = 'ClickBank' | 'Digistore24' | 'BuyGoods' | 'MaxWeb';
 
@@ -78,6 +79,25 @@ export default function MarketTrendsPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [products, setProducts] = useState<TrendProduct[]>(MOCK_DATA);
 
+  // Persistence: Load Top 5 / Data on Mount
+  useEffect(() => {
+    const saved = localStorage.getItem('marketTrends_data');
+    if (saved) {
+        try {
+            setProducts(JSON.parse(saved));
+        } catch (e) {
+            console.error('Failed to load trends:', e);
+        }
+    }
+  }, []);
+
+  // Persistence: Save when updated
+  useEffect(() => {
+      if (products !== MOCK_DATA) {
+        localStorage.setItem('marketTrends_data', JSON.stringify(products));
+      }
+  }, [products]);
+
   // Filter products by platform
   const filteredProducts = products.filter(p => p.platform === selectedPlatform);
   
@@ -87,8 +107,22 @@ export default function MarketTrendsPage() {
     .slice(0, 5);
 
   const handleFastDeploy = (product: TrendProduct) => {
+    // Check catalog for ID match
+    const catalogEntry = Object.entries(productCatalog.products).find(([key, val]) => 
+        val.name === product.name || product.name.includes(val.name)
+    );
+
+    let queryParams = `import=${encodeURIComponent(product.url)}&name=${encodeURIComponent(product.name)}&vertical=${encodeURIComponent(product.vertical)}&platform=${encodeURIComponent(product.platform)}`;
+    
+    if (catalogEntry) {
+        const [slug, data] = catalogEntry;
+        // Inject Catalog ID automatically
+        queryParams += `&catalogId=${data.id}&catalogSlug=${slug}`;
+        console.log(`[FastDeploy] Matched Catalog Item: ${slug} (ID: ${data.id})`);
+    }
+
     // Redirect to create product with imported URL and Platform context
-    router.push(`/admin/products?import=${encodeURIComponent(product.url)}&name=${encodeURIComponent(product.name)}&vertical=${encodeURIComponent(product.vertical)}&platform=${encodeURIComponent(product.platform)}`);
+    router.push(`/admin/products?${queryParams}`);
   };
 
   const handleRefreshAnalysis = async () => {

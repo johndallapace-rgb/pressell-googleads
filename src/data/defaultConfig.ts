@@ -1,4 +1,11 @@
 import { CampaignConfig } from '@/lib/config';
+import productCatalog from './product-catalog.json';
+
+// Helper to generate URLs from the catalog
+const getAffiliateUrl = (productKey: 'advanced-amino' | 'tube-mastery') => {
+    const p = productCatalog.products[productKey];
+    return `${p.base_url}/${p.id}/${p.vendor}`;
+};
 
 export const defaultConfig: CampaignConfig = {
   active_product_slug: 'mitolyn',
@@ -112,7 +119,7 @@ export const defaultConfig: CampaignConfig = {
       vertical: "health",
       template: "editorial",
       official_url: "https://advancedamino.com",
-      affiliate_url: "https://www.digistore24.com/redir/472942/JohnPace",
+      affiliate_url: getAffiliateUrl('advanced-amino'),
       youtube_review_id: "dQw4w9WgXcQ", 
       image_url: "/images/amino.svg",
       google_ads_id: "AW-123456789", // Mock ID
@@ -268,7 +275,7 @@ export const defaultConfig: CampaignConfig = {
       vertical: "finance",
       template: "editorial",
       official_url: "https://tubemastery.com",
-      affiliate_url: "https://www.digistore24.com/redir/299134/JohnPace",
+      affiliate_url: getAffiliateUrl('tube-mastery'),
       youtube_review_id: "dQw4w9WgXcQ",
       image_url: "/images/tube.svg",
       google_ads_id: "AW-987654321", // Mock ID
