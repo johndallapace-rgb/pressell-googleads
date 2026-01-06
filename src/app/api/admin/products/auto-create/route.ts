@@ -93,12 +93,13 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
       - Write in the NATIVE language of the target market.
       - Create a "Shadow Persona" for the review (impartial but persuasive).
       - If Competitor Ads are provided, write headlines that are clearly superior (more specific, higher curiosity).
+      - **CRITICAL**: Proofread all output. Ensure no spelling mistakes in the Headline or Subheadline. Use proper capitalization and grammar.
 
       OUTPUT JSON FORMAT (Strict):
       {
         "slug": "kebab-case-slug",
-        "headline": "Main Headline",
-        "subheadline": "Subheadline",
+        "headline": "Main Headline (Correct Spelling)",
+        "subheadline": "Subheadline (Persuasive & Clear)",
         "bullets": ["Benefit 1", "Benefit 2", "Benefit 3"],
         "pain_points": ["Pain 1", "Pain 2", "Pain 3"],
         "unique_mechanism": "The Secret Mechanism",

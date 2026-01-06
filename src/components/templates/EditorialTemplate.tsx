@@ -127,22 +127,54 @@ export function EditorialTemplate({ product }: Props) {
   return (
     <div className={`flex flex-col min-h-screen ${theme.font} ${theme.pageBg} text-gray-800 transition-colors duration-300`}>
       
-      {/* Content Container */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        
-        {/* Hero Section */}
-        <div className="mb-2 text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center gap-2">
-            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{product.vertical.toUpperCase()}</span>
-            <span>{updatedText}</span>
-        </div>
-        <ProductHero 
-            product={{
-                ...product, 
-                official_url: ctaUrl, 
-                google_ads_id: product.google_ads_id,
-                google_ads_label: product.google_ads_label
-            }} 
-        /> 
+        {/* Content Container */}
+        <div className="container mx-auto px-4 py-8 max-w-3xl">
+          
+          {/* Vertical Hero Layout */}
+          <div className="flex flex-col items-center text-center mb-8 space-y-6">
+               
+               <div className="mb-2 text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-2">
+                   <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{product.vertical.toUpperCase()}</span>
+                   <span>{updatedText}</span>
+               </div>
+
+               <h1 className={`text-3xl md:text-5xl font-black leading-tight ${theme.headingColor}`}>
+                   {product.headline}
+               </h1>
+               
+               <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                   {product.subheadline}
+               </p>
+
+               {/* Centralized Image */}
+               <div className="w-full max-w-lg mx-auto my-6 rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.01] transition-transform duration-500">
+                   <img 
+                       src={product.image_url || '/images/placeholders/health-default.jpg'} 
+                       alt={product.name}
+                       className="w-full h-auto object-cover"
+                       onError={(e) => {
+                           // Fallback if image fails
+                           e.currentTarget.src = '/images/placeholders/health-default.jpg';
+                       }}
+                   />
+               </div>
+
+               {/* Primary CTA - Centralized */}
+               <div className="w-full max-w-md mx-auto">
+                   <CTAButton 
+                        href={ctaUrl} 
+                        label={product.cta_text || "Check Availability"}
+                        className={`w-full text-xl px-8 py-5 flex justify-center items-center gap-2 ${theme.buttonStyle}`}
+                        trackingData={{ product: product.slug, variant: 'hero' }}
+                        googleAdsId={product.google_ads_id}
+                        googleAdsLabel={product.google_ads_label}
+                   />
+                   <p className="mt-3 text-xs text-gray-400 font-medium">
+                       🔒 Official Site Guarantee • Free Shipping Available
+                   </p>
+               </div>
+
+          </div> 
 
         {/* Quick Verdict */}
         <QuickVerdict 
