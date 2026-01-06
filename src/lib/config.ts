@@ -3,8 +3,9 @@ import { defaultConfig } from '@/data/defaultConfig';
 
 // Initialize KV Client Robustly
 // Support KV_REST_API_* (Vercel Default), REDIS_REST_API_* (Upstash), and REDIS_URL (Legacy/Custom)
-const kvUrl = process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || process.env.REDIS_URL;
-const kvToken = process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_API_TOKEN || process.env.REDIS_TOKEN;
+// PRIORITY: REDIS_URL (User Request) -> KV_REST_API -> REDIS_REST_API
+const kvUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL;
+const kvToken = process.env.REDIS_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_API_TOKEN;
 
 // Create a safe client if ANY URL is present. 
 // We use a fallback token to prevent crash, but requests might fail if auth is required and missing.
