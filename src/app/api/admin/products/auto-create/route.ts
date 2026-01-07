@@ -210,7 +210,13 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     }
 
     // Force Vertical from User Input (Priority) -> AI -> 'health' (safest default)
-    const finalVertical = (userVertical || data.vertical || 'health').toLowerCase();
+    let finalVertical = (userVertical || data.vertical || 'health').toLowerCase();
+    
+    // FALLBACK: Force 'health' if AI returns 'other' or 'general' to ensure valid subdomain
+    if (finalVertical === 'other' || finalVertical === 'general') {
+        console.log(`[Auto-Create] Vertical '${finalVertical}' detected. Forcing 'health' for safety.`);
+        finalVertical = 'health';
+    }
 
     // Map AI Vertical to Subdomain (Simple Logic)
     let finalSubdomain = finalVertical;
@@ -218,9 +224,23 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     if (finalVertical === 'tools' || finalVertical === 'home') finalSubdomain = 'diy';
     if (finalVertical === 'tech') finalSubdomain = 'gadgets';
 
+    // RECOVERY: Title Safety
+    let robustName = finalName;
+    if (!robustName || robustName === 'Untitled Product' || robustName === 'New Product') {
+         try {
+            const u = new URL(importUrl);
+            const hostParts = u.hostname.split('.');
+            // ex: getmitolyn.com -> mitolyn
+            const extracted = hostParts.length > 2 ? hostParts[1] : hostParts[0];
+            robustName = extracted.charAt(0).toUpperCase() + extracted.slice(1);
+         } catch(e) {
+            robustName = 'Product ' + Date.now();
+         }
+    }
+
     const newProduct: ProductConfig = {
         slug: finalSlug,
-        name: finalName, // Use robust name
+        name: robustName, // Use robust name
         vertical: finalSubdomain as any, // This is saved to KV
         subdomain: finalSubdomain, // Explicitly save subdomain for routing
         language: country.toLowerCase(),
@@ -339,7 +359,19 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
 
     // SAVE DIRECTLY TO PRODUCTS KEY (Standard Format)
     // KEY CHANGE: Use "vertical:slug" as key to prevent collisions and enforce routing
-    const storageKey = `${finalSubdomain}:${safeSlug}`;
+    let storageKey = `${finalSubdomain}:${safeSlug}`;
+    
+    // VALIDATION: Unique Slug Check
+    let counter = 2;
+    // Check if key exists (simplified check, ideally we read from KV first but we have currentConfig)
+    while (currentConfig.products[storageKey] || currentConfig.products[safeSlug]) {
+        console.log(`[Auto-Create] Collision detected for ${storageKey}. Appending suffix...`);
+        safeSlug = `${newProduct.slug}-${counter}`;
+        storageKey = `${finalSubdomain}:${safeSlug}`;
+        counter++;
+    }
+    newProduct.slug = safeSlug; // Update product slug
+
     currentConfig.products[storageKey] = newProduct;
     
     // Debug log

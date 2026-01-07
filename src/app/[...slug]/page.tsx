@@ -97,6 +97,21 @@ export default async function CatchAllProductPage({ params }: PageProps) {
         if (product) {
              console.log(`[CatchAllPage] Found product globally (Legacy/No-Prefix): ${slug}`);
         }
+        
+        // 4. NEW: Brute-force Search for 'OTHER' or Main Domain Access
+        // If we are on the main domain (detectedVertical is null), we should try to find the product
+        // even if it's saved as "health:mitolyn" or "other:mitolyn"
+        if (!product && !detectedVertical) {
+             const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
+             for (const v of commonVerticals) {
+                 const p = await getProduct(slug, v);
+                 if (p) {
+                     console.log(`[CatchAllPage] Rescue: Found product in vertical '${v}' via main domain.`);
+                     product = p;
+                     break;
+                 }
+             }
+        }
     }
 
     if (!product || product.status !== 'active') {
