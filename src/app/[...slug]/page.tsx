@@ -4,7 +4,7 @@ import { PageProps } from '@/types';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { StoryTemplate } from '@/components/templates/StoryTemplate';
 import { ComparisonTemplate } from '@/components/templates/ComparisonTemplate';
-import { getProduct } from '@/lib/config'; // New Vercel KV Import
+import { getProduct, debugKV } from '@/lib/config'; // New Vercel KV Import
 import LayoutShell from '@/components/LayoutShell';
 import { getVerticalFromHost } from '@/lib/host';
 import { headers } from 'next/headers';
@@ -78,8 +78,13 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     const host = headerList.get('host') || 'unknown';
     const detectedVertical = getVerticalFromHost(host);
 
-    console.log(`[CatchAllPage] INCOMING REQUEST: Host=${host}, Slug=${slug}, Vertical=${detectedVertical}`);
-    console.log(`[CatchAllPage] TARGET KEY: ${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
+    console.log('--- DEBUG PRE-SELL ---');
+    console.log('Hostname capturado:', host);
+    console.log('Slug recebido:', slug);
+    console.log('Chave final gerada para o KV:', `${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
+    
+    const keys = await debugKV();
+    console.log('Chaves existentes no banco:', keys);
 
     // 1. Try Localized Key: "amino-de" (Rare)
     let product = await getProduct(`${slug}-${lang}`, detectedVertical);

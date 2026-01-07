@@ -290,3 +290,17 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{
     return { success: false, error: error.message };
   }
 }
+
+export async function debugKV() {
+    if (!kv) return ['KV Not Initialized'];
+    try {
+        // kv.keys might not be available on Vercel KV client directly depending on version, 
+        // but typically it is. If not, we might need another way.
+        // The user specifically asked for kv.keys('*').
+        // Let's assume standard redis command.
+        const keys = await kv.keys('*');
+        return keys.slice(0, 5);
+    } catch (e) {
+        return [`Error: ${e}`];
+    }
+}
