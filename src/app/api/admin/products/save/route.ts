@@ -22,11 +22,8 @@ export async function POST(request: NextRequest) {
 
     // SECURITY LOCK: Reject Untitled Products
     if (product.name === 'Untitled Product' || product.name === 'New Product') {
-        console.warn(`[Save API] Blocked attempt to save 'Untitled Product' for slug: ${product.slug}`);
         return NextResponse.json({ error: 'Cannot save Untitled Product' }, { status: 400 });
     }
-
-    console.log('[DEBUG-KV]: Tentando salvar slug:', product.slug);
 
     const config = await getCampaignConfig();
     
@@ -45,18 +42,15 @@ export async function POST(request: NextRequest) {
             config.products[k].slug === product.slug
         );
         if (foundKey) {
-            console.log(`[Save API] Resolved slug '${product.slug}' to key '${foundKey}'`);
             storageKey = foundKey;
         } else {
             // New product? Be careful.
             // If we are updating a product that SHOULD exist (from auto-create), this is an error condition
             // unless it's a manual creation from scratch.
-            console.log(`[Save API] Key not found for '${product.slug}'. Treating as new/root entry.`);
             
             // 3. Fallback: Create new key with Vertical prefix if available (SYNC WITH AUTO-CREATE)
             if (product.vertical) {
                 storageKey = `${product.vertical}:${product.slug}`;
-                console.log(`[Save API] Auto-Prefixing New Key: ${storageKey}`);
             }
         }
     }
@@ -77,8 +71,6 @@ export async function POST(request: NextRequest) {
         ...product
     };
 
-    console.log('--- TENTANDO GRAVAR NO KV (Hybrid Strategy) ---', storageKey);
-
     // 1. Save to Campaign Config (Big JSON)
     const success = await updateCampaignConfig(config);
 
@@ -98,7 +90,6 @@ export async function POST(request: NextRequest) {
     // I'll add `saveProduct` helper in lib/config.ts
     
     if (success) {
-      console.log('✅ SUCESSO AO SALVAR NO KV:', storageKey);
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: 'Failed to update Edge Config' }, { status: 500 });

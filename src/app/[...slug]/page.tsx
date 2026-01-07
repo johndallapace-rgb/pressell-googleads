@@ -70,6 +70,11 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     let lang = 'en';
     let slug = slugParts[0].replace('.html', '');
 
+    // Handle "index" or "index.html" explicitly -> Redirect to Home
+    if (slug === 'index') {
+        redirect('/');
+    }
+
     // Detect Locale Strategy
     const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
     
@@ -103,9 +108,6 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     // 2. Try Base Key with Vertical: "health:mitolyn"
     if (!product) {
         product = await getProduct(slug, detectedVertical);
-        if (product) {
-             console.log(`[CatchAllPage] Found product with vertical prefix: ${detectedVertical}:${slug}`);
-        }
     }
 
     // 3. Fallback: Global Search (No Prefix)
@@ -113,13 +115,8 @@ export default async function CatchAllProductPage({ params }: PageProps) {
         // Try searching for the slug as is (legacy support)
         product = await getProduct(slug); // Tries "mitolyn"
         
-        if (product) {
-             console.log(`[CatchAllPage] Found product globally (Legacy/No-Prefix): ${slug}`);
-        } else {
+        if (!product) {
              // 4. NEW: Brute-force Search for ANY vertical if detectedVertical is missing or mismatched
-             // This is CRITICAL for when we access via Main Domain but product is stored as "health:mitolyn"
-             console.log(`[CatchAllPage] Deep Search initiated for '${slug}' across all verticals...`);
-             
              const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
              for (const v of commonVerticals) {
                  // Skip if we already checked this specific vertical above
@@ -127,7 +124,6 @@ export default async function CatchAllProductPage({ params }: PageProps) {
                  
                  const p = await getProduct(slug, v);
                  if (p) {
-                     console.log(`[CatchAllPage] Rescue: Found product in vertical '${v}' (Key: ${v}:${slug})`);
                      product = p;
                      break;
                  }
@@ -136,7 +132,6 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     }
 
     if (!product || product.status !== 'active') {
-      console.warn(`[CatchAllPage] 404 - Product NOT found. Searched: ${detectedVertical}:${slug} AND ${slug}`);
       // Ignore system files
       if (['favicon.ico', 'robots.txt'].includes(slug)) return notFound();
       return notFound();

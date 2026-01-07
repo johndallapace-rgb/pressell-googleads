@@ -188,14 +188,11 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     const safeSlug = slug.toLowerCase().trim();
     const safeVertical = vertical ? vertical.toLowerCase().trim() : undefined;
 
-    console.log(`[KV-Lookup] Strategy: Hybrid. Target: slug='${safeSlug}', vertical='${safeVertical || 'none'}'`);
-
     // A. Try Direct Key: "health:mitolyn"
     if (safeVertical) {
         const directKey = `${safeVertical}:${safeSlug}`;
         const directProduct = await kv?.get<ProductConfig>(directKey);
         if (directProduct && directProduct.slug) {
-            console.log(`[KV-Lookup] Direct Hit (Prefix): ${directKey}`);
             return directProduct;
         }
     }
@@ -203,12 +200,10 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     // B. Try Direct Key: "mitolyn"
     const directGlobal = await kv?.get<ProductConfig>(safeSlug);
     if (directGlobal && directGlobal.slug) {
-        console.log(`[KV-Lookup] Direct Hit (Exact): ${safeSlug}`);
         return directGlobal;
     }
 
     // C. Fallback to Campaign Config (Legacy/Dashboard Support)
-    console.log(`[KV-Lookup] Direct Miss. Falling back to Campaign Config...`);
     const config = await getCampaignConfig();
     const cfgAny = config as any;
     const products = cfgAny.products || {};
@@ -218,7 +213,6 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     if (safeVertical) {
         const key = `${safeVertical}:${safeSlug}`;
         if (products[key]) {
-             console.log(`[KV-Lookup] Config Hit (Prefix): ${key}`);
              const p = products[key];
              if (!p.slug) p.slug = safeSlug;
              return p;
@@ -228,7 +222,6 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     // 2. Try Exact Slug (Legacy/Global)
     // e.g. "mitolyn"
     if (products[safeSlug]) {
-        console.log(`[KV-Lookup] Config Hit (Exact): ${safeSlug}`);
         const p = products[safeSlug];
         if (!p.slug) p.slug = safeSlug;
         return p;
@@ -236,7 +229,6 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     
     // 3. Fallback: Root Object (Legacy Formato B)
     if (cfgAny[safeSlug]) {
-        console.log(`[KV-Lookup] Config Hit (Root): ${safeSlug}`);
         const p = cfgAny[safeSlug];
         if (!p.slug) p.slug = safeSlug;
         return p;
@@ -246,13 +238,11 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     // This handles cases where vertical is missing but product exists as "health:mitolyn"
     const foundKey = Object.keys(products).find(k => k.endsWith(`:${safeSlug}`));
     if (foundKey) {
-        console.log(`[KV-Lookup] Config Hit (Suffix Search): ${foundKey}`);
         const p = products[foundKey];
         if (!p.slug) p.slug = safeSlug;
         return p;
     }
 
-    console.warn(`[KV-Lookup] Total Miss: ${safeSlug}`);
     return null;
   } catch (error) {
     console.error(`Error in getProduct for slug ${slug}:`, error);
@@ -333,7 +323,6 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{
         // Let's just await the active one if possible, or all.
         // For now, let's just do it.
         await Promise.all(promises);
-        console.log(`[Hybrid-Save] Synced ${promises.length} products to direct KV keys.`);
     }
 
     return { success: true };
