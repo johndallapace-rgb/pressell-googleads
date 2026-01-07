@@ -20,7 +20,12 @@ export async function generateMetadata({ params }: PageProps) {
   
   if (!slugParts || !Array.isArray(slugParts) || slugParts.length === 0) return {};
 
-  let lang = 'en';
+    // HTML/System File Filter
+    if (slugParts[0].endsWith('.html') || slugParts[0].endsWith('.php') || slugParts[0].endsWith('.map')) {
+        return {};
+    }
+
+    let lang = 'en';
   let slug = slugParts[0];
 
   const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
@@ -54,6 +59,12 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     if (!slugParts || !Array.isArray(slugParts)) {
         notFound();
+    }
+
+    // HTML/System File Filter (Runtime)
+    if (slugParts[0].endsWith('.html') || slugParts[0].endsWith('.php')) {
+         console.warn(`[CatchAllPage] Blocked file access: ${slugParts[0]}`);
+         notFound();
     }
 
     let lang = 'en';

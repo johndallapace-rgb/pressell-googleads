@@ -435,6 +435,8 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     if (!saveResult.success) {
         throw new Error(`DB Save Failed: ${saveResult.error}`);
     }
+    
+    console.log(`[Auto-Create] PRODUTO SALVO COM SUCESSO NA CHAVE: ${storageKey}`);
 
     return NextResponse.json({ 
         success: true, 
