@@ -80,19 +80,27 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     console.log('[CatchAllPage] Init', { slug, lang, host });
 
-    // 1. Try Localized Key: "amino-de"
-    let product = await getProduct(`${slug}-${lang}`);
+    // 1. Try Localized Key: "amino-de" (Rare)
+    let product = await getProduct(`${slug}-${lang}`, detectedVertical);
 
-    // 2. Try Base Key: "mitolyn" (Global Fallback)
+    // 2. Try Base Key with Vertical: "health:mitolyn"
     if (!product) {
-        product = await getProduct(slug);
-        if (product && lang !== 'en') {
-             console.log(`[CatchAllPage] Serving global content for ${lang}/${slug}`);
+        product = await getProduct(slug, detectedVertical);
+        if (product) {
+             console.log(`[CatchAllPage] Found product with vertical prefix: ${detectedVertical}:${slug}`);
+        }
+    }
+
+    // 3. Fallback: Global Search (No Prefix)
+    if (!product) {
+        product = await getProduct(slug); // Tries "mitolyn"
+        if (product) {
+             console.log(`[CatchAllPage] Found product globally (Legacy/No-Prefix): ${slug}`);
         }
     }
 
     if (!product || product.status !== 'active') {
-      console.log(`[CatchAllPage] Product not found in KV: ${slug} (Lang: ${lang})`);
+      console.warn(`[CatchAllPage] 404 - Product NOT found. Searched: ${detectedVertical}:${slug} AND ${slug}`);
       // Ignore system files
       if (['favicon.ico', 'robots.txt'].includes(slug)) return notFound();
       return notFound();

@@ -169,19 +169,33 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
   }
 }
 
-export async function getProduct(slug: string): Promise<ProductConfig | null> {
+export async function getProduct(slug: string, vertical?: string): Promise<ProductConfig | null> {
   try {
     const config = await getCampaignConfig();
     const cfgAny = config as any;
+    const products = cfgAny.products || {};
     
-    // Support Formato A (products[slug]) AND Formato B (root[slug])
-    // Priority: products object -> root object
-    const product = cfgAny.products?.[slug] ?? cfgAny?.[slug];
+    // 1. Try Vertical-Prefixed Key (Priority)
+    // e.g. "health:mitolyn"
+    if (vertical && products[`${vertical}:${slug}`]) {
+        const p = products[`${vertical}:${slug}`];
+        if (!p.slug) p.slug = slug;
+        return p;
+    }
+
+    // 2. Try Exact Slug (Legacy/Global)
+    // e.g. "mitolyn"
+    if (products[slug]) {
+        const p = products[slug];
+        if (!p.slug) p.slug = slug;
+        return p;
+    }
     
-    if (product) {
-        // Polyfill slug if missing
-        if (!product.slug) product.slug = slug;
-        return product;
+    // 3. Fallback: Root Object (Legacy Formato B)
+    if (cfgAny[slug]) {
+        const p = cfgAny[slug];
+        if (!p.slug) p.slug = slug;
+        return p;
     }
     
     return null;

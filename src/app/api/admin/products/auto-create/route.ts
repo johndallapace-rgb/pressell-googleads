@@ -338,10 +338,12 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     newProduct.slug = safeSlug;
 
     // SAVE DIRECTLY TO PRODUCTS KEY (Standard Format)
-    currentConfig.products[safeSlug] = newProduct;
+    // KEY CHANGE: Use "vertical:slug" as key to prevent collisions and enforce routing
+    const storageKey = `${finalSubdomain}:${safeSlug}`;
+    currentConfig.products[storageKey] = newProduct;
     
     // Debug log
-    console.log(`[Auto-Create] Saving product: ${safeSlug}`, { 
+    console.log(`[Auto-Create] Saving product: ${storageKey}`, { 
         hasName: !!newProduct.name,
         hasUrl: !!newProduct.official_url,
         hasAds: !!newProduct.ads 
