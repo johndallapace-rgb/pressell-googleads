@@ -303,8 +303,13 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     // 6. Save
     const currentConfig = await getCampaignConfig();
     
+    // Ensure products structure exists even if KV is empty
+    if (!currentConfig.products) {
+        currentConfig.products = {};
+        console.log('[Auto-Create] Products object was missing. Created new.');
+    }
     // CLEANUP: AGGRESSIVE SPACE SAVING (Fix "Edge Config Size Limit")
-    if (currentConfig.products) {
+    if (Object.keys(currentConfig.products).length > 0) {
         const keepKeys = new Set<string>();
         
         // 1. Identify valid keys first
@@ -354,9 +359,6 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         // Replace with optimized list
         currentConfig.products = optimizedProducts;
     }
-    
-    // Ensure products structure
-    if (!currentConfig.products) currentConfig.products = {};
     
     // Force lowercase slug for consistency
     let safeSlug = (newProduct.slug || '').toLowerCase().trim();
@@ -424,12 +426,16 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     currentConfig.products[storageKey] = newProduct;
     
     // Debug log
-    console.log(`[Auto-Create] Saving product: ${storageKey}`, { 
+    console.log(`[CREATE-DEBUG] Tentando gravar chave: ${storageKey} no banco (Products Object Count: ${Object.keys(currentConfig.products).length})`, { 
         hasName: !!newProduct.name,
         hasUrl: !!newProduct.official_url,
         hasAds: !!newProduct.ads 
     });
     
+    // Add Timestamp to Force Cache Bypass
+    // @ts-ignore
+    currentConfig.lastUpdated = Date.now();
+
     const saveResult = await updateCampaignConfig(currentConfig);
 
     if (!saveResult.success) {

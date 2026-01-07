@@ -243,6 +243,7 @@ export default function CreateProductForm() {
       // Since auto-create might miss the affiliate link or pixel if not in catalog,
       // we do a quick patch to ensure they are set.
       if (data.slug) {
+          console.log('[CLIENT-DEBUG] Patching manual fields for:', data.slug);
           const updateRes = await fetch('/api/admin/products/save', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -251,7 +252,8 @@ export default function CreateProductForm() {
                       slug: data.slug, // Key to find it
                       affiliate_url: formData.affiliate_url,
                       google_ads_id: formData.google_ads_id,
-                      google_ads_label: formData.google_ads_label
+                      google_ads_label: formData.google_ads_label,
+                      vertical: data.vertical || formData.vertical // Ensure vertical is consistent
                       // We only send fields we want to merge/overwrite
                   } 
               })
