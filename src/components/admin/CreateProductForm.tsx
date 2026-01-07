@@ -376,15 +376,72 @@ export default function CreateProductForm() {
             </div>
 
             {/* Action Area */}
-            <div className="mt-10 pt-8 border-t border-gray-100">
+            <div className="mt-10 pt-8 border-t border-gray-100 flex flex-col gap-4">
+                
+                {/* 1. Dry Run / Route Test Button */}
+                <button 
+                    type="button"
+                    onClick={async (e) => {
+                        e.preventDefault();
+                        if (!formData.official_url || !formData.affiliate_url) {
+                            setMessage({ type: 'error', text: 'URLs are required for Dry Run.' });
+                            return;
+                        }
+                        
+                        setLoading(true);
+                        try {
+                            // Manual save without AI
+                            let name = formData.name;
+                            if (!name) {
+                                try {
+                                    const u = new URL(formData.official_url);
+                                    const parts = u.hostname.split('.');
+                                    name = (parts.length > 2 ? parts[1] : parts[0]);
+                                    name = name.charAt(0).toUpperCase() + name.slice(1);
+                                } catch { name = 'Test Product'; }
+                            }
+
+                            const res = await fetch('/api/admin/products', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    ...formData,
+                                    name,
+                                    headline: 'Route Test Successful',
+                                    subheadline: 'This is a placeholder content to verify domain routing.',
+                                    bullets: ['Route Active', 'KV Connected', 'Ready for AI'],
+                                    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                                })
+                            });
+                            
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error);
+                            
+                            setMessage({ type: 'success', text: `Dry Run Saved! Slug: ${data.slug}. Check 'My Products' for status.` });
+                            
+                            setTimeout(() => {
+                                router.push('/admin/products');
+                                router.refresh();
+                            }, 1500);
+
+                        } catch (e: any) {
+                            setMessage({ type: 'error', text: e.message });
+                        } finally {
+                            setLoading(false);
+                        }
+                    }}
+                    disabled={loading}
+                    className="w-full max-w-2xl mx-auto py-3 bg-gray-100 border-2 border-gray-300 text-gray-700 font-bold text-lg rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                >
+                    🧪 SAVE FOR ROUTE TESTING (NO AI)
+                </button>
+
+                {/* 2. Main AI Button (Temporarily Disabled via Logic, but kept for UI) */}
                 <button 
                     type="submit"
-                    disabled={loading || !formData.affiliate_url || !formData.official_url}
-                    className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-3"
-                    onClick={(e) => {
-                        // Prevent double-click
-                        if (loading) e.preventDefault();
-                    }}
+                    disabled={true} // FORCED DISABLE AS REQUESTED
+                    className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-black text-2xl rounded-2xl shadow-none cursor-not-allowed opacity-70 flex items-center justify-center gap-3"
+                    title="Disabled for Route Debugging"
                 >
                     {loading ? (
                         <>
@@ -396,12 +453,12 @@ export default function CreateProductForm() {
                         </>
                     ) : (
                         <>
-                            <span>🚀</span> GENERATE PRE-SELL WITH GEMINI
+                            <span>🔒</span> AI GENERATION LOCKED (DEBUG MODE)
                         </>
                     )}
                 </button>
-                <p className="text-gray-400 text-sm mt-4">
-                    AI will auto-detect language, download images, and build the vertical layout.
+                <p className="text-red-400 text-xs mt-1 font-bold">
+                    * AI Generation disabled until Route Test passes (Green Light on Dashboard).
                 </p>
             </div>
 
