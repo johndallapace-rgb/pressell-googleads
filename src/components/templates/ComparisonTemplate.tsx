@@ -41,7 +41,7 @@ export function ComparisonTemplate({ product }: Props) {
                 </div>
                 <div className="h-48 bg-blue-50 rounded mb-6 flex items-center justify-center relative overflow-hidden">
                      {product.image_url ? (
-                        <SafeImage src={product.image_url} alt={product.name} className="h-full object-contain" />
+                        <SafeImage src={product.image_url} alt={product.name} fill className="h-full w-full" />
                      ) : (
                         <span className="text-blue-200 font-bold text-2xl">{product.name}</span>
                      )}
