@@ -244,6 +244,11 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
          }
     }
 
+    // STRICT CHECK: If still untitled, reject save to avoid pollution
+    if (!robustName || robustName.includes('Untitled')) {
+         return NextResponse.json({ error: 'Failed to extract valid product name. Please verify URL.' }, { status: 400 });
+    }
+
     const newProduct: ProductConfig = {
         slug: finalSlug,
         name: robustName, // Use robust name
@@ -369,6 +374,21 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     
     // ANTI-GHOSTING: Clean up any potential 'other:slug' or 'undefined:slug' ghosts
     const ghostKeys = [`other:${safeSlug}`, `undefined:${safeSlug}`, `${safeSlug}`];
+    
+    // SAFETY: Never save to 'other' if we have a valid vertical
+    if (finalSubdomain === 'other' || finalSubdomain === 'undefined') {
+        if (newProduct.vertical !== 'other' && newProduct.vertical !== 'general') {
+             // If we ended up here but product says otherwise, correct it
+             finalSubdomain = newProduct.vertical === 'supplements' ? 'health' : 
+                              newProduct.vertical === 'tools' ? 'diy' : 'health';
+             storageKey = `${finalSubdomain}:${safeSlug}`;
+        } else {
+             // If it truly is other, ensure we don't have a specific version
+             // But actually, we want to BLOCK creation of 'other' if it's auto-pilot
+             // unless explicitly allowed. For now, we force health as fallback above.
+        }
+    }
+
     ghostKeys.forEach(ghost => {
         if (currentConfig.products[ghost]) {
             console.log(`[Auto-Create] Removing ghost key: ${ghost}`);
@@ -376,7 +396,21 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         }
     });
 
-    // VALIDATION: Unique Slug Check
+    // GLOBAL UNIQUE CONSTRAINT: Check if slug exists in ANY vertical
+    // If "health:mitolyn" exists, we CANNOT create "diy:mitolyn"
+    const existingKey = Object.keys(currentConfig.products).find(k => k.endsWith(`:${safeSlug}`) || k === safeSlug);
+    if (existingKey && existingKey !== storageKey) {
+        console.log(`[Auto-Create] Slug '${safeSlug}' already exists in '${existingKey}'. Aborting duplicate creation.`);
+        // Return success with existing slug to redirect user, but DO NOT save new one
+        return NextResponse.json({ 
+            success: true, 
+            slug: safeSlug,
+            vertical: currentConfig.products[existingKey].vertical,
+            message: 'Product already exists. Redirecting...'
+        });
+    }
+
+    // VALIDATION: Unique Slug Check (Collision within same vertical)
     let counter = 2;
     // Check if key exists (simplified check, ideally we read from KV first but we have currentConfig)
     while (currentConfig.products[storageKey] || currentConfig.products[safeSlug]) {
