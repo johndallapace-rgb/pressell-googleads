@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductConfig } from '@/lib/config';
 
 interface ProductListProps {
@@ -12,6 +12,42 @@ interface ProductListProps {
 export default function ProductList({ products }: ProductListProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [statusMap, setStatusMap] = useState<Record<string, { domain: boolean; pixel: boolean; affiliate: boolean; ads: boolean }>>({});
+
+  useEffect(() => {
+      // Background Health Check on Load
+      const checkStatus = async () => {
+          const updates: typeof statusMap = {};
+          
+          for (const p of products) {
+              const realUrl = getRealLink(p);
+              let domainStatus = false;
+              
+              // 1. Domain Check (Ping)
+              try {
+                  // Use internal API to avoid CORS issues
+                  const res = await fetch(`/api/admin/diagnostics/check-links`, {
+                      method: 'POST',
+                      body: JSON.stringify({ urls: [realUrl] })
+                  });
+                  const data = await res.json();
+                  domainStatus = data.results?.[0]?.ok || false;
+              } catch { domainStatus = false; }
+
+              updates[p.slug] = {
+                  domain: domainStatus,
+                  pixel: !!p.google_ads_id, // Static Check for now
+                  affiliate: !!p.affiliate_url && p.affiliate_url.length > 10,
+                  ads: false // Placeholder for future Google Ads API integration
+              };
+          }
+          setStatusMap(updates);
+      };
+      
+      if (products.length > 0) {
+          checkStatus();
+      }
+  }, [products]);
 
   const getFlag = (lang: string) => {
       const map: Record<string, string> = {
@@ -144,26 +180,34 @@ export default function ProductList({ products }: ProductListProps) {
                         <svg className="w-5 h-5 text-blue-900 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       </a>
 
-                      {/* Pixel Validation Badge */}
-                      {product.google_ads_id ? (
-                          <div className="group relative w-fit">
-                              <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full cursor-help">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                  <span className="text-xs font-bold text-green-700 tracking-wide">PIXEL ACTIVE</span>
-                              </div>
-                              {/* Tooltip */}
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10">
-                                  <div className="bg-black text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap font-mono">
-                                      ID: {product.google_ads_id}
-                                  </div>
-                              </div>
+                      {/* Live Status Indicators */}
+                      <div className="flex items-center gap-3 mt-1">
+                          {/* 1. Domain Status */}
+                          <div className="flex items-center gap-1.5" title="Domain Propagation">
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.domain ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                              <span className="text-[10px] font-bold text-gray-500 uppercase">
+                                  {statusMap[product.slug]?.domain ? 'Live' : 'Offline'}
+                              </span>
                           </div>
-                      ) : (
-                          <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full w-fit">
-                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                              <span className="text-xs font-bold text-yellow-700 tracking-wide">NO PIXEL</span>
+
+                          {/* 2. Pixel Status */}
+                          <div className="flex items-center gap-1.5" title="Google Ads Pixel">
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.pixel ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                              <span className="text-[10px] font-bold text-gray-500 uppercase">Pixel</span>
                           </div>
-                      )}
+
+                          {/* 3. Affiliate Link */}
+                          <div className="flex items-center gap-1.5" title="Affiliate Link Integrity">
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.affiliate ? 'bg-purple-500' : 'bg-red-500'}`}></div>
+                              <span className="text-[10px] font-bold text-gray-500 uppercase">Link</span>
+                          </div>
+
+                          {/* 4. Ads Status (Placeholder) */}
+                          <div className="flex items-center gap-1.5" title="Ads Activity">
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.ads ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">Ads</span>
+                          </div>
+                      </div>
                   </div>
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
