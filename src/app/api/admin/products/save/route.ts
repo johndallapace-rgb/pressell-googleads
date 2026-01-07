@@ -20,6 +20,11 @@ export async function POST(request: NextRequest) {
     // NORMALIZE SLUG ON SAVE
     product.slug = product.slug.toLowerCase().trim();
 
+    // SANITIZE AFFILIATE URL (Remove trailing { if present)
+    if (product.affiliate_url) {
+        product.affiliate_url = product.affiliate_url.replace(/\{$/, '');
+    }
+
     // SECURITY LOCK: Reject Untitled Products
     if (product.name === 'Untitled Product' || product.name === 'New Product') {
         return NextResponse.json({ error: 'Cannot save Untitled Product' }, { status: 400 });

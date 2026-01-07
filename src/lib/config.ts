@@ -299,31 +299,60 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
   try {
     // If kv is null, it means NO environment variables were found at all.
-    // However, user might have a local setup or build time.
     if (!kv) {
         console.warn('KV Database not configured. Changes will NOT be saved.');
         return { success: false, error: 'KV Database not configured (Check Environment Variables)' };
     }
     
-    // 1. Save Big JSON (Legacy/Dashboard)
-    await kv.set('campaign_config', newConfig);
+    // 1. Separate Full Data from Index Data
+    const fullProducts = newConfig.products || {};
+    const indexProducts: Record<string, ProductConfig> = {};
 
-    // 2. Hybrid Save: Also save individual products as keys for fast lookup
-    // This solves the 404 issue if the JSON is too big or stale.
-    if (newConfig.products) {
-        const promises = Object.entries(newConfig.products).map(async ([key, product]) => {
-            // Only save if it's a valid product
-            if (product && product.slug) {
-                // Key: "health:mitolyn"
-                await kv?.set(key, product);
-            }
-        });
-        // We don't await all of them to block the response, but for reliability in this critical fix, we should.
-        // However, Promise.all might be too heavy if there are 100 products.
-        // Let's just await the active one if possible, or all.
-        // For now, let's just do it.
-        await Promise.all(promises);
-    }
+    // 2. Save Full Data to Individual Keys & Build Index
+    const promises = Object.entries(fullProducts).map(async ([key, product]) => {
+        if (product && product.slug) {
+            // A. Save FULL data to specific key (e.g. "health:mitolyn")
+            // This ensures the product page gets all details (bullets, headlines, etc.)
+            await kv?.set(key, product);
+
+            // B. Create Lightweight Summary for Campaign Config (Index)
+            // This prevents campaign_config from exceeding 1MB limits and causing JSON errors
+            indexProducts[key] = {
+                ...product,
+                // Keep essential fields for List View / Dashboard
+                name: product.name,
+                slug: product.slug,
+                vertical: product.vertical,
+                status: product.status,
+                language: product.language,
+                affiliate_url: product.affiliate_url,
+                google_ads_id: product.google_ads_id,
+                image_url: product.image_url,
+                // STRIP HEAVY FIELDS from the index
+                whatIs: undefined,
+                howItWorks: undefined,
+                prosCons: undefined,
+                testimonials: undefined,
+                faq: undefined,
+                bullets: undefined,
+                headline: undefined,
+                subheadline: undefined,
+                ads: undefined,
+                seo: undefined
+            } as ProductConfig;
+        }
+    });
+
+    await Promise.all(promises);
+
+    // 3. Save Lightweight Index to 'campaign_config'
+    // This file now only acts as a directory/registry
+    const indexConfig = {
+        ...newConfig,
+        products: indexProducts
+    };
+
+    await kv.set('campaign_config', indexConfig);
 
     return { success: true };
   } catch (error: any) {

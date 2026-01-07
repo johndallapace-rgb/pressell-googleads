@@ -259,7 +259,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         status: 'active', // FORCE ACTIVE
         platform: 'unknown',
         official_url: importUrl,
-        affiliate_url: catalogItem ? `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}` : importUrl, // Fallback if no catalog match
+        affiliate_url: (catalogItem ? `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}` : importUrl).replace(/\{$/, ''), // Fix Trailing { Bug
         image_url: finalImageUrl, // Prioritize scraped/uploaded image
         headline: data.headline,
         subheadline: data.subheadline,
