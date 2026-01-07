@@ -175,29 +175,53 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     const cfgAny = config as any;
     const products = cfgAny.products || {};
     
+    // Normalize Input
+    const safeSlug = slug.toLowerCase().trim();
+    const safeVertical = vertical ? vertical.toLowerCase().trim() : undefined;
+
+    // DEBUG LOG
+    console.log(`[KV-Lookup] Searching for: slug='${safeSlug}', vertical='${safeVertical || 'none'}'`);
+
     // 1. Try Vertical-Prefixed Key (Priority)
     // e.g. "health:mitolyn"
-    if (vertical && products[`${vertical}:${slug}`]) {
-        const p = products[`${vertical}:${slug}`];
-        if (!p.slug) p.slug = slug;
-        return p;
+    if (safeVertical) {
+        const key = `${safeVertical}:${safeSlug}`;
+        if (products[key]) {
+             console.log(`[KV-Lookup] Hit (Prefix): ${key}`);
+             const p = products[key];
+             if (!p.slug) p.slug = safeSlug;
+             return p;
+        }
     }
 
     // 2. Try Exact Slug (Legacy/Global)
     // e.g. "mitolyn"
-    if (products[slug]) {
-        const p = products[slug];
-        if (!p.slug) p.slug = slug;
+    if (products[safeSlug]) {
+        console.log(`[KV-Lookup] Hit (Exact): ${safeSlug}`);
+        const p = products[safeSlug];
+        if (!p.slug) p.slug = safeSlug;
         return p;
     }
     
     // 3. Fallback: Root Object (Legacy Formato B)
-    if (cfgAny[slug]) {
-        const p = cfgAny[slug];
-        if (!p.slug) p.slug = slug;
+    if (cfgAny[safeSlug]) {
+        console.log(`[KV-Lookup] Hit (Root): ${safeSlug}`);
+        const p = cfgAny[safeSlug];
+        if (!p.slug) p.slug = safeSlug;
         return p;
     }
     
+    // 4. Fallback: Search Keys ending with :slug
+    // This handles cases where vertical is missing but product exists as "health:mitolyn"
+    const foundKey = Object.keys(products).find(k => k.endsWith(`:${safeSlug}`));
+    if (foundKey) {
+        console.log(`[KV-Lookup] Hit (Suffix Search): ${foundKey}`);
+        const p = products[foundKey];
+        if (!p.slug) p.slug = safeSlug;
+        return p;
+    }
+
+    console.warn(`[KV-Lookup] Miss: ${safeSlug}`);
     return null;
   } catch (error) {
     console.error(`Error in getProduct for slug ${slug}:`, error);

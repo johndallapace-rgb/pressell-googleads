@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
     if (!product || !product.slug) {
        return NextResponse.json({ error: 'Invalid product data' }, { status: 400 });
     }
+    
+    // NORMALIZE SLUG ON SAVE
+    product.slug = product.slug.toLowerCase().trim();
 
     // SECURITY LOCK: Reject Untitled Products
     if (product.name === 'Untitled Product' || product.name === 'New Product') {

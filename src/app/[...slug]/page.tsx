@@ -78,7 +78,8 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     const host = headerList.get('host') || 'unknown';
     const detectedVertical = getVerticalFromHost(host);
 
-    console.log('[CatchAllPage] Init', { slug, lang, host });
+    console.log(`[CatchAllPage] INCOMING REQUEST: Host=${host}, Slug=${slug}, Vertical=${detectedVertical}`);
+    console.log(`[CatchAllPage] TARGET KEY: ${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
 
     // 1. Try Localized Key: "amino-de" (Rare)
     let product = await getProduct(`${slug}-${lang}`, detectedVertical);
