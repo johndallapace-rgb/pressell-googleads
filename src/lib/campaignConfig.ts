@@ -99,7 +99,6 @@ export function normalizeConfig(raw: any): CampaignConfig {
     }
 
     return {
-        active_product_slug: effectiveConfig.active_product_slug || defaultConfig.active_product_slug,
         default_lang: effectiveConfig.default_lang || defaultConfig.default_lang,
         products: Object.keys(normalizedProducts).length > 0 ? normalizedProducts : defaultConfig.products
     };
@@ -127,15 +126,13 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
         }
 
         // If not found, try reading separate keys
-        const [activeSlug, defaultLang, products] = await Promise.all([
-            client.get('active_product_slug'),
+        const [defaultLang, products] = await Promise.all([
             client.get('default_lang'),
             client.get('products')
         ]);
 
-        if (activeSlug || products) {
+        if (products) {
             return normalizeConfig({
-                active_product_slug: activeSlug,
                 default_lang: defaultLang,
                 products: products
             });
@@ -166,7 +163,7 @@ export function getKeysFound(config: CampaignConfig): string[] {
     const productKeys = Object.keys(productsObj);
     
     // Root keys (Format B), excluding known non-product keys
-    const knownKeys = ['active_product_slug', 'default_lang', 'products'];
+    const knownKeys = ['default_lang', 'products'];
     const rootKeys = Object.keys(cfgAny).filter(k => 
         !knownKeys.includes(k) && 
         typeof cfgAny[k] === 'object' &&

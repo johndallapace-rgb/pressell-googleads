@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignConfig, ProductConfig, updateCampaignConfig } from '@/lib/config';
+import { getCampaignConfig, ProductConfig, updateCampaignConfig, deleteProductKey } from '@/lib/config';
 import { extractYoutubeId } from '@/lib/youtube';
 import { verifyToken } from '@/lib/auth';
 import fs from 'fs';
@@ -307,8 +307,18 @@ export async function DELETE(request: NextRequest) {
     // 3. Delete from Config
     if (location === 'products') {
         delete currentConfig.products[keyToDelete];
+        
+        // NEW: Also delete from KV directly to prevent ghosts
+        await deleteProductKey(keyToDelete);
+        
+        // Also try to delete the simple slug if it differs from keyToDelete (e.g. key=health:slug, delete slug too)
+        if (keyToDelete.includes(':')) {
+             const simpleSlug = keyToDelete.split(':')[1];
+             await deleteProductKey(simpleSlug);
+        }
     } else {
         delete cfgAny[keyToDelete];
+        await deleteProductKey(keyToDelete);
     }
     
     // If active, unset it

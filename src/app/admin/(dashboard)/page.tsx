@@ -2,9 +2,9 @@ import { getCampaignConfig } from '@/lib/config';
 
 export default async function AdminDashboard() {
   const config = await getCampaignConfig();
-  const activeSlug = config.active_product_slug || 'mitolyn';
-  const activeProduct = config.products[activeSlug] || config.products['mitolyn'];
-  const productName = activeProduct ? activeProduct.name : 'Unknown Product';
+  const products = Object.values(config.products || {});
+  const activeProducts = products.filter(p => p.status === 'active');
+  const activeCount = activeProducts.length;
 
   return (
     <div>
@@ -13,9 +13,9 @@ export default async function AdminDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-gray-500 text-sm font-medium uppercase">Active Campaign</h3>
-          <p className="text-2xl font-bold text-gray-900 mt-2 truncate" title={productName}>{productName}</p>
-          <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-1 rounded mt-2 inline-block">LIVE</span>
+          <h3 className="text-gray-500 text-sm font-medium uppercase">Active Campaigns</h3>
+          <p className="text-2xl font-bold text-gray-900 mt-2 truncate">{activeCount}</p>
+          <span className="text-xs text-green-600 font-bold bg-green-100 px-2 py-1 rounded mt-2 inline-block">LIVE PRODUCTS</span>
         </div>
         
         {/* Last Spy Widget */}

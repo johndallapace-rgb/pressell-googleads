@@ -53,19 +53,6 @@ export default function SettingsManager({ initialConfig, readOnly = false }: { i
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Active Product Slug</label>
-          <p className="text-xs text-gray-500 mb-2">The product that will be shown on the home page (/).</p>
-          <select 
-            value={config.active_product_slug}
-            onChange={e => setConfig({...config, active_product_slug: e.target.value})}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          >
-            {productKeys.map(slug => (
-              <option key={slug} value={slug}>{config.products[slug].name} ({slug})</option>
-            ))}
-          </select>
-        </div>
-        <div>
           <label className="block text-sm font-medium text-gray-700">Default Language</label>
           <p className="text-xs text-gray-500 mb-2">Fallback language for the platform.</p>
           <select 

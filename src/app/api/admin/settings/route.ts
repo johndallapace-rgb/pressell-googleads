@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const newConfig = await request.json();
     
     // Basic validation
-    if (!newConfig.active_product_slug || !newConfig.products) {
+    if (!newConfig.products) {
        return NextResponse.json({ error: 'Invalid config structure' }, { status: 400 });
     }
 

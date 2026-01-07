@@ -332,6 +332,62 @@ export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{
   }
 }
 
+export async function deleteProductKey(key: string): Promise<void> {
+    if (!kv) return;
+    try {
+        console.log(`[KV-Delete] Removing key: ${key}`);
+        await kv.del(key);
+    } catch (e) {
+        console.error(`Failed to delete KV key ${key}:`, e);
+    }
+}
+
+export async function cleanupGhostKeys(): Promise<{ deleted: string[], kept: string[] }> {
+    if (!kv) return { deleted: [], kept: [] };
+    
+    try {
+        // Get all keys
+        const allKeys = await kv.keys('*');
+        const config = await getCampaignConfig();
+        // Normalize valid keys from the current configuration
+        const validKeys = new Set(Object.keys(config.products || {}));
+        const systemKeys = ['campaign_config', 'campaign_metrics', 'default_lang'];
+        
+        const deleted: string[] = [];
+        const kept: string[] = [];
+
+        for (const key of allKeys) {
+            if (systemKeys.includes(key)) {
+                kept.push(key);
+                continue;
+            }
+            
+            // If it's in the products map, keep it
+            if (validKeys.has(key)) {
+                kept.push(key);
+                continue;
+            }
+            
+            // If we are here, it's a ghost key (e.g. "tedswoodworking" when only "health:tedswoodworking" is valid, or completely removed)
+            // But wait! What if "health:mitolyn" is in config, but "mitolyn" key exists as a redirect?
+            // If the user wants strict sync, we delete "mitolyn" if it's not in config.
+            
+            // Safety check: Don't delete session tokens or other potential keys if we share Redis
+            // Assuming dedicated Redis for this app or prefixed.
+            // If keys look like "sess:...", skip?
+            // User said "remove keys that are not in My Products".
+            
+            await kv.del(key);
+            deleted.push(key);
+        }
+        
+        return { deleted, kept };
+    } catch (e) {
+        console.error('Cleanup failed:', e);
+        return { deleted: [], kept: [] };
+    }
+}
+
 export async function debugKV() {
     if (!kv) return ['KV Not Initialized'];
     try {

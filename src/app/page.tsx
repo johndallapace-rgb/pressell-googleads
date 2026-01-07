@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   const config = await getCampaignConfig();
   
-  const activeSlug = config.active_product_slug;
   const products = config.products || {};
   
   // Detect Host Vertical
@@ -35,18 +34,13 @@ export default async function HomePage() {
   }
 
   // 2. Default Logic (Root Domain)
-  // Check if the configured active product is actually active
-  if (activeSlug && products[activeSlug]?.status === 'active') {
-    redirect(`/${activeSlug}`);
-  }
-
-  // 3. Fallback: Find the first active product available (any vertical)
+  // Fallback: Find the first active product available (any vertical)
   const firstActive = Object.values(products).find(p => p.status === 'active');
   if (firstActive) {
     redirect(`/${firstActive.slug}`);
   }
 
-  // 4. No active campaign found -> Render "No Active Campaign" page
+  // 3. No active campaign found -> Render "No Active Campaign" page
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-600 p-4">
       <div className="max-w-md text-center">
