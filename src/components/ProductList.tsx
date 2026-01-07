@@ -184,27 +184,27 @@ export default function ProductList({ products }: ProductListProps) {
                       <div className="flex items-center gap-3 mt-1">
                           {/* 1. Domain Status */}
                           <div className="flex items-center gap-1.5" title="Domain Propagation">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.domain ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.domain ? 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-[#ef4444]'}`}></div>
                               <span className="text-[10px] font-bold text-gray-500 uppercase">
-                                  {statusMap[product.slug]?.domain ? 'Live' : 'Offline'}
+                                  {statusMap[product.slug]?.domain ? 'Online' : 'Offline'}
                               </span>
                           </div>
 
                           {/* 2. Pixel Status */}
                           <div className="flex items-center gap-1.5" title="Google Ads Pixel">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.pixel ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.pixel ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
                               <span className="text-[10px] font-bold text-gray-500 uppercase">Pixel</span>
                           </div>
 
                           {/* 3. Affiliate Link */}
                           <div className="flex items-center gap-1.5" title="Affiliate Link Integrity">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.affiliate ? 'bg-purple-500' : 'bg-red-500'}`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.affiliate ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
                               <span className="text-[10px] font-bold text-gray-500 uppercase">Link</span>
                           </div>
 
                           {/* 4. Ads Status (Placeholder) */}
                           <div className="flex items-center gap-1.5" title="Ads Activity">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.ads ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.ads ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
                               <span className="text-[10px] font-bold text-gray-400 uppercase">Ads</span>
                           </div>
                       </div>
