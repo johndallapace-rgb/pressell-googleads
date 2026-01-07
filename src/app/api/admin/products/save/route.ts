@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
         ...product
     };
 
+    console.log('--- TENTANDO GRAVAR NO KV ---', storageKey);
+
     const success = await updateCampaignConfig(config);
 
     if (success) {

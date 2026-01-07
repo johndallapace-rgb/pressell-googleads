@@ -441,13 +441,6 @@ export default function CreateProductForm() {
                     type="submit"
                     disabled={loading || !formData.affiliate_url || !formData.official_url}
                     className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-3"
-                    onClick={(e) => {
-                        // Prevent double-click
-                        if (loading) {
-                            e.preventDefault();
-                            return;
-                        }
-                    }}
                 >
                     {loading ? (
                         <>
