@@ -234,15 +234,25 @@ export async function listProducts(): Promise<ProductConfig[]> {
   if (!config.products) return [];
   
   // Robust mapping: Ensure slug is present by using the key if missing in the value
+  // IMPORTANT: Clean up keys like 'health:mitolyn' to just 'mitolyn' for display if needed
   return Object.entries(config.products)
-    .map(([key, value]) => ({
-        ...value,
-        slug: value.slug || key,
-        // Ensure other critical fields have fallbacks
-        name: value.name || 'Untitled Product',
-        vertical: value.vertical || 'other',
-        language: value.language || 'en'
-    }))
+    .map(([key, value]) => {
+        // If key is 'health:mitolyn', the slug should be 'mitolyn'
+        // But we must respect the value.slug if it exists and is correct.
+        let displaySlug = value.slug || key;
+        if (key.includes(':') && (!value.slug || value.slug === key)) {
+             displaySlug = key.split(':')[1];
+        }
+
+        return {
+            ...value,
+            slug: displaySlug, // Clean slug for UI
+            // Ensure other critical fields have fallbacks
+            name: value.name || 'Untitled Product',
+            vertical: value.vertical || 'other',
+            language: value.language || 'en'
+        };
+    })
     .filter(p => p.slug && p.slug !== 'undefined' && p.slug !== 'null');
 }
 
