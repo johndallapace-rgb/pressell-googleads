@@ -80,7 +80,8 @@ export default function CreateProductForm() {
             ...prev, 
             official_url: importUrlParam,
             vertical: nicheParam ? nicheParam.toLowerCase() : prev.vertical, // Pre-select Niche
-            affiliate_url: prev.affiliate_url || 'https://hop.clickbank.net/?affiliate=johnpace&vendor=VENDOR_ID' // Default JohnPace placeholder
+            affiliate_url: prev.affiliate_url || 'https://hop.clickbank.net/?affiliate=johnpace&vendor=VENDOR_ID', // Default JohnPace placeholder
+            google_ads_id: prev.google_ads_id || '17850696537' // Default Pixel ID for Scale
         }));
         
         if (nicheParam) {
