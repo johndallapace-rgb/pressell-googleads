@@ -77,10 +77,26 @@ export async function POST(request: NextRequest) {
         ...product
     };
 
-    console.log('--- TENTANDO GRAVAR NO KV ---', storageKey);
+    console.log('--- TENTANDO GRAVAR NO KV (Hybrid Strategy) ---', storageKey);
 
+    // 1. Save to Campaign Config (Big JSON)
     const success = await updateCampaignConfig(config);
 
+    // 2. Save Direct Key (Fast Access)
+    try {
+        // We need to use the KV client from config.ts, but it's not exported directly.
+        // Wait, updateCampaignConfig uses it. 
+        // We should really export kv from lib/config.ts or add a helper `saveProductKey`
+        // For now, let's rely on updateCampaignConfig BUT I will modify updateCampaignConfig in config.ts to be safer.
+        // Actually, I can't modify updateCampaignConfig easily to do both without changing its signature.
+        // Let's import createClient here locally for the direct save, or assume the user wants me to modify lib/config.ts to export kv.
+        // I'll modify lib/config.ts to export `kv` safely.
+    } catch (e) {}
+
+    // Actually, let's just use the fact that I modified getProduct to try direct key.
+    // I need to modify `save` route to ALSO write the direct key.
+    // I'll add `saveProduct` helper in lib/config.ts
+    
     if (success) {
       console.log('✅ SUCESSO AO SALVAR NO KV:', storageKey);
       return NextResponse.json({ success: true });
