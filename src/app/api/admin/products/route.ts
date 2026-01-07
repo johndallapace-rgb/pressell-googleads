@@ -76,10 +76,10 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // 2. Basic Validation & Safety Lock
-    // Explicitly require Affiliate URL and YouTube Review for revenue/conversion safety
-    if (!name || !vertical || !affiliate_url || !official_url || !youtube_review_url) {
+    // Explicitly require Affiliate URL for revenue safety. YouTube is optional (AI might not find one).
+    if (!name || !vertical || !affiliate_url || !official_url) {
       return NextResponse.json({ 
-          error: 'Missing required fields: Name, Vertical, Affiliate URL, Official URL, and YouTube Review are mandatory.' 
+          error: 'Missing required fields: Name, Vertical, Affiliate URL, and Official URL are mandatory.' 
       }, { status: 400 });
     }
 

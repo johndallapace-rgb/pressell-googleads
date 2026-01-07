@@ -436,12 +436,18 @@ export default function CreateProductForm() {
                     🧪 SAVE FOR ROUTE TESTING (NO AI)
                 </button>
 
-                {/* 2. Main AI Button (Temporarily Disabled via Logic, but kept for UI) */}
+                {/* 2. Main AI Button (UNLOCKED) */}
                 <button 
                     type="submit"
-                    disabled={true} // FORCED DISABLE AS REQUESTED
-                    className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-black text-2xl rounded-2xl shadow-none cursor-not-allowed opacity-70 flex items-center justify-center gap-3"
-                    title="Disabled for Route Debugging"
+                    disabled={loading || !formData.affiliate_url || !formData.official_url}
+                    className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-3"
+                    onClick={(e) => {
+                        // Prevent double-click
+                        if (loading) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }}
                 >
                     {loading ? (
                         <>
@@ -453,12 +459,12 @@ export default function CreateProductForm() {
                         </>
                     ) : (
                         <>
-                            <span>🔒</span> AI GENERATION LOCKED (DEBUG MODE)
+                            <span>🚀</span> GENERATE PRE-SELL WITH GEMINI
                         </>
                     )}
                 </button>
-                <p className="text-red-400 text-xs mt-1 font-bold">
-                    * AI Generation disabled until Route Test passes (Green Light on Dashboard).
+                <p className="text-gray-400 text-sm mt-4">
+                    AI will auto-detect language, download images, and build the vertical layout.
                 </p>
             </div>
 
