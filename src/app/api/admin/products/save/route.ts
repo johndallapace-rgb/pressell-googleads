@@ -52,6 +52,12 @@ export async function POST(request: NextRequest) {
             // If we are updating a product that SHOULD exist (from auto-create), this is an error condition
             // unless it's a manual creation from scratch.
             console.log(`[Save API] Key not found for '${product.slug}'. Treating as new/root entry.`);
+            
+            // 3. Fallback: Create new key with Vertical prefix if available (SYNC WITH AUTO-CREATE)
+            if (product.vertical) {
+                storageKey = `${product.vertical}:${product.slug}`;
+                console.log(`[Save API] Auto-Prefixing New Key: ${storageKey}`);
+            }
         }
     }
     
@@ -76,6 +82,7 @@ export async function POST(request: NextRequest) {
     const success = await updateCampaignConfig(config);
 
     if (success) {
+      console.log('✅ SUCESSO AO SALVAR NO KV:', storageKey);
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: 'Failed to update Edge Config' }, { status: 500 });

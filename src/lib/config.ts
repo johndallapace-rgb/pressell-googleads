@@ -10,7 +10,14 @@ const kvToken = process.env.REDIS_TOKEN || process.env.KV_REST_API_TOKEN || proc
 // Create a safe client if ANY URL is present. 
 // We use a fallback token to prevent crash, but requests might fail if auth is required and missing.
 const kv = kvUrl 
-    ? createClient({ url: kvUrl, token: kvToken || 'missing-token' })
+    ? createClient({ 
+        url: kvUrl, 
+        token: kvToken || 'missing-token',
+        automaticDeserialization: true,
+        // FORCE NO CACHE to ensure real-time updates for status check
+        // @ts-ignore
+        fetchOptions: { cache: 'no-store', next: { revalidate: 0 } }
+      })
     : null;
 
 export type SeoConfig = {
