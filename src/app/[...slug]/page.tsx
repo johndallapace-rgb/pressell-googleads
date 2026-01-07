@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { generateSeoMetadata } from '@/lib/seo';
 import { PageProps } from '@/types';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
