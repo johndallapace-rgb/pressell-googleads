@@ -214,8 +214,14 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     
     // FALLBACK: Force 'health' if AI returns 'other' or 'general' to ensure valid subdomain
     if (finalVertical === 'other' || finalVertical === 'general') {
-        console.log(`[Auto-Create] Vertical '${finalVertical}' detected. Forcing 'health' for safety.`);
-        finalVertical = 'health';
+        // If user explicitly provided 'other', we might respect it, but generally for auto-create we want specific verticals.
+        // If userVertical was provided, use it. If not, default to health.
+        if (userVertical && userVertical !== 'other') {
+             finalVertical = userVertical;
+        } else {
+             console.log(`[Auto-Create] Vertical '${finalVertical}' detected. Forcing 'health' for safety.`);
+             finalVertical = 'health';
+        }
     }
 
     // Map AI Vertical to Subdomain (Simple Logic)
@@ -361,6 +367,15 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     // KEY CHANGE: Use "vertical:slug" as key to prevent collisions and enforce routing
     let storageKey = `${finalSubdomain}:${safeSlug}`;
     
+    // ANTI-GHOSTING: Clean up any potential 'other:slug' or 'undefined:slug' ghosts
+    const ghostKeys = [`other:${safeSlug}`, `undefined:${safeSlug}`, `${safeSlug}`];
+    ghostKeys.forEach(ghost => {
+        if (currentConfig.products[ghost]) {
+            console.log(`[Auto-Create] Removing ghost key: ${ghost}`);
+            delete currentConfig.products[ghost];
+        }
+    });
+
     // VALIDATION: Unique Slug Check
     let counter = 2;
     // Check if key exists (simplified check, ideally we read from KV first but we have currentConfig)
