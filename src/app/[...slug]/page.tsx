@@ -93,20 +93,24 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     // 3. Fallback: Global Search (No Prefix)
     if (!product) {
+        // Try searching for the slug as is (legacy support)
         product = await getProduct(slug); // Tries "mitolyn"
+        
         if (product) {
              console.log(`[CatchAllPage] Found product globally (Legacy/No-Prefix): ${slug}`);
-        }
-        
-        // 4. NEW: Brute-force Search for 'OTHER' or Main Domain Access
-        // If we are on the main domain (detectedVertical is null), we should try to find the product
-        // even if it's saved as "health:mitolyn" or "other:mitolyn"
-        if (!product && !detectedVertical) {
+        } else {
+             // 4. NEW: Brute-force Search for ANY vertical if detectedVertical is missing or mismatched
+             // This is CRITICAL for when we access via Main Domain but product is stored as "health:mitolyn"
+             console.log(`[CatchAllPage] Deep Search initiated for '${slug}' across all verticals...`);
+             
              const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
              for (const v of commonVerticals) {
+                 // Skip if we already checked this specific vertical above
+                 if (v === detectedVertical) continue;
+                 
                  const p = await getProduct(slug, v);
                  if (p) {
-                     console.log(`[CatchAllPage] Rescue: Found product in vertical '${v}' via main domain.`);
+                     console.log(`[CatchAllPage] Rescue: Found product in vertical '${v}' (Key: ${v}:${slug})`);
                      product = p;
                      break;
                  }
