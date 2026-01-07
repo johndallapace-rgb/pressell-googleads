@@ -102,10 +102,10 @@ export default function ProductList({ products }: ProductListProps) {
       
       // FIX: Respect the product's vertical for subdomain routing
       if (p.vertical && p.vertical !== 'other' && p.vertical !== 'general') {
-          return `https://${p.vertical}.${rootDomain}/${p.slug}`;
+          return `https://${p.vertical}.${rootDomain}/${p.slug}`; // No .html
       }
 
-      return `https://${rootDomain}/${p.slug}`;
+      return `https://${rootDomain}/${p.slug}`; // No .html
   };
 
   return (

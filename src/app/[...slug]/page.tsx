@@ -21,12 +21,12 @@ export async function generateMetadata({ params }: PageProps) {
   if (!slugParts || !Array.isArray(slugParts) || slugParts.length === 0) return {};
 
     // HTML/System File Filter
-    if (slugParts[0].endsWith('.html') || slugParts[0].endsWith('.php') || slugParts[0].endsWith('.map')) {
+    if (slugParts[0].endsWith('.php') || slugParts[0].endsWith('.map')) {
         return {};
     }
 
     let lang = 'en';
-  let slug = slugParts[0];
+    let slug = slugParts[0].replace('.html', '');
 
   const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
   if (slugParts.length >= 2 && validLangs.includes(slugParts[0])) {
@@ -62,13 +62,13 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     }
 
     // HTML/System File Filter (Runtime)
-    if (slugParts[0].endsWith('.html') || slugParts[0].endsWith('.php')) {
+    if (slugParts[0].endsWith('.php')) {
          console.warn(`[CatchAllPage] Blocked file access: ${slugParts[0]}`);
          notFound();
     }
 
     let lang = 'en';
-    let slug = slugParts[0];
+    let slug = slugParts[0].replace('.html', '');
 
     // Detect Locale Strategy
     const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
