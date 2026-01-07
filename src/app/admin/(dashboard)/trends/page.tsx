@@ -357,10 +357,10 @@ export default function MarketTrendsPage() {
 
                           <div className="flex gap-2">
                             <button 
-                                onClick={() => router.push(`/admin/ad-spy?q=${encodeURIComponent(product.name)}&country=${product.currency === 'EUR' ? 'DE' : 'US'}&targetUrl=${encodeURIComponent(product.url)}`)}
-                                className="w-full bg-gray-900 text-white text-xs font-bold py-2 rounded hover:bg-black transition-colors flex items-center justify-center gap-1 group-hover:scale-[1.02]"
+                                onClick={() => router.push(`/admin/products/new?url=${encodeURIComponent(product.url)}&niche=${encodeURIComponent(product.vertical)}`)}
+                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold py-2 rounded hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1"
                             >
-                                🕵️ Spy Now
+                                🚀 Create Pre-sell
                             </button>
                           </div>
                       </div>
@@ -430,10 +430,10 @@ export default function MarketTrendsPage() {
                               </td>
                               <td className="px-6 py-4 text-right">
                                   <button 
-                                    onClick={() => router.push(`/admin/ad-spy?q=${encodeURIComponent(product.name)}&country=${product.currency === 'EUR' ? 'DE' : 'US'}&targetUrl=${encodeURIComponent(product.url)}`)}
-                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded transition-all"
+                                    onClick={() => router.push(`/admin/products/new?url=${encodeURIComponent(product.url)}&niche=${encodeURIComponent(product.vertical)}`)}
+                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded transition-all flex items-center gap-1 ml-auto"
                                   >
-                                      🕵️ Spy
+                                      🚀 Create
                                   </button>
                               </td>
                           </tr>

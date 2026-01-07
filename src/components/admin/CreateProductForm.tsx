@@ -15,7 +15,8 @@ export default function CreateProductForm() {
 
   // Platform Context
   const importedPlatform = searchParams.get('platform');
-  const importUrlParam = searchParams.get('import');
+  const importUrlParam = searchParams.get('import') || searchParams.get('url'); // Handle 'url' from Market Trends
+  const nicheParam = searchParams.get('niche');
   const catalogId = searchParams.get('catalogId');
   const catalogSlug = searchParams.get('catalogSlug');
   
@@ -75,9 +76,18 @@ export default function CreateProductForm() {
     // 2. Handle Import Param (Auto-Scrape)
     if (importUrlParam && !importing && !importUrl) {
         setImportUrl(importUrlParam);
-        // Removed auto-click to allow manual control as requested
+        setFormData(prev => ({ 
+            ...prev, 
+            official_url: importUrlParam,
+            vertical: nicheParam ? nicheParam.toLowerCase() : prev.vertical, // Pre-select Niche
+            affiliate_url: prev.affiliate_url || 'https://hop.clickbank.net/?affiliate=johnpace&vendor=VENDOR_ID' // Default JohnPace placeholder
+        }));
+        
+        if (nicheParam) {
+            setMessage({ type: 'success', text: `🚀 Ready to Launch: ${nicheParam} Product Detected. Please verify Affiliate Link.` });
+        }
     }
-  }, [catalogId, catalogSlug, importUrlParam]);
+  }, [catalogId, catalogSlug, importUrlParam, nicheParam]);
 
   // Auto-fill Affiliate ID if Platform detected
   useEffect(() => {
