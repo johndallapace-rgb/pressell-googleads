@@ -260,40 +260,82 @@ export async function DELETE(request: NextRequest) {
     const slug = searchParams.get('slug');
 
     if (!slug) {
-        return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Slug/ID is required' }, { status: 400 });
     }
+
+    console.log(`[Delete API] Request to delete: ${slug}`);
 
     // 1. Get Config
     const currentConfig = await getCampaignConfig();
+    const cfgAny = currentConfig as any;
     
-    if (!currentConfig.products || !currentConfig.products[slug]) {
+    // 2. Find Key to Delete
+    let keyToDelete: string | null = null;
+    let location: 'products' | 'root' | null = null;
+
+    // A. Check products object (Standard)
+    if (currentConfig.products && currentConfig.products[slug]) {
+        keyToDelete = slug;
+        location = 'products';
+    }
+    // B. Check products object by Value (ID/Slug match)
+    else if (currentConfig.products) {
+        const foundKey = Object.keys(currentConfig.products).find(k => {
+            const p = currentConfig.products[k];
+            return p.slug === slug || p.id === slug || k === slug;
+        });
+        if (foundKey) {
+            keyToDelete = foundKey;
+            location = 'products';
+        }
+    }
+
+    // C. Check Root (Legacy Formato B)
+    if (!keyToDelete && cfgAny[slug]) {
+        keyToDelete = slug;
+        location = 'root';
+    }
+
+    if (!keyToDelete) {
+        console.warn(`[Delete API] Product not found: ${slug}`);
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // 2. Delete from Config
-    delete currentConfig.products[slug];
+    console.log(`[Delete API] Deleting key: ${keyToDelete} from ${location}`);
+
+    // 3. Delete from Config
+    if (location === 'products') {
+        delete currentConfig.products[keyToDelete];
+    } else {
+        delete cfgAny[keyToDelete];
+    }
     
     // If active, unset it
-    if (currentConfig.active_product_slug === slug) {
+    if (currentConfig.active_product_slug === slug || currentConfig.active_product_slug === keyToDelete) {
         currentConfig.active_product_slug = '';
     }
 
-    // 3. Save Config
+    // 4. Save Config
     const result = await updateCampaignConfig(currentConfig);
     if (!result.success) {
         throw new Error(result.error);
     }
 
-    // 4. Delete Image (Best Effort)
+    // 5. Delete Image (Best Effort)
     try {
         const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
-        // We don't know the extension, try common ones
         const extensions = ['.jpg', '.png', '.webp', '.svg'];
-        for (const ext of extensions) {
-            const filePath = path.join(publicDir, `${slug}${ext}`);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-                console.log(`[Delete] Removed image: ${filePath}`);
+        
+        // Try deleting by slug and key
+        const namesToCheck = [slug, keyToDelete];
+        
+        for (const name of namesToCheck) {
+            for (const ext of extensions) {
+                const filePath = path.join(publicDir, `${name}${ext}`);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    console.log(`[Delete] Removed image: ${filePath}`);
+                }
             }
         }
     } catch (e) {
