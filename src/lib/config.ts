@@ -136,7 +136,6 @@ export type PlatformConfig = {
 };
 
 export interface CampaignConfig {
-  active_product_slug: string;
   default_lang: string;
   products: Record<string, ProductConfig>;
   platforms?: Record<string, PlatformConfig>; // New field for storing keys
@@ -160,6 +159,10 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
     
     if (config && typeof config === 'object') {
       const cfg = config as any;
+      
+      // CLEANUP: Remove deprecated active_product_slug
+      if (cfg.active_product_slug) delete cfg.active_product_slug;
+
       return {
         ...defaultConfig,
         ...cfg, // Merges root keys (Formato B support)

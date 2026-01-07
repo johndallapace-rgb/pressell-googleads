@@ -5,7 +5,7 @@ import { CampaignConfig } from '@/lib/config';
 // The hardcoded products (Mitolyn, Amino, Tube Mastery) are removed.
 
 export const defaultConfig: CampaignConfig = {
-  active_product_slug: '',
   default_lang: 'en',
-  products: {} // Empty!
+  products: {},
+  platforms: {}
 };

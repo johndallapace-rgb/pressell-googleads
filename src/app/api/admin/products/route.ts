@@ -231,9 +231,10 @@ export async function POST(request: NextRequest) {
     currentConfig.products[finalSlug] = newProduct;
 
     // Optional: Set as Active
-    if (set_as_active) {
-      currentConfig.active_product_slug = finalSlug;
-    }
+    // DEPRECATED: active_product_slug is removed. We use status 'active' per product now.
+    // if (set_as_active) {
+    //   currentConfig.active_product_slug = finalSlug;
+    // }
 
     // 7. Save to Edge Config (Upsert)
     const result = await updateCampaignConfig(currentConfig);
@@ -311,9 +312,10 @@ export async function DELETE(request: NextRequest) {
     }
     
     // If active, unset it
-    if (currentConfig.active_product_slug === slug || currentConfig.active_product_slug === keyToDelete) {
-        currentConfig.active_product_slug = '';
-    }
+    // DEPRECATED
+    // if (currentConfig.active_product_slug === slug || currentConfig.active_product_slug === keyToDelete) {
+    //     currentConfig.active_product_slug = '';
+    // }
 
     // 4. Save Config
     const result = await updateCampaignConfig(currentConfig);
