@@ -9,7 +9,7 @@ const kvToken = process.env.REDIS_TOKEN || process.env.KV_REST_API_TOKEN || proc
 
 // Create a safe client if ANY URL is present. 
 // We use a fallback token to prevent crash, but requests might fail if auth is required and missing.
-const kv = kvUrl 
+export const kv = kvUrl 
     ? createClient({ 
         url: kvUrl, 
         token: kvToken || 'missing-token',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignConfig, updateCampaignConfig, saveProduct, ProductConfig } from '@/lib/config';
+import { getCampaignConfig, updateCampaignConfig, saveProduct, ProductConfig, kv } from '@/lib/config';
 import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -41,6 +41,12 @@ export async function POST(request: NextRequest) {
     // 2. Save FULL Product to KV (Side A - Content)
     // This ensures the product page has all data (bullets, content, etc.)
     await saveProduct(product);
+    
+    // DIRECT KV SAVE (Safety Net)
+    if (kv) {
+        console.log(`[Save API] Direct KV Set for key: ${storageKey}`);
+        await kv.set(storageKey, product);
+    }
 
     // 3. Update Campaign Config Index (Side B - Directory)
     // This ensures the product appears in the Admin List

@@ -139,12 +139,14 @@ export default async function CatchAllProductPage({ params }: PageProps) {
       return notFound();
     }
 
-    // STRICT VERTICAL ROUTING (Subdomain Enforcement)
+    // STRICT VERTICAL ROUTING (Subdomain Enforcement) - REMOVED FOR FLEXIBILITY
+    /*
     // If accessing via health.domain.com, product MUST be health vertical.
     if (detectedVertical && product.vertical !== detectedVertical) {
          console.warn(`[Routing] Mismatch: Host Vertical (${detectedVertical}) != Product Vertical (${product.vertical})`);
          return notFound(); // Or redirect to main domain? notFound is safer for now to avoid loops.
     }
+    */
 
     // --- Tracking Setup ---
     const externalTrackId = generateExternalTrackId('googleads', lang, slug);

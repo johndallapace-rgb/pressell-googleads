@@ -111,22 +111,16 @@ export async function middleware(request: NextRequest) {
       realSlug = pathname;
   }
 
-  // Rewrite Logic
+  // Rewrite Logic - SIMPLIFIED: Just Pass Headers, No Rewrites to avoid loops
+  /*
   if (subdomain || locale !== 'en') {
       const url = request.nextUrl.clone();
-      
-      // If we have a locale in path, we DON'T need to rewrite path anymore
-      // because we now have src/app/[lang]/[slug]/page.tsx handling it physically.
-      // We just need to pass headers.
       
       if (subdomain && url.pathname === '/') {
           // Subdomain root rewrite (legacy support)
           url.pathname = `/${subdomain}`;
           return NextResponse.rewrite(url);
       }
-      
-      // For locale paths, we just let them pass through, BUT we inject headers
-      // The Next.js router will match [lang]/[slug] automatically.
       
       const response = NextResponse.next();
       
@@ -135,6 +129,7 @@ export async function middleware(request: NextRequest) {
       
       return response;
   }
+  */
 
   // Pass subdomain as header for normal requests
   const response = NextResponse.next();
