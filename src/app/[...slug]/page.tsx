@@ -115,21 +115,21 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     if (!product) {
         // Try searching for the slug as is (legacy support)
         product = await getProduct(slug); // Tries "mitolyn"
-        
-        if (!product) {
-             // 4. NEW: Brute-force Search for ANY vertical if detectedVertical is missing or mismatched
-             const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
-             for (const v of commonVerticals) {
-                 // Skip if we already checked this specific vertical above
-                 if (v === detectedVertical) continue;
-                 
-                 const p = await getProduct(slug, v);
-                 if (p) {
-                     product = p;
-                     break;
-                 }
+    }
+
+    // 4. Fallback: Brute-force Search for ANY vertical if detectedVertical is missing or mismatched
+    if (!product) {
+         const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
+         for (const v of commonVerticals) {
+             // Skip if we already checked this specific vertical above
+             if (v === detectedVertical) continue;
+             
+             const p = await getProduct(slug, v);
+             if (p) {
+                 product = p;
+                 break;
              }
-        }
+         }
     }
 
     if (!product || product.status !== 'active') {

@@ -96,8 +96,8 @@ export async function middleware(request: NextRequest) {
   // 4. Folder Strategy: Detect Language/Locale from path
   // health.topproductofficial.com/de/amino -> subdomain=health, locale=de, slug=amino
   
-  // CRITICAL: Skip vertical/locale logic if we are in Admin (Safety Check)
-  if (pathname.startsWith('/admin')) {
+  // CRITICAL: Skip vertical/locale logic if we are in Admin or API (Safety Check)
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api')) {
       return NextResponse.next();
   }
   

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCampaignConfig, updateCampaignConfig, ProductConfig } from '@/lib/config';
+import { getCampaignConfig, updateCampaignConfig, saveProduct, ProductConfig } from '@/lib/config';
 import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -30,69 +30,50 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Cannot save Untitled Product' }, { status: 400 });
     }
 
+    // 1. Determine Storage Key
+    let storageKey = product.slug;
+    if (product.vertical) {
+        storageKey = `${product.vertical}:${product.slug}`;
+    }
+
+    console.log(`[Save API] Saving product to key: ${storageKey}`);
+
+    // 2. Save FULL Product to KV (Side A - Content)
+    // This ensures the product page has all data (bullets, content, etc.)
+    await saveProduct(product);
+
+    // 3. Update Campaign Config Index (Side B - Directory)
+    // This ensures the product appears in the Admin List
     const config = await getCampaignConfig();
     
-    // SMART LOOKUP: Find the correct storage key (e.g. 'health:slug' instead of just 'slug')
-    let storageKey = product.slug;
-    
-    // 1. Try exact match first
-    if (config.products[storageKey]) {
-        // Found exact match
-    } 
-    // 2. Try to find by suffix (vertical:slug)
-    else {
-        const foundKey = Object.keys(config.products).find(k => 
-            k === product.slug || 
-            k.endsWith(`:${product.slug}`) ||
-            config.products[k].slug === product.slug
-        );
-        if (foundKey) {
-            storageKey = foundKey;
-        } else {
-            // New product? Be careful.
-            // If we are updating a product that SHOULD exist (from auto-create), this is an error condition
-            // unless it's a manual creation from scratch.
-            
-            // 3. Fallback: Create new key with Vertical prefix if available (SYNC WITH AUTO-CREATE)
-            if (product.vertical) {
-                storageKey = `${product.vertical}:${product.slug}`;
-            }
-        }
-    }
-    
-    // Update or Add product
-    // Merge Strategy: Keep existing fields, only update new ones
-    const existing = config.products[storageKey] || {};
-    
-    // PROTECTION: Don't overwrite a full product with a partial update that lacks name/vertical
-    // If 'existing' is empty (new product) and 'product' lacks name, REJECT.
-    if (Object.keys(existing).length === 0 && (!product.name || !product.vertical)) {
-         console.error(`[Save API] Attempted to create NEW product via Partial Update without Name/Vertical. Aborting.`);
-         return NextResponse.json({ error: 'Partial update failed: Product not found and missing required fields for creation.' }, { status: 400 });
+    // Ensure products structure exists
+    if (!config.products) config.products = {};
+
+    // Find if we need to clean up old keys (e.g. if vertical changed)
+    // We do a quick scan for the slug
+    const oldKey = Object.keys(config.products).find(k => k.endsWith(`:${product.slug}`) || k === product.slug);
+    if (oldKey && oldKey !== storageKey) {
+        console.log(`[Save API] Removing old key index: ${oldKey}`);
+        delete config.products[oldKey];
     }
 
+    // Create Lightweight Index Entry
     config.products[storageKey] = {
-        ...existing,
-        ...product
+        ...product,
+        // STRIP HEAVY FIELDS for the index
+        whatIs: undefined,
+        howItWorks: undefined,
+        prosCons: undefined,
+        testimonials: undefined,
+        faq: undefined,
+        bullets: undefined,
+        headline: undefined,
+        subheadline: undefined,
+        ads: undefined,
+        seo: undefined
     };
 
-    // 1. Save to Campaign Config (Big JSON)
     const success = await updateCampaignConfig(config);
-
-    // 2. Save Direct Key (Fast Access)
-    try {
-        // We need to use the KV client from config.ts, but it's not exported directly.
-        // Wait, updateCampaignConfig uses it. 
-        // We should really export kv from lib/config.ts or add a helper `saveProductKey`
-        // For now, let's rely on updateCampaignConfig BUT I will modify updateCampaignConfig in config.ts to be safer.
-        // Actually, I can't modify updateCampaignConfig easily to do both without changing its signature.
-        // Let's import createClient here locally for the direct save, or assume the user wants me to modify lib/config.ts to export kv.
-        // I'll modify lib/config.ts to export `kv` safely.
-    } catch (e) {}
-
-    // Actually, let's just use the fact that I modified getProduct to try direct key.
-    // I need to modify `save` route to ALSO write the direct key.
-    // I'll add `saveProduct` helper in lib/config.ts
     
     if (success) {
       return NextResponse.json({ success: true });

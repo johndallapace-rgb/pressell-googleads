@@ -296,64 +296,44 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
     }
 }
 
+export async function saveProduct(product: ProductConfig): Promise<boolean> {
+    if (!kv || !product.slug) return false;
+    try {
+        // Determine Key
+        const vertical = product.vertical || 'health';
+        // If we have a subdomain/vertical, use it. If 'other' or 'general', maybe just slug? 
+        // User wants vertical:slug.
+        const key = `${vertical}:${product.slug}`;
+        
+        console.log(`[KV-Save] Saving FULL product to key: ${key}`);
+        await kv.set(key, product);
+        return true;
+    } catch (e) {
+        console.error('[KV-Save] Error:', e);
+        return false;
+    }
+}
+
 export async function updateCampaignConfig(newConfig: CampaignConfig): Promise<{ success: boolean; error?: string }> {
   try {
-    // If kv is null, it means NO environment variables were found at all.
     if (!kv) {
-        console.warn('KV Database not configured. Changes will NOT be saved.');
-        return { success: false, error: 'KV Database not configured (Check Environment Variables)' };
+        return { success: false, error: 'KV not configured' };
     }
     
-    // 1. Separate Full Data from Index Data
-    const fullProducts = newConfig.products || {};
-    const indexProducts: Record<string, ProductConfig> = {};
-
-    // 2. Save Full Data to Individual Keys & Build Index
-    const promises = Object.entries(fullProducts).map(async ([key, product]) => {
-        if (product && product.slug) {
-            // A. Save FULL data to specific key (e.g. "health:mitolyn")
-            // This ensures the product page gets all details (bullets, headlines, etc.)
-            await kv?.set(key, product);
-
-            // B. Create Lightweight Summary for Campaign Config (Index)
-            // This prevents campaign_config from exceeding 1MB limits and causing JSON errors
-            indexProducts[key] = {
-                ...product,
-                // Keep essential fields for List View / Dashboard
-                name: product.name,
-                slug: product.slug,
-                vertical: product.vertical,
-                status: product.status,
-                language: product.language,
-                affiliate_url: product.affiliate_url,
-                google_ads_id: product.google_ads_id,
-                image_url: product.image_url,
-                // STRIP HEAVY FIELDS from the index
-                whatIs: undefined,
-                howItWorks: undefined,
-                prosCons: undefined,
-                testimonials: undefined,
-                faq: undefined,
-                bullets: undefined,
-                headline: undefined,
-                subheadline: undefined,
-                ads: undefined,
-                seo: undefined
-            } as ProductConfig;
-        }
-    });
-
-    await Promise.all(promises);
-
-    // 3. Save Lightweight Index to 'campaign_config'
-    // This file now only acts as a directory/registry
-    const indexConfig = {
-        ...newConfig,
-        products: indexProducts
-    };
-
-    await kv.set('campaign_config', indexConfig);
-
+    // We only save the index here. We assume individual products are saved via saveProduct.
+    // However, to be safe and fix the "overwrite with light data" bug:
+    // We should NOT save individual keys here unless we are sure we have full data.
+    // But distinguishing is hard.
+    
+    // BETTER STRATEGY:
+    // This function now ONLY updates the 'campaign_config' (Index).
+    // It assumes the caller has already saved the individual product data if needed.
+    // OR, we can try to save individual keys ONLY if they look "heavy" (have content).
+    
+    // But since the user specifically asked to fix the save flow, let's change this to ONLY save the Index.
+    // The caller (save route) must call saveProduct() for the specific product being edited.
+    
+    await kv.set('campaign_config', newConfig);
     return { success: true };
   } catch (error: any) {
     console.error('Error updating Vercel KV:', error);
