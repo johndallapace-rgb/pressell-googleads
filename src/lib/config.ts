@@ -4,14 +4,35 @@ import { defaultConfig } from '@/data/defaultConfig';
 // Initialize KV Client Robustly
 // Support KV_REST_API_* (Vercel Default), REDIS_REST_API_* (Upstash), and REDIS_URL (Legacy/Custom)
 // PRIORITY: REDIS_URL (User Request) -> KV_REST_API -> REDIS_REST_API
-const kvUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL;
+
+// BUILD SAFETY: Check if we are in build mode to avoid connection errors
+const isBuild = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
+
+let rawKvUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL;
 const kvToken = process.env.REDIS_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_API_TOKEN;
+
+// FIX: Force HTTPS if using REST API but URL is rediss:// (common Upstash confusion)
+if (rawKvUrl && rawKvUrl.startsWith('rediss://') && !rawKvUrl.includes('upstash.io')) {
+    // If it's a rediss:// connection string but we are using @vercel/kv in REST mode,
+    // we might need to swap to the REST URL if available, or warn the user.
+    // However, @vercel/kv createClient expects a REST URL (https://) OR a full Redis connection string?
+    // Actually, createClient({ url, token }) expects REST API URL (https://...).
+    // If user provided a REDIS CONNECTION STRING (rediss://user:pass@host:port), that won't work with REST client.
+    
+    // Attempt to fallback to a known HTTPS var if the current one is wrong type
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_URL.startsWith('http')) {
+        console.warn('[Config] Swapping invalid REDIS_URL (rediss://) for KV_REST_API_URL (https://)');
+        rawKvUrl = process.env.KV_REST_API_URL;
+    } else {
+        console.warn('[Config] Warning: KV URL starts with rediss://. Ensure you are using the REST API URL (https://) for Vercel KV.');
+    }
+}
 
 // Create a safe client if ANY URL is present. 
 // We use a fallback token to prevent crash, but requests might fail if auth is required and missing.
-export const kv = kvUrl 
+export const kv = rawKvUrl 
     ? createClient({ 
-        url: kvUrl, 
+        url: rawKvUrl, 
         token: kvToken || 'missing-token',
         automaticDeserialization: true,
         // FORCE NO CACHE to ensure real-time updates for status check

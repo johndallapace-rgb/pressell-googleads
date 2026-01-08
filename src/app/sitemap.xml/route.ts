@@ -2,7 +2,14 @@ import { getCampaignConfig } from '@/lib/config';
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const config = await getCampaignConfig();
+  
+  let config;
+  try {
+      config = await getCampaignConfig();
+  } catch (e) {
+      console.warn('Failed to fetch campaign config for sitemap (likely build time), using empty default.');
+      config = { products: {} };
+  }
 
   const urls: string[] = [];
 
