@@ -299,11 +299,15 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 export async function saveProduct(product: ProductConfig): Promise<boolean> {
     if (!kv || !product.slug) return false;
     try {
-        // Determine Key
-        const vertical = product.vertical || 'health';
-        // If we have a subdomain/vertical, use it. If 'other' or 'general', maybe just slug? 
-        // User wants vertical:slug.
-        const key = `${vertical}:${product.slug}`;
+        // Determine Key - SYNC WITH SAVE ROUTE
+        // If vertical is present, use it. If not, use slug only (or default to 'health' if that's the strict policy, but let's be flexible).
+        // The save route uses: if (product.vertical) key = vertical:slug; else key = slug;
+        // We should follow that to ensure Side A (KV) and Side B (Edge Config) match.
+        
+        let key = product.slug;
+        if (product.vertical) {
+             key = `${product.vertical}:${product.slug}`;
+        }
         
         console.log(`[KV-Save] Saving FULL product to key: ${key}`);
         await kv.set(key, product);

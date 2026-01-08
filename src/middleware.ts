@@ -40,17 +40,7 @@ export async function middleware(request: NextRequest) {
 
     // FORCE MAIN DOMAIN FOR ADMIN (DISABLED FOR FLEXIBILITY)
     // We want admin to be accessible from any vertical subdomain to avoid "kick-out" issues.
-    /*
-    if (!hostname.includes('localhost') && hostname.split('.').length >= 3 && hostname.split('.')[0] !== 'www') {
-         const parts = hostname.split('.');
-         const mainDomain = parts.slice(1).join('.');
-         const url = request.nextUrl.clone();
-         url.hostname = mainDomain;
-         url.port = ''; // Ensure no port issues
-         console.log(`[Middleware] Redirecting Admin to Main Domain: ${url.toString()}`);
-         return NextResponse.redirect(url);
-    }
-    */
+    // Logic removed to prevent 404s.
 
     // Allow login page unconditionally
     if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {

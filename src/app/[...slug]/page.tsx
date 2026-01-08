@@ -71,9 +71,10 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     // Remove .html AND normalize
     let slug = slugParts[0].replace(/\.html$/, '').trim();
 
-    // Handle "index" or "index.html" explicitly -> Redirect to Home
+    // Handle "index" or "index.html" explicitly -> Avoid Loop, just 404 if not found
     if (slug === 'index') {
-        redirect('/');
+        // redirect('/'); // REMOVED to prevent NEXT_REDIRECT loops
+        notFound();
     }
 
     // Detect Locale Strategy
