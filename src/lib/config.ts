@@ -188,16 +188,22 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     const safeSlug = slug.toLowerCase().trim();
     const safeVertical = vertical ? vertical.toLowerCase().trim() : undefined;
 
-    // A. Try Direct Key: "health:mitolyn"
+    // DEBUG: Log the attempt
+    // console.log(`[getProduct] Searching for slug: ${safeSlug}, vertical: ${safeVertical}`);
+
+    // A. Try Direct Key: "health:mitolyn" (EXACT MATCH PRIORITY)
     if (safeVertical) {
         const directKey = `${safeVertical}:${safeSlug}`;
+        console.log(`[KV-CHECK] Buscando chave: ${directKey}`);
         const directProduct = await kv?.get<ProductConfig>(directKey);
         if (directProduct && directProduct.slug) {
             return directProduct;
         }
     }
 
-    // B. Try Direct Key: "mitolyn"
+    // B. Try Direct Key: "mitolyn" (Global/Legacy Fallback)
+    // IMPORTANT: If 'safeSlug' contains ':', it's already a full key? No, slug shouldn't contain ':' usually.
+    console.log(`[KV-CHECK] Buscando chave: ${safeSlug}`);
     const directGlobal = await kv?.get<ProductConfig>(safeSlug);
     if (directGlobal && directGlobal.slug) {
         return directGlobal;
@@ -207,6 +213,8 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     const config = await getCampaignConfig();
     const cfgAny = config as any;
     const products = cfgAny.products || {};
+    
+    // ... rest of logic ...
     
     // 1. Try Vertical-Prefixed Key (Priority)
     // e.g. "health:mitolyn"

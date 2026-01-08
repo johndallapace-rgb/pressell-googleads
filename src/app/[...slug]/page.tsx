@@ -106,13 +106,18 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     // 1. Try Localized Key: "amino-de" (Rare)
     let product = await getProduct(`${slug}-${lang}`, detectedVertical);
 
-    // 2. Try Base Key with Vertical: "health:mitolyn"
+    // 2. Try Base Key with Vertical: "health:mitolyn" (STANDARD)
     if (!product) {
-        product = await getProduct(slug, detectedVertical);
+        // Force explicit vertical check
+        if (detectedVertical) {
+             console.log(`[Page] Tentando chave com vertical: ${detectedVertical}:${slug}`);
+             product = await getProduct(slug, detectedVertical);
+        }
     }
 
     // 3. Fallback: Global Search (No Prefix)
     if (!product) {
+        console.log(`[Page] Tentando chave global (sem vertical): ${slug}`);
         // Try searching for the slug as is (legacy support)
         product = await getProduct(slug); // Tries "mitolyn"
     }
