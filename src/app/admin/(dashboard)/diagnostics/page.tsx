@@ -1,14 +1,14 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/auth';
-import { CampaignConfig } from '@/lib/config';
+import { CampaignConfig, getCampaignConfig, kv } from '@/lib/config'; // Use Centralized Config
 import { getVerticalFromHost } from '@/lib/host';
-import HealthCheckRunner from '@/components/admin/HealthCheckRunner'; // Import component
-import GeminiTestButton from '@/components/admin/GeminiTestButton'; // Import component
-import ListModelsButton from '@/components/admin/ListModelsButton'; // New component
+import HealthCheckRunner from '@/components/admin/HealthCheckRunner'; 
+import GeminiTestButton from '@/components/admin/GeminiTestButton'; 
+import ListModelsButton from '@/components/admin/ListModelsButton'; 
+import KvTestButton from '@/components/admin/KvTestButton'; // New component
 
 export const dynamic = 'force-dynamic';
-
 
 type Product = {
   name?: string;
@@ -16,7 +16,6 @@ type Product = {
   affiliate_url?: string;
   official_url?: string;
   vertical?: string;
-  // outros campos...
 };
 
 export default async function DiagnosticsPage() {
@@ -33,56 +32,58 @@ export default async function DiagnosticsPage() {
 
   // Check Env Vars
   const envStatus = {
-    EDGE_CONFIG: !!process.env.EDGE_CONFIG,
-    EDGE_CONFIG_ID: !!process.env.EDGE_CONFIG_ID,
-    VERCEL_API_TOKEN: !!process.env.VERCEL_API_TOKEN,
+    // Vercel KV (Priority)
+    KV_URL: !!process.env.KV_URL,
+    KV_REST_API_URL: !!process.env.KV_REST_API_URL,
+    KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+    // Upstash / Legacy
+    REDIS_URL: !!process.env.REDIS_URL,
+    // App Secrets
     ADMIN_EMAIL: !!process.env.ADMIN_EMAIL,
     ADMIN_PASSWORD: !!process.env.ADMIN_PASSWORD,
     JWT_SECRET: !!process.env.JWT_SECRET,
-    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY, // Added for diagnostic
+    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
   };
 
-  // Fetch from Edge Config
-  let edgeStatus: 'OK' | 'ERROR' = 'ERROR';
+  // Fetch from KV (Centralized)
+  let dbStatus: 'OK' | 'ERROR' = 'ERROR';
   let config: CampaignConfig | null = null;
   let errorMsg = '';
-  let configSource = 'unknown';
+  let configSource = 'Vercel KV';
+  let totalKeys = 0;
 
   try {
-    if (process.env.EDGE_CONFIG) {
-      const { createClient } = await import('@vercel/edge-config');
-      const client = createClient(process.env.EDGE_CONFIG);
-
-      const wrapper = await client.get('campaign_config');
-      if (wrapper) {
-        config = wrapper as CampaignConfig;
-        configSource = 'wrapper (campaign_config)';
-        edgeStatus = 'OK';
-      } else {
-        const products = await client.get('products');
-        if (products) {
-          config = { products } as CampaignConfig;
-          configSource = 'separate keys';
-          edgeStatus = 'OK';
-        } else {
-          errorMsg = 'No config found (wrapper or keys)';
+    // 1. Get Config Index
+    config = await getCampaignConfig();
+    
+    // 2. Check KV Connection & Count Keys
+    if (kv) {
+        try {
+            const keys = await kv.keys('*');
+            totalKeys = keys.length;
+            dbStatus = 'OK';
+        } catch (e: any) {
+            errorMsg = `KV Connection Error: ${e.message}`;
+            dbStatus = 'ERROR';
         }
-      }
     } else {
-      errorMsg = 'EDGE_CONFIG env var missing';
+        errorMsg = 'KV Client not initialized';
+        dbStatus = 'ERROR';
     }
+
   } catch (err: any) {
-    errorMsg = err?.message || 'Unknown error fetching Edge Config';
+    errorMsg = err?.message || 'Unknown error fetching Config';
   }
 
   const productsObj = (config?.products || {}) as Record<string, Product>;
+  // We use the keys from the loaded config, which should match KV if sync is correct.
+  // However, the 'Total Keys' metric above is more raw.
   const productKeys = Object.keys(productsObj);
 
   // ✅ Monta rows com slug vindo da chave
   const productRows = Object.entries(productsObj).map(([slug, product]) => ({
     slug,
     ...product,
-    // fallback vertical opcional (não substitui a correção no Edge Config)
     vertical: product.vertical || '',
   }));
 
@@ -95,51 +96,49 @@ export default async function DiagnosticsPage() {
         <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
           <h2 className="text-xl font-semibold mb-4 border-b pb-2 text-gray-700">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            {/* Vercel KV Status */}
             <div
               className={`p-4 rounded border ${
-                edgeStatus === 'OK'
+                dbStatus === 'OK'
                   ? 'bg-green-50 border-green-200'
                   : 'bg-red-50 border-red-200'
               }`}
             >
-              <p className="text-sm font-bold text-gray-500 uppercase">Edge Config</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">Vercel KV</p>
               <p
                 className={`text-2xl font-bold ${
-                  edgeStatus === 'OK' ? 'text-green-700' : 'text-red-700'
+                  dbStatus === 'OK' ? 'text-green-700' : 'text-red-700'
                 }`}
               >
-                {edgeStatus === 'OK' ? '✅ ACCESSIBLE' : '❌ ERROR'}
+                {dbStatus === 'OK' ? '✅ CONNECTED' : '❌ ERROR'}
               </p>
               {errorMsg && <p className="text-xs text-red-600 mt-1">{errorMsg}</p>}
+              <div className="mt-2">
+                 <KvTestButton />
+              </div>
             </div>
 
             <div className="p-4 rounded border bg-blue-50 border-blue-200">
               <p className="text-sm font-bold text-gray-500 uppercase">Config Source</p>
               <p className="text-lg font-bold text-blue-700 truncate">{configSource}</p>
+              <p className="text-xs text-blue-600 mt-1">Total Keys in DB: {totalKeys}</p>
             </div>
 
             <div className="p-4 rounded border bg-purple-50 border-purple-200">
-              <p className="text-sm font-bold text-gray-500 uppercase">Gemini Connection</p>
-              <div className="mt-2">
+              <p className="text-sm font-bold text-gray-500 uppercase">Gemini AI</p>
+              <div className="mt-2 space-y-2">
                   <GeminiTestButton />
                   <ListModelsButton />
               </div>
             </div>
 
-            <div className="p-4 rounded border bg-purple-50 border-purple-200">
-              <p className="text-sm font-bold text-gray-500 uppercase">Active Product</p>
-              <p className="text-xl font-bold text-purple-700 truncate">
-                {config?.active_product_slug || 'None'}
-              </p>
-              {/* opcional: mostrar vertical detectado */}
-              <p className="text-xs text-purple-600 mt-1">
-                Host vertical: {currentVertical || 'none'} ({currentHost})
-              </p>
-            </div>
-
             <div className="p-4 rounded border bg-gray-50 border-gray-200">
-              <p className="text-sm font-bold text-gray-500 uppercase">Total Products</p>
+              <p className="text-sm font-bold text-gray-500 uppercase">Active Products</p>
               <p className="text-2xl font-bold text-gray-700">{productKeys.length}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Vertical: {currentVertical || 'none'}
+              </p>
             </div>
           </div>
         </section>
@@ -160,6 +159,7 @@ export default async function DiagnosticsPage() {
             ))}
           </div>
         </section>
+
 
         {/* Products Table */}
         <section className="bg-white p-6 rounded-lg shadow border border-gray-200">
