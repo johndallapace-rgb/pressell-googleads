@@ -68,7 +68,8 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     }
 
     let lang = 'en';
-    let slug = slugParts[0].replace('.html', '');
+    // Remove .html AND normalize
+    let slug = slugParts[0].replace(/\.html$/, '').trim();
 
     // Handle "index" or "index.html" explicitly -> Redirect to Home
     if (slug === 'index') {

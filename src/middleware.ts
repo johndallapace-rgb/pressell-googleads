@@ -38,13 +38,11 @@ export async function middleware(request: NextRequest) {
     // DEBUG: Log admin access
     console.log(`[Middleware] Admin Access: ${pathname} | Host: ${hostname}`);
 
-    // FORCE MAIN DOMAIN FOR ADMIN
-    // If accessing admin via subdomain (e.g. health.site.com/admin), redirect to main domain (site.com/admin)
-    // to prevent 404s and auth issues.
+    // FORCE MAIN DOMAIN FOR ADMIN (DISABLED FOR FLEXIBILITY)
+    // We want admin to be accessible from any vertical subdomain to avoid "kick-out" issues.
+    /*
     if (!hostname.includes('localhost') && hostname.split('.').length >= 3 && hostname.split('.')[0] !== 'www') {
          const parts = hostname.split('.');
-         // Take last 2 parts (domain.com) or 3 if co.uk etc. (simplified for now to just strip first part)
-         // Better: just remove the subdomain part
          const mainDomain = parts.slice(1).join('.');
          const url = request.nextUrl.clone();
          url.hostname = mainDomain;
@@ -52,6 +50,7 @@ export async function middleware(request: NextRequest) {
          console.log(`[Middleware] Redirecting Admin to Main Domain: ${url.toString()}`);
          return NextResponse.redirect(url);
     }
+    */
 
     // Allow login page unconditionally
     if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
@@ -96,6 +95,11 @@ export async function middleware(request: NextRequest) {
 
   // 4. Folder Strategy: Detect Language/Locale from path
   // health.topproductofficial.com/de/amino -> subdomain=health, locale=de, slug=amino
+  
+  // CRITICAL: Skip vertical/locale logic if we are in Admin (Safety Check)
+  if (pathname.startsWith('/admin')) {
+      return NextResponse.next();
+  }
   
   const pathParts = pathname.split('/').filter(Boolean); // Remove empty
   // Check if first part is a supported locale code
