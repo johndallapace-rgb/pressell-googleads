@@ -103,7 +103,7 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     const dbUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || 'UNKNOWN';
     console.log('[ENV-CHECK] KV URL Starts with:', dbUrl.substring(0, 15) + '...');
 
-    const detectedVertical = getVerticalFromHost(host);
+    // const detectedVertical = getVerticalFromHost(host); // REMOVED DUPLICATE - Already declared at line 96
     console.log(`[ROTA] Host detectado: ${host} | Vertical: ${detectedVertical || 'none'}`);
     console.log('Chave final gerada para o KV:', `${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
     
