@@ -73,7 +73,6 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     // Handle "index" or "index.html" explicitly -> Avoid Loop, just 404 if not found
     if (slug === 'index') {
-        // redirect('/'); // REMOVED to prevent NEXT_REDIRECT loops
         notFound();
     }
 

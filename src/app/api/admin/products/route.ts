@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     const config = await getCampaignConfig();
-    return NextResponse.json({ products: config.products || {} });
+    return NextResponse.json({ products: config.products || {} }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch (error) {
     console.error('[List Products API] Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -308,14 +308,25 @@ export async function DELETE(request: NextRequest) {
     if (location === 'products') {
         delete currentConfig.products[keyToDelete];
         
-        // NEW: Also delete from KV directly to prevent ghosts
+        // AGGRESSIVE DELETE: Remove all possible variations to prevent ghosts
+        // 1. The detected key
         await deleteProductKey(keyToDelete);
         
-        // Also try to delete the simple slug if it differs from keyToDelete (e.g. key=health:slug, delete slug too)
+        // 2. The simple slug (e.g. "mitolyn")
         if (keyToDelete.includes(':')) {
              const simpleSlug = keyToDelete.split(':')[1];
              await deleteProductKey(simpleSlug);
         }
+
+        // 3. The vertical composed key (e.g. "health:mitolyn") - Just in case
+        // We try to reconstruct it if we have the slug
+        const possibleVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
+        const cleanSlug = slug.includes(':') ? slug.split(':')[1] : slug;
+        
+        for (const v of possibleVerticals) {
+            await deleteProductKey(`${v}:${cleanSlug}`);
+        }
+        
     } else {
         delete cfgAny[keyToDelete];
         await deleteProductKey(keyToDelete);
@@ -354,7 +365,7 @@ export async function DELETE(request: NextRequest) {
         console.warn('[Delete] Failed to delete image files:', e);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
 
   } catch (error: any) {
     console.error('[Delete Product API] Error:', error);

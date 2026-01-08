@@ -64,8 +64,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Lightweight Index Entry
+    // CRITICAL: Ensure 'name' is preserved for the Admin Dashboard
     config.products[storageKey] = {
         ...product,
+        name: product.name || config.products[storageKey]?.name || 'Untitled Product', // Fallback to existing or default
+        slug: storageKey.includes(':') ? storageKey.split(':')[1] : storageKey, // Ensure clean slug
+        vertical: product.vertical || 'health',
         // STRIP HEAVY FIELDS for the index
         whatIs: undefined,
         howItWorks: undefined,
@@ -82,7 +86,7 @@ export async function POST(request: NextRequest) {
     const success = await updateCampaignConfig(config);
     
     if (success) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
     } else {
       return NextResponse.json({ error: 'Failed to update Edge Config' }, { status: 500 });
     }
