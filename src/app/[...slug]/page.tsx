@@ -98,40 +98,47 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     console.log('--- DEBUG PRE-SELL ---');
     console.log('Hostname capturado:', host);
     console.log('Slug recebido:', slug);
+    
+    // DEBUG: Confirm Database Connection
+    const dbUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || 'UNKNOWN';
+    console.log('[ENV-CHECK] KV URL Starts with:', dbUrl.substring(0, 15) + '...');
+
+    const detectedVertical = getVerticalFromHost(host);
     console.log('Chave final gerada para o KV:', `${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
     
     const keys = await debugKV();
     console.log('Chaves existentes no banco:', keys);
 
-    // 1. Try Localized Key: "amino-de" (Rare)
-    let product = await getProduct(`${slug}-${lang}`, detectedVertical);
-
-    // 2. Try Base Key with Vertical: "health:mitolyn" (STANDARD)
-    if (!product) {
-        // Force explicit vertical check
-        if (detectedVertical) {
-             console.log(`[Page] Tentando chave com vertical: ${detectedVertical}:${slug}`);
-             product = await getProduct(slug, detectedVertical);
-        }
+    // 1. Try Exact Key with Vertical (health:prodentim-review)
+    // This matches what is in the database according to user
+    let product: ProductConfig | null = null;
+    
+    if (detectedVertical) {
+         console.log(`[Page] 1. Tentando chave EXATA (vertical:slug): ${detectedVertical}:${slug}`);
+         product = await getProduct(slug, detectedVertical);
     }
 
-    // 3. Fallback: Global Search (No Prefix)
+    // 2. Try Raw Slug (prodentim-review)
+    // Fallback if the user is accessing via a different subdomain or no vertical logic applies
     if (!product) {
-        console.log(`[Page] Tentando chave global (sem vertical): ${slug}`);
-        // Try searching for the slug as is (legacy support)
-        product = await getProduct(slug); // Tries "mitolyn"
+        console.log(`[Page] 2. Tentando chave SEM prefixo (slug puro): ${slug}`);
+        product = await getProduct(slug);
     }
 
-    // 4. Fallback: Brute-force Search for ANY vertical if detectedVertical is missing or mismatched
+    // 3. Fallback: Brute-force Search for ANY vertical
+    // If the product exists as "health:prodentim" but we are on "diy.site.com" (or no vertical detected)
     if (!product) {
+         console.log(`[Page] 3. Tentando todas as verticais conhecidas...`);
          const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
          for (const v of commonVerticals) {
              // Skip if we already checked this specific vertical above
              if (v === detectedVertical) continue;
              
+             console.log(`[Page] ... tentando ${v}:${slug}`);
              const p = await getProduct(slug, v);
              if (p) {
                  product = p;
+                 console.log(`[Page] ENCONTRADO em ${v}:${slug}`);
                  break;
              }
          }
