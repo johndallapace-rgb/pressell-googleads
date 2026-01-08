@@ -103,7 +103,8 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     const dbUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || 'UNKNOWN';
     console.log('[ENV-CHECK] KV URL Starts with:', dbUrl.substring(0, 15) + '...');
 
-    // const detectedVertical = getVerticalFromHost(host); // REMOVED DUPLICATE
+    const detectedVertical = getVerticalFromHost(host);
+    console.log(`[ROTA] Host detectado: ${host} | Vertical: ${detectedVertical || 'none'}`);
     console.log('Chave final gerada para o KV:', `${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
     
     const keys = await debugKV();
@@ -123,6 +124,12 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     if (!product) {
         console.log(`[Page] 2. Tentando chave SEM prefixo (slug puro): ${slug}`);
         product = await getProduct(slug);
+    }
+
+    // 2.5 Try Raw Slug with Suffix (prodentim-review) explicitly if vertical failed
+    if (!product && detectedVertical) {
+         console.log(`[Page] 2.5 Vertical falhou, tentando slug puro mesmo com vertical detectada: ${slug}`);
+         product = await getProduct(slug);
     }
 
     // 3. Fallback: Brute-force Search for ANY vertical
