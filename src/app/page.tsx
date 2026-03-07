@@ -29,17 +29,18 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const config = await getCampaignConfig();
-  const products = config.products || {};
-  
-  // Detect Host Vertical
+  // 1. Detect Host Vertical
   const headerList = await headers();
   const host = headerList.get('host');
   const detectedVertical = getVerticalFromHost(host);
 
-  // 1. If Subdomain Vertical detected, keep existing logic (redirect to product)
+  // 2. If Subdomain Vertical detected, keep existing logic (redirect to product)
+  // This preserves existing subdomains logic (e.g. health.topproductofficial.com)
   if (detectedVertical) {
+      const config = await getCampaignConfig();
+      const products = config.products || {};
       const verticalProduct = Object.values(products).find(p => p.status === 'active' && p.vertical === detectedVertical);
+      
       if (verticalProduct) {
           redirect(`/${verticalProduct.slug}`);
       }
@@ -54,7 +55,8 @@ export default async function HomePage() {
       );
   }
 
-  // 2. Default Logic (Root Domain) -> RENDER INSTITUTIONAL HOMEPAGE
+  // 3. Default Logic (Root Domain) -> RENDER INSTITUTIONAL HOMEPAGE
+  // Removed fallback redirect logic for root domain to ensure "No Active Campaign" never shows on www/root
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
       {/* Header */}
