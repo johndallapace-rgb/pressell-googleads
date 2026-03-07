@@ -131,13 +131,13 @@ export default async function HomePage() {
               <p className="font-medium text-lg text-white">Top Product Official</p>
             </div>
             <div className="text-center">
-              <p className="text-sm uppercase tracking-widest text-gray-500 mb-2">Location</p>
-              <p className="font-medium text-lg text-white">Brazil</p>
+              <p className="text-sm uppercase tracking-widest text-gray-500 mb-2">Operating Region</p>
+              <p className="font-medium text-lg text-white">Global</p>
             </div>
             <div className="text-center">
               <p className="text-sm uppercase tracking-widest text-gray-500 mb-2">Email</p>
-              <a href="mailto:google-ads-api@topproductofficial.com" className="font-medium text-lg text-white hover:text-blue-400 transition-colors">
-                google-ads-api@topproductofficial.com
+              <a href="mailto:support@topproductofficial.com" className="font-medium text-lg text-white hover:text-blue-400 transition-colors">
+                support@topproductofficial.com
               </a>
             </div>
           </div>
