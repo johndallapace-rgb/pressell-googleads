@@ -116,65 +116,101 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     }
 
     const headerList = await headers();
-    const host = headerList.get('host') || 'unknown';
+    const rawHost = headerList.get('host') || 'unknown';
+    const forwardedHost = headerList.get('x-forwarded-host');
+    const xVertical = headerList.get('x-vertical');
     
-    // DIRECT HOST DETECTION (Middleware Bypass)
-    let detectedVertical = getVerticalFromHost(host);
+    // Priority: X-Forwarded-Host > Host
+    const realHost = forwardedHost || rawHost;
 
-    // FORÇAR VERTICAL (Fallback para subdomínios complexos ou Vercel URLs)
-    if (!detectedVertical && host.includes('health')) {
+    console.log('[ROTA] Raw Host:', rawHost);
+    console.log('[ROTA] Forwarded Host:', forwardedHost);
+    console.log('[ROTA] X-Vertical:', xVertical);
+    console.log('[ROTA] Real Host Used:', realHost);
+    console.log('[ROTA] Pathname:', `/${slugParts.join('/')}`);
+    
+    // 1. Try Middleware Vertical (Most Accurate)
+    let detectedVertical: string | null = xVertical || null;
+
+    // 2. Fallback: Recalculate from Real Host
+    if (!detectedVertical) {
+        detectedVertical = getVerticalFromHost(realHost);
+    }
+
+    // 3. Fallback: Force keyword check (Robustness)
+    if (!detectedVertical && realHost.includes('health')) {
         detectedVertical = 'health';
     }
 
-    console.log('[ROTA] Host detectado:', host);
-    console.log('[ROTA] Vertical:', detectedVertical || 'none');
+    console.log('[ROTA] Final Vertical:', detectedVertical || 'none');
     
-    // 1. Try Exact Key with Vertical (health:prodentim-review)
+    // 4. Reserved Routes Protection & System Files
+    const reservedRoutes = [
+        'admin', 'api', 'about', 'contact', 'privacy-policy', 'terms', 'legal',
+        'robots.txt', 'sitemap.xml', 'favicon.ico', 'sw.js', 'index', 'index.html', 'index.php'
+    ];
+    
+    // 5. Product Lookup with Enhanced Logging
     let product: ProductConfig | null = null;
-    
+    let queryKey = '';
+
+    // A. Try Vertical+Slug (Best Practice)
     if (detectedVertical) {
-         console.log(`[FINAL-CHECK] Buscando chave no KV: ${detectedVertical}:${slug}`);
+         // Early exit for reserved routes before KV lookup
+         if (reservedRoutes.includes(slugParts[0]) || reservedRoutes.includes(slug)) {
+             console.log(`[CatchAll] Ignored reserved/system route: ${slug}`);
+             return notFound();
+         }
+
+         queryKey = `${detectedVertical}:${slug}`;
+         console.log(`[LOOKUP] 1. Vertical detected (${detectedVertical}). Querying KV: ${queryKey}`);
          product = await getProduct(slug, detectedVertical);
     }
 
-    // 2. Busca Flexível (Fallback para chave pura)
-    // Se não encontrou com vertical (ou não tem vertical), tenta slug puro
+    // B. Try Slug Only (Legacy/Fallback)
     if (!product) {
-        console.log(`[ROTA] Vertical falhou ou inexistente, tentando slug puro: ${slug}`);
+        queryKey = slug;
+        console.log(`[LOOKUP] 2. No vertical or not found. Querying KV slug only: ${queryKey}`);
         product = await getProduct(slug);
     }
 
-    // 3. Fallback: Brute-force Search for ANY vertical
-    // If the product exists as "health:prodentim" but we are on "diy.site.com" (or no vertical detected)
+    // C. Brute Force Search (Rescue)
     if (!product) {
-         console.log(`[Page] 3. Tentando todas as verticais conhecidas...`);
+         console.log(`[LOOKUP] 3. Not found. Brute-forcing all verticals for slug: ${slug}`);
          const commonVerticals = ['health', 'diy', 'gadgets', 'finance', 'dating', 'pets', 'other'];
          for (const v of commonVerticals) {
-             // Skip if we already checked this specific vertical above
              if (v === detectedVertical) continue;
              
-             console.log(`[Page] ... tentando ${v}:${slug}`);
+             const tryKey = `${v}:${slug}`;
+             console.log(`[LOOKUP] ... trying ${tryKey}`);
              const p = await getProduct(slug, v);
              if (p) {
                  product = p;
-                 console.log(`[Page] ENCONTRADO em ${v}:${slug}`);
+                 queryKey = tryKey; // Update found key for logging
+                 console.log(`[LOOKUP] FOUND in ${tryKey}`);
                  break;
              }
          }
     }
-
-    // 4. Reserved Routes Protection
-    // Ensure these paths are never treated as product slugs
-    const reservedRoutes = [
-        'admin', 'api', 'about', 'contact', 'privacy-policy', 'terms', 
-        'robots.txt', 'sitemap.xml', 'favicon.ico', 'sw.js'
-    ];
     
-    if (reservedRoutes.includes(slug)) {
+    // Log Final Result
+    if (product) {
+        console.log(`[SUCCESS] Product Found!`);
+        console.log(`- URL: ${host}/${slugParts.join('/')}`);
+        console.log(`- KV Key: ${queryKey}`);
+        console.log(`- Product Name: ${product.name}`);
+        console.log(`- Status: ${product.status}`);
+    } else {
+        console.log(`[MISS] Product NOT found for slug: ${slug}`);
+    }
+
+    // 6. Final Validation
+    if (reservedRoutes.includes(slugParts[0]) || reservedRoutes.includes(slug)) {
         return notFound();
     }
 
     if (!product || product.status !== 'active') {
+      console.log(`[404] Product not found or inactive: ${slug}`);
       return notFound();
     }
 
