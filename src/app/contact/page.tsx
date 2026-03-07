@@ -32,14 +32,14 @@ export default function ContactPage() {
           
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
             <h3 className="font-bold text-gray-900 mb-2">Email</h3>
-            <a href="mailto:google-ads-api@topproductofficial.com" className="text-blue-600 hover:underline text-lg">
-              google-ads-api@topproductofficial.com
+            <a href="mailto:support@topproductofficial.com" className="text-blue-600 hover:underline text-lg">
+              support@topproductofficial.com
             </a>
           </div>
 
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
-            <h3 className="font-bold text-gray-900 mb-2">Location</h3>
-            <p className="text-lg">Brazil</p>
+            <h3 className="font-bold text-gray-900 mb-2">Operating Region</h3>
+            <p className="text-lg">Global</p>
           </div>
         </div>
       </main>

@@ -40,7 +40,7 @@ export default function PrivacyPage() {
 
           <h3 className="text-xl font-bold mt-8 mb-4">4. Contact</h3>
           <p>
-            If you have questions about this policy, please contact us at <a href="mailto:google-ads-api@topproductofficial.com" className="text-blue-600">google-ads-api@topproductofficial.com</a>.
+            If you have questions about this policy, please contact us at <a href="mailto:support@topproductofficial.com" className="text-blue-600">support@topproductofficial.com</a>.
           </p>
         </div>
       </main>
