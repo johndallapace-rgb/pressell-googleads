@@ -129,45 +129,42 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     console.log('[ROTA] Real Host Used:', realHost);
     console.log('[ROTA] Pathname:', `/${slugParts.join('/')}`);
     
-    // 1. Try Middleware Vertical (Most Accurate)
+    // 1. Vertical Detection Pipeline
     let detectedVertical: string | null = xVertical || null;
 
-    // 2. Fallback: Recalculate from Real Host
     if (!detectedVertical) {
         detectedVertical = getVerticalFromHost(realHost);
     }
 
-    // 3. Fallback: Force keyword check (Robustness)
     if (!detectedVertical && realHost.includes('health')) {
         detectedVertical = 'health';
     }
 
     console.log('[ROTA] Final Vertical:', detectedVertical || 'none');
     
-    // 4. Reserved Routes Protection & System Files
+    // 2. Reserved Routes Protection
     const reservedRoutes = [
         'admin', 'api', 'about', 'contact', 'privacy-policy', 'terms', 'legal',
         'robots.txt', 'sitemap.xml', 'favicon.ico', 'sw.js', 'index', 'index.html', 'index.php'
     ];
     
-    // 5. Product Lookup with Enhanced Logging
+    if (reservedRoutes.includes(slugParts[0]) || reservedRoutes.includes(slug)) {
+        console.log(`[CatchAll] Ignored reserved/system route: ${slug}`);
+        return notFound();
+    }
+    
+    // 3. Product Lookup Flow
     let product: ProductConfig | null = null;
     let queryKey = '';
 
-    // A. Try Vertical+Slug (Best Practice)
+    // A. Try Vertical+Slug (Primary)
     if (detectedVertical) {
-         // Early exit for reserved routes before KV lookup
-         if (reservedRoutes.includes(slugParts[0]) || reservedRoutes.includes(slug)) {
-             console.log(`[CatchAll] Ignored reserved/system route: ${slug}`);
-             return notFound();
-         }
-
          queryKey = `${detectedVertical}:${slug}`;
          console.log(`[LOOKUP] 1. Vertical detected (${detectedVertical}). Querying KV: ${queryKey}`);
          product = await getProduct(slug, detectedVertical);
     }
 
-    // B. Try Slug Only (Legacy/Fallback)
+    // B. Try Slug Only (Fallback)
     if (!product) {
         queryKey = slug;
         console.log(`[LOOKUP] 2. No vertical or not found. Querying KV slug only: ${queryKey}`);
@@ -186,32 +183,23 @@ export default async function CatchAllProductPage({ params }: PageProps) {
              const p = await getProduct(slug, v);
              if (p) {
                  product = p;
-                 queryKey = tryKey; // Update found key for logging
+                 queryKey = tryKey;
                  console.log(`[LOOKUP] FOUND in ${tryKey}`);
                  break;
              }
          }
     }
     
-    // Log Final Result
-    if (product) {
+    // 4. Final Result Handling
+    if (product && product.status === 'active') {
         console.log(`[SUCCESS] Product Found!`);
-        console.log(`- URL: ${host}/${slugParts.join('/')}`);
+        console.log(`- URL: ${realHost}/${slugParts.join('/')}`);
         console.log(`- KV Key: ${queryKey}`);
         console.log(`- Product Name: ${product.name}`);
         console.log(`- Status: ${product.status}`);
     } else {
-        console.log(`[MISS] Product NOT found for slug: ${slug}`);
-    }
-
-    // 6. Final Validation
-    if (reservedRoutes.includes(slugParts[0]) || reservedRoutes.includes(slug)) {
+        console.log(`[MISS/404] Product NOT found or inactive: ${slug}`);
         return notFound();
-    }
-
-    if (!product || product.status !== 'active') {
-      console.log(`[404] Product not found or inactive: ${slug}`);
-      return notFound();
     }
 
     // --- Tracking Setup ---
