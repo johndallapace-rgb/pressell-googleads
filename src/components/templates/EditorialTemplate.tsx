@@ -1,3 +1,5 @@
+'use client';
+
 import { ProductConfig } from '@/lib/config';
 import Image from 'next/image';
 import { ProductHero } from '@/components/ProductHero';
@@ -7,6 +9,7 @@ import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
 import { QuickVerdict } from '@/components/public/QuickVerdict';
 import { Testimonials } from '@/components/public/Testimonials';
+import { useState, useEffect } from 'react';
 
 function assertComponent(name: string, comp: any) {
   const t = typeof comp;
@@ -29,8 +32,37 @@ interface Props {
 }
 
 export function EditorialTemplate({ product }: Props) {
-  const ctaUrl = product.affiliate_url;
+  // 1. Process VENDOR_ID Replacement (Dynamic Slug Injection)
+  // If the link contains VENDOR_ID placeholder, replace it with the product's slug (or name)
+  let ctaUrl = product.affiliate_url;
   
+  // SAFETY CHECK 1: Detect Broken URLs from previous bug (undefined/undefined/undefined)
+  if (ctaUrl && ctaUrl.includes('undefined/undefined')) {
+      console.warn('⚠️ [EditorialTemplate] Detected broken URL. Falling back to Official URL.');
+      ctaUrl = product.official_url || '#';
+  }
+
+  if (ctaUrl && ctaUrl.includes('VENDOR_ID')) {
+      // Clean slug: "health:mitolyn" -> "mitolyn"
+      const cleanVendorId = product.slug.includes(':') ? product.slug.split(':')[1] : product.slug;
+      ctaUrl = ctaUrl.replace(/VENDOR_ID/g, cleanVendorId);
+  }
+
+  // SAFETY CHECK 2: Ensure Absolute URL
+  if (ctaUrl && !ctaUrl.startsWith('http') && !ctaUrl.startsWith('#')) {
+      // If it looks like a domain but missing protocol, add https://
+      if (ctaUrl.includes('.') && !ctaUrl.startsWith('/')) {
+          ctaUrl = `https://${ctaUrl}`;
+      }
+  }
+
+  // Fallback: If URL is empty, use a placeholder (should not happen with strict validation)
+  if (!ctaUrl || ctaUrl.length < 5) ctaUrl = '#';
+
+  // Fallback for image: use product.image_url if set, otherwise use a placeholder
+  // PRIORITY: Manual Alias > Standard Field > Placeholder
+  const productImage = (product as any).product_image_url || product.image_url || '/images/placeholders/health-default.jpg';
+
   // Formatters for localization
   const locale = (product as any).activeLocale || 'en';
   
@@ -50,11 +82,33 @@ export function EditorialTemplate({ product }: Props) {
                       locale === 'fr' ? `Mis à jour le ${formatDate(today)}` :
                       `Updated on ${formatDate(today)}`;
 
-  const videoObj = product.youtube_review_id ? {
-    provider: 'youtube' as const,
-    id: product.youtube_review_id,
-    title: `${product.name} Review`
-  } : undefined;
+  // Video Logic: Prioritize YouTube ID, then generic URL
+  let videoObj: any = undefined;
+
+  if (product.youtube_review_id) {
+    videoObj = {
+        provider: 'youtube',
+        id: product.youtube_review_id,
+        title: `${product.name} Review`
+    };
+  } else if (product.video_url) {
+    // Check for Vimeo
+    const vimeoMatch = product.video_url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) {
+        videoObj = {
+            provider: 'vimeo',
+            id: vimeoMatch[1],
+            title: `${product.name} Review`
+        };
+    } else {
+        // Assume Custom/MP4
+        videoObj = {
+            provider: 'custom',
+            url: product.video_url,
+            title: `${product.name} Review`
+        };
+    }
+  }
 
   // Synthesize Quick Verdict Data (Safe Defaults if missing)
   const verdict = 'recommended';
@@ -124,19 +178,78 @@ export function EditorialTemplate({ product }: Props) {
   };
 
   const theme = getTheme();
+  const [iframeAllowed, setIframeAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkIframe = async () => {
+        const targetUrl = product.affiliate_url || product.official_url;
+        if (!targetUrl) {
+            setIframeAllowed(false);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/utils/check-iframe?url=${encodeURIComponent(targetUrl)}`);
+            const data = await res.json();
+            setIframeAllowed(data.canLoad);
+        } catch {
+            setIframeAllowed(false);
+        }
+    };
+    checkIframe();
+  }, [product.affiliate_url, product.official_url]);
 
   return (
     <div className={`flex flex-col min-h-screen ${theme.font} ${theme.pageBg} text-gray-800 transition-colors duration-300`}>
-      
-        {/* Updated Date - Top Discreet */}
-        <div className="bg-gray-50 border-b border-gray-100 py-1 text-center">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
-                {updatedText}
-            </span>
-        </div>
+      <style>{`
+        @keyframes pulse-scale {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse-scale {
+            animation: pulse-scale 2s infinite ease-in-out;
+        }
+      `}</style>
 
+      {/* Background Logic (Sales Page Preview > Iframe > None) */}
+      {/* RESTRICTION: Only show dynamic background for non-US locales to preserve standard US layout */}
+      {locale !== 'en' && (
+      <div className="fixed inset-0 z-0 pointer-events-none">
+          {product.sales_page_image_url ? (
+            <div 
+                className="absolute inset-0 opacity-100"
+                style={{
+                    backgroundImage: `url(${product.sales_page_image_url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'top center',
+                    filter: 'blur(2px)',
+                    zIndex: 0
+                }}
+            />
+          ) : (
+             // Fallback to Iframe
+             (iframeAllowed === true && (product.affiliate_url || product.official_url)) ? (
+                 <iframe 
+                    src={product.affiliate_url || product.official_url}
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105 pointer-events-none"
+                    style={{ filter: 'blur(2px)', zIndex: 0 }}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    sandbox="allow-scripts allow-same-origin"
+                 />
+             ) : (
+                 // No background (white/theme bg takes over)
+                 null
+             )
+          )}
+          {/* Overlay to ensure text readability */}
+          <div className={`absolute inset-0 bg-white/90 backdrop-blur-sm z-10`} />
+      </div>
+      )}
+
+      <div className="relative z-20">
         {/* Content Container */}
-        <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="container mx-auto px-4 py-8 max-w-3xl mb-12">
           
           {/* Vertical Hero Layout */}
           <div className="flex flex-col items-center text-center mb-8 space-y-6">
@@ -154,21 +267,18 @@ export function EditorialTemplate({ product }: Props) {
                </p>
 
                {/* Centralized Image - Optimized with next/image */}
-               <div className="w-full max-w-lg mx-auto my-6 rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.01] transition-transform duration-500 bg-gray-100 relative aspect-[4/3]">
-                   <Image 
-                       src={product.image_url || '/images/placeholders/health-default.jpg'} 
-                       alt={product.name}
-                       fill
-                       priority
-                       sizes="(max-width: 768px) 100vw, 600px"
-                       className="object-cover"
-                       onError={(e) => {
-                           // Note: onError on next/image is client-side only and might need state
-                           // But since we use a valid placeholder or scraped URL, we trust it mostly.
-                           // If it fails, next/image shows broken icon. 
-                           // For robustness, we could use a state wrapper, but keeping it simple for LCP.
-                       }}
-                   />
+               <div className="w-full max-w-[450px] mx-auto my-6 rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.01] transition-transform duration-500 bg-gray-50 relative aspect-[4/3] flex items-center justify-center">
+                   <div className="relative w-full h-full p-4">
+                       <Image 
+                           src={productImage} 
+                           alt={product.name}
+                           fill
+                           priority
+                           unoptimized={productImage.startsWith('http')} 
+                           sizes="(max-width: 768px) 100vw, 450px"
+                           className="object-contain"
+                       />
+                   </div>
                </div>
 
                {/* Primary CTA - Centralized */}
@@ -257,17 +367,12 @@ export function EditorialTemplate({ product }: Props) {
         )}
 
         {/* Video Review - Centralized Placeholder */}
-        <section className="mb-12 bg-black/5 rounded-2xl p-4 md:p-8">
-             <h2 className={`text-2xl font-bold mb-8 text-center ${theme.headingColor}`}>Watch the Independent Review</h2>
-             {videoObj ? (
+        {videoObj && (
+            <section className="mb-12 bg-black/5 rounded-2xl p-4 md:p-8">
+                 <h2 className={`text-2xl font-bold mb-8 text-center ${theme.headingColor}`}>Watch the Independent Review</h2>
                  <VideoReview video={videoObj} disclaimer="This review reflects the personal experience of the user." />
-             ) : (
-                 <div className="w-full aspect-video bg-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-500 shadow-inner">
-                     <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                     <p className="font-medium">Video Review Coming Soon</p>
-                 </div>
-             )}
-        </section>
+            </section>
+        )}
 
         {/* Testimonials */}
         <Testimonials testimonials={product.testimonials} productName={product.name} />
@@ -303,6 +408,7 @@ export function EditorialTemplate({ product }: Props) {
           googleAdsId={product.google_ads_id}
           googleAdsLabel={product.google_ads_label}
         />
+      </div>
       </div>
     </div>
   );

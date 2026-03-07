@@ -1,6 +1,9 @@
 import { createClient } from '@vercel/kv';
 import { defaultConfig } from '@/data/defaultConfig';
 
+// AVISO: Todas as APIs devem ser consumidas via Config System UI
+// WARNING: All APIs must be consumed via Config System UI. Do not use process.env.
+
 // Initialize KV Client Robustly
 // Support KV_REST_API_* (Vercel Default), REDIS_REST_API_* (Upstash), and REDIS_URL (Legacy/Custom)
 // PRIORITY: REDIS_URL (User Request) -> KV_REST_API -> REDIS_REST_API
@@ -110,13 +113,15 @@ export type ProductConfig = {
   language: string;
   status: 'active' | 'paused';
   vertical: 'health' | 'diy' | 'pets' | 'dating' | 'finance' | 'other';
-  template: 'editorial' | 'story' | 'comparison' | 'quiz'; // Added 'quiz'
+  template: 'editorial' | 'story' | 'comparison' | 'quiz' | 'cookie'; // Added 'cookie'
   theme?: string;
   ab_test?: AbTestConfig;
   official_url: string;
   affiliate_url: string;
   youtube_review_id?: string;
-  image_url: string;
+  video_url?: string; // New: Generic Video URL (YouTube/Vimeo/MP4)
+  image_url: string; // "Product Image" (Bottle/Box only)
+  sales_page_image_url?: string; // NEW: "Sales Page Preview" (Full Background Context)
   image_prompt?: string; // AI Suggested Prompt
   google_ads_id?: string; // Google Ads Pixel ID (AW-XXXXXXXX)
   google_ads_label?: string; // Conversion Label (optional)
@@ -156,11 +161,62 @@ export type PlatformConfig = {
     }
 };
 
+export interface SystemConfig {
+    affiliate_nickname?: string; // e.g. "johnpace"
+    api_keys: {
+        gemini?: string;
+        vercel?: string;
+        google_search_key?: string; // Google Search API Key
+        google_search_cx?: string; // Google Search Engine ID
+        clickbank_api_token?: string; // Unified Token
+        clickbank_nickname?: string; // Account Nickname
+        buygoods_api?: string; 
+        buygoods_account_id?: string; // New
+        maxweb_api?: string; 
+        maxweb_affiliate_id?: string; // New
+    };
+    platforms: Record<string, PlatformConfig>;
+}
+
 export interface CampaignConfig {
   default_lang: string;
   products: Record<string, ProductConfig>;
   platforms?: Record<string, PlatformConfig>; // New field for storing keys
+  system?: SystemConfig; // Global System Config
 }
+
+export async function getSystemConfig(): Promise<SystemConfig> {
+    try {
+        const config = await getCampaignConfig();
+        return config.system || {
+            affiliate_nickname: 'johnpace', // Default
+            api_keys: {},
+            platforms: {}
+        };
+    } catch (e) {
+        console.error('[Config] Failed to getSystemConfig, activating Safety Mode fallback:', e);
+        return {
+            affiliate_nickname: 'johnpace',
+            api_keys: {},
+            platforms: {}
+        };
+    }
+}
+
+export async function updateSystemConfig(sysConfig: SystemConfig): Promise<boolean> {
+    try {
+        const config = await getCampaignConfig();
+        config.system = sysConfig;
+        await updateCampaignConfig(config);
+        return true;
+    } catch (e) {
+        console.error('Failed to update system config', e);
+        return false;
+    }
+}
+
+// Initialize Cache
+let configCache: CampaignConfig | null = null;
 
 export async function getCampaignConfig(): Promise<CampaignConfig> {
   // Safety check for Build Time or Missing Env
@@ -170,8 +226,42 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
   }
 
   try {
+    // Timeout Promise to prevent UI Blocking (1.5s max)
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('KV Timeout')), 1500));
+    
+    console.log('[Config] Attempting to fetch campaign_config from KV...');
+    
     // Fetch from Vercel KV
-    let config = await kv.get<CampaignConfig>('campaign_config');
+    const kvPromise = kv.get<CampaignConfig>('campaign_config');
+    
+    let config: any = await Promise.race([kvPromise, timeout]).catch(err => {
+        console.warn('[Config] KV Fetch Warning (Timeout or Error):', err.message);
+        
+        // CACHE FALLBACK: Use memory cache if available (prevent gray screen)
+        if (configCache) {
+            console.log('[Config] ⚡ Using In-Memory Cache (Fallback Active)');
+            return configCache;
+        }
+        
+        return null; // Trigger rescue mode
+    });
+
+    // FALLBACK: If config is null (KV failed/timeout) OR we are in Development/Rescue Mode
+    // We prioritize KV if it works, but if it returns null, we use fallback.
+    if (!config && (process.env.RESCUE_MODE || process.env.NODE_ENV === 'development')) {
+         console.log('[Config] Activating Local/Rescue Fallback...');
+         return {
+             ...defaultConfig,
+             system: {
+                 api_keys: {
+                     gemini: process.env.GEMINI_API_KEY,
+                     google_search_key: process.env.GOOGLE_SEARCH_KEY,
+                     google_search_cx: process.env.GOOGLE_SEARCH_CX,
+                     vercel: process.env.VERCEL_TOKEN
+                 }
+             }
+         };
+    }
 
     // Handle stringified JSON (common issue in Vercel env vars sometimes)
     if (typeof config === 'string') {
@@ -184,7 +274,7 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
       // CLEANUP: Remove deprecated active_product_slug
       if (cfg.active_product_slug) delete cfg.active_product_slug;
 
-      return {
+      const finalConfig = {
         ...defaultConfig,
         ...cfg, // Merges root keys (Formato B support)
         products: {
@@ -192,10 +282,17 @@ export async function getCampaignConfig(): Promise<CampaignConfig> {
             ...(cfg.products || {})
         }
       };
+
+      // UPDATE CACHE
+      configCache = finalConfig;
+      
+      return finalConfig;
     }
     return defaultConfig;
   } catch (error) {
     console.error('Error fetching Vercel KV:', error);
+    // Last resort cache return
+    if (configCache) return configCache;
     return defaultConfig;
   }
 }
@@ -215,18 +312,24 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     // A. Try Direct Key: "health:mitolyn" (EXACT MATCH PRIORITY)
     if (safeVertical) {
         const directKey = `${safeVertical}:${safeSlug}`;
-        console.log(`[KV-CHECK] Buscando chave: ${directKey}`);
         const directProduct = await kv?.get<ProductConfig>(directKey);
-        if (directProduct && directProduct.slug) {
+        
+        // RELAXED CHECK: If it has slug OR name, we consider it valid (status is fixed below)
+        if (directProduct && (directProduct.slug || directProduct.name)) {
+            // FORCE ACTIVE
+            directProduct.status = 'active';
             return directProduct;
         }
     }
 
     // B. Try Direct Key: "mitolyn" (Global/Legacy Fallback)
     // IMPORTANT: If 'safeSlug' contains ':', it's already a full key? No, slug shouldn't contain ':' usually.
-    console.log(`[KV-CHECK] Buscando chave: ${safeSlug}`);
     const directGlobal = await kv?.get<ProductConfig>(safeSlug);
-    if (directGlobal && directGlobal.slug) {
+    
+    // RELAXED CHECK
+    if (directGlobal && (directGlobal.slug || directGlobal.name)) {
+        // FORCE ACTIVE
+        directGlobal.status = 'active';
         return directGlobal;
     }
 
@@ -244,6 +347,7 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
         if (products[key]) {
              const p = products[key];
              if (!p.slug) p.slug = safeSlug;
+             p.status = 'active'; // FORCE ACTIVE ALWAYS
              return p;
         }
     }
@@ -253,6 +357,7 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     if (products[safeSlug]) {
         const p = products[safeSlug];
         if (!p.slug) p.slug = safeSlug;
+        p.status = 'active'; // FORCE ACTIVE ALWAYS
         return p;
     }
     
@@ -260,6 +365,7 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     if (cfgAny[safeSlug]) {
         const p = cfgAny[safeSlug];
         if (!p.slug) p.slug = safeSlug;
+        p.status = 'active'; // FORCE ACTIVE ALWAYS
         return p;
     }
     
@@ -269,9 +375,12 @@ export async function getProduct(slug: string, vertical?: string): Promise<Produ
     if (foundKey) {
         const p = products[foundKey];
         if (!p.slug) p.slug = safeSlug;
+        // FORCE STATUS ACTIVE TO PREVENT 404s
+        p.status = 'active';
         return p;
     }
 
+    console.log('[KV-DEBUG] Nenhum produto encontrado para:', slug);
     return null;
   } catch (error) {
     console.error(`Error in getProduct for slug ${slug}:`, error);

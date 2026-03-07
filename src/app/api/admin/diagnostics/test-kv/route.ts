@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   try {
     if (!kv) {
-        return NextResponse.json({ success: false, error: 'KV Client not initialized (Check env vars)' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'NOT_CONFIGURED' });
     }
 
     // Write a test key

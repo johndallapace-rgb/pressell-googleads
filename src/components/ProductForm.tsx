@@ -902,10 +902,27 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             placeholder="AW-XXXXXXXX"
           />
+          {(!product.google_ads_id || product.google_ads_id.includes('PIXEL_ID')) && (
+              <p className="text-xs text-red-600 font-bold mt-1">⚠️ Atenção: Sem pixel, você não terá dados de conversão.</p>
+          )}
           <p className="text-xs text-gray-500 mt-1">
             If provided, <code>gtag.js</code> will be injected automatically. 
             Clicks on checkout buttons will trigger a <code>conversion</code> event.
           </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Meta Pixel ID (Facebook)</label>
+          <input
+            type="text"
+            value={product.meta_pixel_id || ''}
+            onChange={e => handleChange('meta_pixel_id', e.target.value)}
+            disabled={readOnly}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            placeholder="XXXXXXXXX"
+          />
+          {(!product.meta_pixel_id || product.meta_pixel_id.includes('PIXEL_ID')) && (
+              <p className="text-xs text-red-600 font-bold mt-1">⚠️ Atenção: Sem pixel do Facebook, você perderá dados de otimização.</p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Google Ads Conversion Label (Optional)</label>

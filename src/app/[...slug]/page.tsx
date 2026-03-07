@@ -4,12 +4,14 @@ import { PageProps } from '@/types';
 import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { StoryTemplate } from '@/components/templates/StoryTemplate';
 import { ComparisonTemplate } from '@/components/templates/ComparisonTemplate';
+import { InteractiveCookie } from '@/components/templates/InteractiveCookie';
 import { getProduct, debugKV } from '@/lib/config'; // New Vercel KV Import
 import LayoutShell from '@/components/LayoutShell';
 import { getVerticalFromHost } from '@/lib/host';
 import { headers } from 'next/headers';
 import { TrackingManager } from '@/components/analytics/TrackingManager';
 import { generateExternalTrackId, appendTrackingParams } from '@/lib/tracking';
+import { ProductConfig } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Force live data from KV
@@ -21,27 +23,47 @@ export async function generateMetadata({ params }: PageProps) {
   if (!slugParts || !Array.isArray(slugParts) || slugParts.length === 0) return {};
 
     // HTML/System File Filter
-    if (slugParts[0].endsWith('.php') || slugParts[0].endsWith('.map')) {
+    if (slugParts[0].endsWith('.map')) {
         return {};
     }
 
     let lang = 'en';
-    let slug = slugParts[0].replace('.html', '');
+    // Clean slug from extensions
+    let slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
 
   const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
   if (slugParts.length >= 2 && validLangs.includes(slugParts[0])) {
       lang = slugParts[0];
-      slug = slugParts[1];
+      slug = slugParts[1].replace(/\.(php|html)$/, '').trim();
   } else if (slugParts.length === 1) {
-      slug = slugParts[0];
+      slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
   } else {
       return {};
   }
 
-  // Use new KV getter
-  let product = await getProduct(`${slug}-${lang}`);
+  // Get Vertical Context for Metadata
+  const headerList = await headers();
+  const host = headerList.get('host') || 'unknown';
+  const verticalHeader = headerList.get('x-vertical');
+  let detectedVertical = getVerticalFromHost(host);
+
+  if (verticalHeader) {
+      detectedVertical = verticalHeader as any;
+  }
+
+  // Use new KV getter with Vertical awareness
+  let product: ProductConfig | null = null;
+
+  if (detectedVertical) {
+      product = await getProduct(slug, detectedVertical);
+  }
+
   if (!product) {
-      product = await getProduct(slug);
+      // Fallback strategies matching the page logic
+      product = await getProduct(`${slug}-${lang}`); // Legacy lang support
+      if (!product) {
+          product = await getProduct(slug);
+      }
   }
 
   if (!product || product.status !== 'active') return {};
@@ -57,35 +79,37 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     const resolvedParams = await params;
     const slugParts = resolvedParams?.slug; // Array of strings
 
+    console.log('[DEBUG] Slug Parts:', slugParts);
+
     if (!slugParts || !Array.isArray(slugParts)) {
         notFound();
     }
 
     // HTML/System File Filter (Runtime)
-    if (slugParts[0].endsWith('.php')) {
-         console.warn(`[CatchAllPage] Blocked file access: ${slugParts[0]}`);
-         notFound();
+    // We allow .php now to be cleaned and processed, unless it's a specific system file we want to block?
+    // User said "Normalização do Slug: Garanta que o slug seja limpo...".
+    // But we might still want to block .map or other weird things.
+    if (slugParts[0].endsWith('.map')) {
+         return notFound();
     }
 
     let lang = 'en';
-    // Remove .html AND normalize
-    let slug = slugParts[0].replace(/\.html$/, '').trim();
+    // Remove .html, .php AND normalize
+    let slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
 
-    // Handle "index" or "index.html" explicitly -> Avoid Loop, just 404 if not found
-    if (slug === 'index') {
-        notFound();
-    }
-
+    // REMOVED "index" BLOCKING
+    // If slug is "index", we let it proceed to try and find a product named "index" or handle it.
+    
     // Detect Locale Strategy
     const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
     
     if (slugParts.length >= 2 && validLangs.includes(slugParts[0])) {
         // Pattern: /de/amino
         lang = slugParts[0];
-        slug = slugParts[1];
+        slug = slugParts[1].replace(/\.(php|html)$/, '').trim();
     } else if (slugParts.length === 1) {
         // Pattern: /mitolyn
-        slug = slugParts[0];
+        slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
     } else {
         // Pattern: /de/amino/extra (too deep) -> 404
         notFound();
@@ -93,43 +117,31 @@ export default async function CatchAllProductPage({ params }: PageProps) {
 
     const headerList = await headers();
     const host = headerList.get('host') || 'unknown';
-    const detectedVertical = getVerticalFromHost(host);
-
-    console.log('--- DEBUG PRE-SELL ---');
-    console.log('Hostname capturado:', host);
-    console.log('Slug recebido:', slug);
     
-    // DEBUG: Confirm Database Connection
-    const dbUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || 'UNKNOWN';
-    console.log('[ENV-CHECK] KV URL Starts with:', dbUrl.substring(0, 15) + '...');
+    // DIRECT HOST DETECTION (Middleware Bypass)
+    let detectedVertical = getVerticalFromHost(host);
 
-    // const detectedVertical = getVerticalFromHost(host); // REMOVED DUPLICATE - Already declared at line 96
-    console.log(`[ROTA] Host detectado: ${host} | Vertical: ${detectedVertical || 'none'}`);
-    console.log('Chave final gerada para o KV:', `${detectedVertical ? detectedVertical + ':' : ''}${slug}`);
+    // FORÇAR VERTICAL (Fallback para subdomínios complexos ou Vercel URLs)
+    if (!detectedVertical && host.includes('health')) {
+        detectedVertical = 'health';
+    }
+
+    console.log('[ROTA] Host detectado:', host);
+    console.log('[ROTA] Vertical:', detectedVertical || 'none');
     
-    const keys = await debugKV();
-    console.log('Chaves existentes no banco:', keys);
-
     // 1. Try Exact Key with Vertical (health:prodentim-review)
-    // This matches what is in the database according to user
     let product: ProductConfig | null = null;
     
     if (detectedVertical) {
-         console.log(`[Page] 1. Tentando chave EXATA (vertical:slug): ${detectedVertical}:${slug}`);
+         console.log(`[FINAL-CHECK] Buscando chave no KV: ${detectedVertical}:${slug}`);
          product = await getProduct(slug, detectedVertical);
     }
 
-    // 2. Try Raw Slug (prodentim-review)
-    // Fallback if the user is accessing via a different subdomain or no vertical logic applies
+    // 2. Busca Flexível (Fallback para chave pura)
+    // Se não encontrou com vertical (ou não tem vertical), tenta slug puro
     if (!product) {
-        console.log(`[Page] 2. Tentando chave SEM prefixo (slug puro): ${slug}`);
+        console.log(`[ROTA] Vertical falhou ou inexistente, tentando slug puro: ${slug}`);
         product = await getProduct(slug);
-    }
-
-    // 2.5 Try Raw Slug with Suffix (prodentim-review) explicitly if vertical failed
-    if (!product && detectedVertical) {
-         console.log(`[Page] 2.5 Vertical falhou, tentando slug puro mesmo com vertical detectada: ${slug}`);
-         product = await getProduct(slug);
     }
 
     // 3. Fallback: Brute-force Search for ANY vertical
@@ -151,20 +163,20 @@ export default async function CatchAllProductPage({ params }: PageProps) {
          }
     }
 
-    if (!product || product.status !== 'active') {
-      // Ignore system files
-      if (['favicon.ico', 'robots.txt'].includes(slug)) return notFound();
-      return notFound();
+    // 4. Reserved Routes Protection
+    // Ensure these paths are never treated as product slugs
+    const reservedRoutes = [
+        'admin', 'api', 'about', 'contact', 'privacy-policy', 'terms', 
+        'robots.txt', 'sitemap.xml', 'favicon.ico', 'sw.js'
+    ];
+    
+    if (reservedRoutes.includes(slug)) {
+        return notFound();
     }
 
-    // STRICT VERTICAL ROUTING (Subdomain Enforcement) - REMOVED FOR FLEXIBILITY
-    /*
-    // If accessing via health.domain.com, product MUST be health vertical.
-    if (detectedVertical && product.vertical !== detectedVertical) {
-         console.warn(`[Routing] Mismatch: Host Vertical (${detectedVertical}) != Product Vertical (${product.vertical})`);
-         return notFound(); // Or redirect to main domain? notFound is safer for now to avoid loops.
+    if (!product || product.status !== 'active') {
+      return notFound();
     }
-    */
 
     // --- Tracking Setup ---
     const externalTrackId = generateExternalTrackId('googleads', lang, slug);
@@ -202,6 +214,7 @@ export default async function CatchAllProductPage({ params }: PageProps) {
           switch (templateType) {
               case 'story': return <StoryTemplate product={productWithLocale} />;
               case 'comparison': return <ComparisonTemplate product={productWithLocale} />;
+              case 'cookie': return <InteractiveCookie product={productWithLocale} />;
               case 'editorial': default: return <EditorialTemplate product={productWithLocale} />;
           }
         })()}

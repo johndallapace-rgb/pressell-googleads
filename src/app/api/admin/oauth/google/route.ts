@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   const domain = isLocal ? host : 'topproductofficial.com';
   const redirectUri = `${protocol}://${domain}/api/admin/oauth/callback`;
 
-  // Scopes for Google Ads
+  // Scopes for Google Ads - STRICTLY ONLY ADS
   const scopes = [
     'https://www.googleapis.com/auth/adwords'
   ];

@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
     
     // NORMALIZE SLUG ON SAVE
     product.slug = product.slug.toLowerCase().trim();
+    product.status = 'active'; // FORCE ACTIVE ON SAVE
 
-    // SANITIZE AFFILIATE URL (Remove trailing { if present)
+    // Fix Trailing Brackets Bug in Affiliate URL
     if (product.affiliate_url) {
-        product.affiliate_url = product.affiliate_url.replace(/\{$/, '');
+        product.affiliate_url = product.affiliate_url.replace(/\{$/, '').replace(/\s/g, '');
     }
 
     // SECURITY LOCK: Reject Untitled Products

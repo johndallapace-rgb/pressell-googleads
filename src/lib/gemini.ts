@@ -1,16 +1,33 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getSystemConfig } from '@/lib/config';
 
-// Initialize the Google Generative AI client
-// Ensure process.env.GEMINI_API_KEY is set in your .env.local
-// IMPORTANT: Use standard API Key (starts with 'AIza...'), NOT Service Account JSON.
-const apiKey = process.env.GEMINI_API_KEY;
+// AVISO: Todas as APIs devem ser consumidas via Config System UI
+// WARNING: All APIs must be consumed via Config System UI. Do not use process.env.
 
-export const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+// Removed static initialization to allow dynamic key loading
 
 export async function generateContent(prompt: string) {
-  if (!genAI) {
-    throw new Error('GEMINI_API_KEY is not set');
+  // 1. Priority: System Config (KV) - User Control via UI
+  let apiKey: string | undefined;
+  
+  try {
+      const config = await getSystemConfig();
+      apiKey = config.api_keys?.gemini;
+  } catch (e) {
+      console.warn('Failed to load system config for Gemini Key', e);
   }
+
+  // 2. Fallback: process.env (Legacy/Dev) - DISABLED per user request
+  // The system must rely strictly on the Config System.
+  // if (!apiKey) {
+  //    apiKey = process.env.GEMINI_API_KEY;
+  // }
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY_MISSING'); // Specific code for detection
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   try {
     // Use 'gemini-2.0-flash' on v1 (stable).
@@ -65,7 +82,8 @@ export async function generateContent(prompt: string) {
         throw new Error(`Bad Request (400). Raw: ${rawMessage} - Action: Check API Key quotas/regions.`);
     }
     if (rawMessage.includes('401') || rawMessage.includes('API key')) {
-        throw new Error(`Invalid API Key (401). Raw: ${rawMessage} - Check GEMINI_API_KEY in Vercel.`);
+        // Updated error message to reflect Config System
+        throw new Error(`Invalid API Key (401). Key: ${apiKey?.substring(0,8)}... - Check Config System.`);
     }
     if (rawMessage.includes('429') || rawMessage.includes('quota')) {
         throw new Error(`Quota Exceeded (429). Raw: ${rawMessage}`);

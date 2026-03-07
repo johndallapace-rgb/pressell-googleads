@@ -1,3 +1,5 @@
+'use client';
+
 import { ProductConfig } from '@/lib/config';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';

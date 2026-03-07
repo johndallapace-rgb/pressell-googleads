@@ -109,40 +109,17 @@ export function normalizeConfig(raw: any): CampaignConfig {
  * Uses dynamic import to avoid top-level side effects.
  */
 export async function getCampaignConfig(): Promise<CampaignConfig> {
-    if (!process.env.EDGE_CONFIG) {
-        console.warn('EDGE_CONFIG env var missing, using default.');
-        return defaultConfig;
-    }
-
+    // 1. Try Vercel KV (Redis) - The Source of Truth
+    // This is now the primary store, replacing Edge Config for write operations.
+    // We reuse the logic from lib/config.ts to avoid circular deps or logic drift.
+    // Ideally, this file should just re-export from lib/config.ts or be deprecated.
+    
+    // Check if we are in a server context where we can import lib/config
     try {
-        const { createClient } = await import('@vercel/edge-config');
-        const client = createClient(process.env.EDGE_CONFIG);
-        
-        // Try reading the wrapper key first
-        const campaignConfig = await client.get('campaign_config');
-        
-        if (campaignConfig) {
-            return normalizeConfig(campaignConfig);
-        }
-
-        // If not found, try reading separate keys
-        const [defaultLang, products] = await Promise.all([
-            client.get('default_lang'),
-            client.get('products')
-        ]);
-
-        if (products) {
-            return normalizeConfig({
-                default_lang: defaultLang,
-                products: products
-            });
-        }
-
-        console.warn('No valid config found in Edge Config, using default.');
-        return defaultConfig;
-
-    } catch (error) {
-        console.error('Error fetching from Edge Config:', error);
+        const { getCampaignConfig: getKVConfig } = await import('@/lib/config');
+        return getKVConfig();
+    } catch (e) {
+        // Fallback for edge runtime or if import fails
         return defaultConfig;
     }
 }

@@ -31,7 +31,7 @@ export function TrackingManager({
   return (
     <>
       {/* --- Google Ads (GTag) --- */}
-      {googleAdsId && (
+      {googleAdsId && !googleAdsId.includes('PIXEL_ID') && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
@@ -49,7 +49,7 @@ export function TrackingManager({
       )}
 
       {/* --- Meta Pixel --- */}
-      {metaPixelId && (
+      {metaPixelId && !metaPixelId.includes('PIXEL_ID') && (
         <Script id="meta-pixel-init" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
@@ -67,7 +67,7 @@ export function TrackingManager({
       )}
       
       {/* --- NoScript Fallback for Meta --- */}
-      {metaPixelId && (
+      {metaPixelId && !metaPixelId.includes('PIXEL_ID') && (
         <noscript>
           <img 
             height="1" 

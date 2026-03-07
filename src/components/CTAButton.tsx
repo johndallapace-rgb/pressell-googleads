@@ -25,14 +25,14 @@ export function CTAButton({ href, label, className = '', variant = 'primary', fu
     setFinalUrl(buildOutgoingUrl(href));
   }, [href]);
 
-  const isLinkValid = href && href.trim() !== '';
+  const isLinkValid = href && href.trim() !== '' && !href.includes('VENDOR_ID');
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     // 1. Safety Check (Shielding)
     if (!isLinkValid) {
         e.preventDefault();
-        console.error('❌ [CTAButton] Affiliate URL is missing! Interaction blocked.');
-        alert('Configuration Error: Affiliate Link is missing. Please check the admin panel.');
+        console.error('❌ [CTAButton] Affiliate URL is invalid (Contains VENDOR_ID or empty)! Interaction blocked.');
+        alert('Configuration Error: Affiliate Link is not configured correctly. Please check the admin panel.');
         return;
     }
 

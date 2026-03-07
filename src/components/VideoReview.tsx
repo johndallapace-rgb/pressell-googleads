@@ -3,8 +3,9 @@
 import { useState } from 'react';
 
 export interface VideoReviewType {
-  provider: 'youtube' | 'vimeo';
-  id: string;
+  provider: 'youtube' | 'vimeo' | 'custom';
+  id?: string;
+  url?: string; // For custom videos
   thumbnailUrl?: string;
   title?: string;
 }
@@ -19,11 +20,15 @@ export function VideoReview({ video, disclaimer }: Props) {
 
   // Helper to construct embed URL
   const getEmbedUrl = () => {
-      if (video.provider === 'youtube') {
-          return `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
+      if (video.provider === 'youtube' && video.id) {
+          // Controls=1: Show controls (better UX than 0)
+          // Rel=0: Show related videos from SAME channel only (less distracting)
+          // Modestbranding=1: Minimize YouTube logo
+          // Showinfo=0: Deprecated but kept for legacy
+          return `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0`;
       }
-      if (video.provider === 'vimeo') {
-          return `https://player.vimeo.com/video/${video.id}?autoplay=1`;
+      if (video.provider === 'vimeo' && video.id) {
+          return `https://player.vimeo.com/video/${video.id}?autoplay=1&title=0&byline=0&portrait=0`;
       }
       return '';
   };
@@ -31,13 +36,12 @@ export function VideoReview({ video, disclaimer }: Props) {
   // Helper for thumbnail
   const getThumbnail = () => {
       if (video.thumbnailUrl) return video.thumbnailUrl;
-      if (video.provider === 'youtube') return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
-      // Vimeo requires API for thumb, so we'd need a placeholder or passed prop. 
-      // Fallback to a generic placeholder if no URL provided for Vimeo.
+      if (video.provider === 'youtube' && video.id) return `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+      // Fallback for Vimeo or Custom
       return '/images/video-placeholder.jpg'; 
   };
 
-  if (!['youtube', 'vimeo'].includes(video.provider)) return null;
+  if (!['youtube', 'vimeo', 'custom'].includes(video.provider)) return null;
 
   return (
     <div className="w-full max-w-3xl mx-auto mb-8">
@@ -70,13 +74,22 @@ export function VideoReview({ video, disclaimer }: Props) {
             </div>
           </>
         ) : (
-          <iframe
-            className="w-full h-full"
-            src={getEmbedUrl()}
-            title={video.title || 'Video Review'}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+          video.provider === 'custom' && video.url ? (
+             <video 
+                src={video.url}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+             />
+          ) : (
+             <iframe
+                className="w-full h-full"
+                src={getEmbedUrl()}
+                title={video.title || 'Video Review'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+             />
+          )
         )}
       </div>
       <p className="text-xs text-gray-500 text-center mt-2">{disclaimer}</p>

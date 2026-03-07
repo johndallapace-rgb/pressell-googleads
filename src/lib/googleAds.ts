@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
-const GOOGLE_ADS_API_VERSION = 'v17';
+import { getCampaignConfig } from '@/lib/config';
+
+const GOOGLE_ADS_API_VERSION = 'v19';
 const GOOGLE_OAUTH_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com';
 
@@ -11,24 +13,54 @@ interface GoogleAdsConfig {
   refreshToken: string;
 }
 
-function getConfig(): GoogleAdsConfig {
+// In-Memory Token Cache
+let tokenCache: { token: string; expiresAt: number } | null = null;
+
+// Async function to get config (since we might need to read KV)
+async function getConfig(): Promise<GoogleAdsConfig> {
+  let refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN || '';
+
+  // If not in env, check KV
+  if (!refreshToken) {
+      try {
+          const config = await getCampaignConfig();
+          refreshToken = config.system?.api_keys?.google_ads_refresh_token || '';
+      } catch (e) {
+          console.warn('[GoogleAds] Failed to fetch config from KV', e);
+      }
+  }
+
   const cfg = {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '',
     developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '',
-    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN || '',
+    refreshToken: refreshToken,
   };
 
   if (!cfg.clientId || !cfg.clientSecret || !cfg.developerToken || !cfg.refreshToken) {
-    throw new Error('Missing Google Ads credentials in environment variables.');
+    throw new Error('Missing Google Ads credentials (CLIENT_ID, SECRET, DEVELOPER_TOKEN, or REFRESH_TOKEN). Please connect in Admin Settings.');
   }
 
   return cfg;
 }
 
-async function getAccessToken(): Promise<string> {
-  const config = getConfig();
+// ALERT SYSTEM
+async function sendAlertEmail(subject: string, message: string) {
+    console.error(`[URGENT_ACTION_REQUIRED] 🚨 ${subject}`);
+    console.error(`DETAILS: ${message}`);
+    // TODO: Connect to Resend/SendGrid using user's API Key
+    // if (process.env.RESEND_API_KEY) { ... }
+}
+
+async function getAccessToken(forceRefresh = false): Promise<string> {
+  // 1. Check Cache (if not forced)
+  if (!forceRefresh && tokenCache && Date.now() < tokenCache.expiresAt) {
+      return tokenCache.token;
+  }
+
+  const config = await getConfig();
   
+  console.log('[GoogleAds] 🔄 Refreshing Access Token...');
   const params = new URLSearchParams({
     client_id: config.clientId,
     client_secret: config.clientSecret,
@@ -36,42 +68,69 @@ async function getAccessToken(): Promise<string> {
     grant_type: 'refresh_token',
   });
 
-  const res = await fetch(GOOGLE_OAUTH_URL, {
-    method: 'POST',
-    body: params,
-  });
+  try {
+      const res = await fetch(GOOGLE_OAUTH_URL, {
+        method: 'POST',
+        body: params,
+      });
 
-  const data = await res.json();
-  
-  if (!res.ok) {
-    throw new Error(`Failed to refresh token: ${data.error_description || data.error}`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        const errorMsg = data.error_description || data.error;
+        // CRITICAL ALERT: Refresh Token Expired/Revoked
+        if (errorMsg.includes('invalid_grant') || errorMsg.includes('unauthorized_client')) {
+             await sendAlertEmail('Google Ads Token REVOKED', 'The Refresh Token is invalid. Please visit /admin/settings to reconnect Google Ads immediately.');
+        }
+        throw new Error(`Failed to refresh token: ${errorMsg}`);
+      }
+
+      // Cache Token (Expires in 3500s, slightly less than 3600s for safety)
+      tokenCache = {
+          token: data.access_token,
+          expiresAt: Date.now() + 3500 * 1000 
+      };
+
+      return data.access_token;
+  } catch (e: any) {
+      await sendAlertEmail('Google Ads Auth Failed', e.message);
+      throw e;
   }
-
-  return data.access_token;
 }
 
 async function googleAdsRequest(
   customerId: string, 
   path: string, 
   method: 'GET' | 'POST', 
-  body?: any
-) {
-  const accessToken = await getAccessToken();
-  const config = getConfig();
+  body?: any,
+  retryCount = 0
+): Promise<any> {
+  // 1. Get Token (Silent Refresh handled internally)
+  const accessToken = await getAccessToken(retryCount > 0); // Force refresh if retrying
+  const config = await getConfig();
   
   // Format customerId (remove dashes)
-  const cleanCustomerId = customerId.replace(/-/g, '');
+  const cleanCustomerId = customerId.replace(/[^0-9]/g, ''); // STRICT: Only numbers
   
   const url = `${GOOGLE_ADS_API_BASE}/${GOOGLE_ADS_API_VERSION}/customers/${cleanCustomerId}/${path}`;
   
   // Log URL for debugging 404s
-  console.log(`[GoogleAds] Requesting: ${url}`);
+  // console.log(`[GoogleAds] Requesting: ${url}`);
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Authorization': `Bearer ${accessToken}`,
     'developer-token': config.developerToken,
     'Content-Type': 'application/json',
+    // 'login-customer-id': cleanCustomerId, // STRICTLY REMOVED as per user request for direct account
   };
+
+  // HOTFIX: For search/mutate, if operating directly on the customer, NO login-customer-id needed
+  // UNLESS accessing via Manager.
+  // BUT: Some users have weird setups where they MUST use it.
+  // Let's try WITHOUT first (default behavior).
+  
+  // If we wanted to support managers, we'd need a way to know the manager ID.
+  // For now, assuming Direct Access or OAuth User = Admin of Account.
 
   const res = await fetch(url, {
     method,
@@ -82,15 +141,37 @@ async function googleAdsRequest(
   if (!res.ok) {
     const errorText = await res.text();
     let errorMessage = 'Unknown Google Ads API Error';
-    
+    let isAuthError = false;
+    let isPermissionError = false;
+
     // Check if response is JSON
     try {
         const data = JSON.parse(errorText);
         errorMessage = data.error?.message || JSON.stringify(data.error) || errorMessage;
+        
+        // Detect 401/403 specifically
+        if (data.error?.code === 401 || data.error?.status === 'UNAUTHENTICATED') {
+            isAuthError = true;
+        }
+        if (data.error?.code === 403 || data.error?.status === 'PERMISSION_DENIED') {
+            isPermissionError = true;
+        }
     } catch (e) {
-        // Response is likely HTML (DOCTYPE) or plain text
         console.error('[GoogleAds] Non-JSON Error Response:', errorText.substring(0, 500));
         errorMessage = `Non-JSON Error (${res.status}): ${errorText.substring(0, 200)}...`;
+        if (res.status === 401) isAuthError = true;
+    }
+
+    // AUTO-RETRY LOGIC (Silent Recovery)
+    if (isAuthError && retryCount < 1) {
+        console.warn('[GoogleAds] 401 Detected. Retrying with fresh token...');
+        // Recursive call with retryCount = 1, which forces token refresh
+        return googleAdsRequest(customerId, path, method, body, 1);
+    }
+
+    // PERMISSION HINT
+    if (isPermissionError) {
+        errorMessage += ' (Hint: Verify user email matches account Admin. Try login-customer-id ONLY if Manager Account. Current config: NO login-customer-id)';
     }
 
     throw new Error(`Google Ads API Error: ${errorMessage}`);
@@ -107,11 +188,11 @@ export const GoogleAds = {
    */
   async listAccessibleCustomers() {
      const accessToken = await getAccessToken();
-     const config = getConfig();
+     const config = await getConfig();
      
      const url = `${GOOGLE_ADS_API_BASE}/${GOOGLE_ADS_API_VERSION}/customers:listAccessibleCustomers`;
      
-     const headers = {
+     const headers: Record<string, string> = {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': config.developerToken,
      };
@@ -175,6 +256,96 @@ export const GoogleAds = {
         name: row.ad_group.name,
         status: row.ad_group.status
     })) || [];
+  },
+
+  /**
+   * Create a Campaign Budget
+   */
+  async createBudget(customerId: string, budgetName: string, amountMicros: number) {
+      const operation = {
+          create: {
+              name: budgetName,
+              amountMicros: amountMicros,
+              deliveryMethod: 'STANDARD',
+              explicitlyShared: false
+          }
+      };
+
+      const response = await googleAdsRequest(customerId, 'campaignBudgets:mutate', 'POST', {
+          operations: [operation]
+      });
+
+      return response.results?.[0]?.resourceName;
+  },
+
+  /**
+   * Create a Search Campaign
+   */
+  async createCampaign(customerId: string, budgetResourceName: string, campaignName: string) {
+      const operation = {
+          create: {
+              name: campaignName,
+              status: 'PAUSED', // Safety first
+              advertisingChannelType: 'SEARCH',
+              campaignBudget: budgetResourceName,
+              targetGoogleSearch: true,
+              targetSearchNetwork: true,
+              targetPartnerSearchNetwork: false,
+              targetContentNetwork: false,
+              manualCpc: {
+                  enhancedCpcEnabled: false
+              }
+          }
+      };
+
+      const response = await googleAdsRequest(customerId, 'campaigns:mutate', 'POST', {
+          operations: [operation]
+      });
+
+      return response.results?.[0]?.resourceName;
+  },
+
+  /**
+   * Create an AdGroup
+   */
+  async createAdGroup(customerId: string, campaignResourceName: string, adGroupName: string, cpcBidMicros: number) {
+      const operation = {
+          create: {
+              name: adGroupName,
+              status: 'ENABLED',
+              campaign: campaignResourceName,
+              type: 'SEARCH_STANDARD',
+              cpcBidMicros: cpcBidMicros
+          }
+      };
+
+      const response = await googleAdsRequest(customerId, 'adGroups:mutate', 'POST', {
+          operations: [operation]
+      });
+
+      return response.results?.[0]?.resourceName;
+  },
+
+  /**
+   * Add Keywords to AdGroup
+   */
+  async addKeywords(customerId: string, adGroupResourceName: string, keywords: string[]) {
+      const operations = keywords.map(keyword => ({
+          create: {
+              adGroup: adGroupResourceName,
+              status: 'ENABLED',
+              keyword: {
+                  text: keyword,
+                  matchType: 'PHRASE'
+              }
+          }
+      }));
+
+      const response = await googleAdsRequest(customerId, 'adGroupCriteria:mutate', 'POST', {
+          operations: operations
+      });
+
+      return response.results?.map((r: any) => r.resourceName);
   },
 
   /**

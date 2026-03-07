@@ -4,15 +4,34 @@ import { useState, useEffect } from 'react';
 import { ProductConfig } from '@/lib/config';
 import { getStrategyRecommendation, generateLaunchChecklist, StrategySettings, AdAssets } from '@/lib/ads/strategyPlanner';
 import { convertToCsv } from '@/lib/ads/csv';
+import PushCampaignModal from './PushCampaignModal';
+import AdPreviewCard from './AdPreviewCard';
 
 interface AdsManagerProps {
   products: ProductConfig[];
 }
 
 export default function AdsManager({ products }: AdsManagerProps) {
-  const [selectedSlug, setSelectedSlug] = useState(products[0]?.slug || '');
+  const [selectedSlug, setSelectedSlug] = useState('');
+  
+  // Initialize selection with first valid product
+  useEffect(() => {
+      if (products.length > 0 && !selectedSlug) {
+          // Sort by newest? Or just take first.
+          // Filter out products that don't make sense if needed (e.g. status != active)
+          const activeProducts = products.filter(p => p.status === 'active');
+          if (activeProducts.length > 0) {
+              setSelectedSlug(activeProducts[0].slug);
+          } else if (products.length > 0) {
+              setSelectedSlug(products[0].slug);
+          }
+      }
+  }, [products]);
+  
   const [loading, setLoading] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [pushModalOpen, setPushModalOpen] = useState(false);
+  const [adsStatus, setAdsStatus] = useState<'ONLINE' | 'OFFLINE' | 'CHECKING'>('CHECKING');
   
   // Strategy State
   const [strategy, setStrategy] = useState<StrategySettings>({
@@ -25,13 +44,29 @@ export default function AdsManager({ products }: AdsManagerProps) {
   });
   const [assets, setAssets] = useState<AdAssets | null>(null);
 
-  // Load recommendations when product changes
+  // Check Ads Status
+  useEffect(() => {
+      fetch('/api/admin/verify-google-ads')
+        .then(res => res.json())
+        .then(data => setAdsStatus(data.status))
+        .catch(() => setAdsStatus('OFFLINE'));
+  }, []);
+
+  // Load product data (including existing ads) when slug changes
   useEffect(() => {
     const product = products.find(p => p.slug === selectedSlug);
     if (product) {
+        // 1. Strategy & Assets Recommendation
         const { settings, assets } = getStrategyRecommendation(product.vertical, product.language);
         setStrategy(settings);
         setAssets(assets);
+
+        // 2. Load Existing Campaigns from Config (if any)
+        if (product.ads?.campaigns && product.ads.campaigns.length > 0) {
+            setCampaigns(product.ads.campaigns);
+        } else {
+            setCampaigns([]);
+        }
     }
   }, [selectedSlug, products]);
 
@@ -50,6 +85,7 @@ export default function AdsManager({ products }: AdsManagerProps) {
       const data = await res.json();
       if (data.success) {
         setCampaigns(data.campaigns);
+        // Force refresh product data? Ideally parent should re-fetch, but for now local state update is enough
       } else {
         alert('Error: ' + data.error);
       }
@@ -92,7 +128,21 @@ export default function AdsManager({ products }: AdsManagerProps) {
     <div className="space-y-8">
       {/* Product Selection & Strategy */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">1. Campaign Strategy</h2>
+        <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h2 className="text-lg font-bold text-gray-800">1. Campaign Strategy</h2>
+            {adsStatus === 'OFFLINE' && (
+                <a href="/api/admin/oauth/google" className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    API Offline (Connect)
+                </a>
+            )}
+            {adsStatus === 'ONLINE' && (
+                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    API Online
+                </span>
+            )}
+        </div>
         
         <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-4">
@@ -101,10 +151,15 @@ export default function AdsManager({ products }: AdsManagerProps) {
                     <select 
                         value={selectedSlug} 
                         onChange={(e) => setSelectedSlug(e.target.value)}
-                        className="w-full border rounded px-3 py-2"
+                        className="w-full border rounded px-3 py-2 bg-gray-50 font-medium text-gray-900"
                     >
-                        {products.map(p => (
-                        <option key={p.slug} value={p.slug}>{p.name} ({p.vertical})</option>
+                        <option value="" disabled>-- Select a Product to Advertise --</option>
+                        {products
+                            .filter(p => p.status !== 'paused') // Hide paused/archived
+                            .map(p => (
+                            <option key={p.slug} value={p.slug}>
+                                {p.name} ({p.vertical.toUpperCase()})
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -189,6 +244,15 @@ export default function AdsManager({ products }: AdsManagerProps) {
             {campaigns.length > 0 && (
                 <div className="flex gap-3 ml-auto">
                     <button 
+                        onClick={() => setPushModalOpen(true)}
+                        disabled={adsStatus !== 'ONLINE'}
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm font-medium animate-pulse"
+                        title={adsStatus !== 'ONLINE' ? "Connect Google Ads API first" : "Launch Campaign"}
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        Push to Google Ads
+                    </button>
+                    <button 
                         onClick={handleDownloadChecklist}
                         className="border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 flex items-center bg-white"
                     >
@@ -209,12 +273,25 @@ export default function AdsManager({ products }: AdsManagerProps) {
         {campaigns.length > 0 && (
             <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto border rounded p-4 bg-gray-50">
                 {campaigns.map((camp, i) => (
-                <div key={i} className="bg-white p-4 rounded border shadow-sm">
+                <div key={i} className="bg-white p-4 rounded border shadow-sm space-y-4">
                     <div className="flex justify-between">
                         <h4 className="font-bold text-gray-800">{camp.campaignName}</h4>
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{strategy.bidStrategy}</span>
                     </div>
-                    <div className="text-sm text-gray-600 mt-2 grid grid-cols-3 gap-4">
+                    
+                    {/* RSA Preview Card */}
+                    {camp.adGroups?.[0]?.ads?.[0] && (
+                        <div className="mt-2">
+                            <h5 className="text-xs font-bold text-gray-500 uppercase mb-2">Ad Preview</h5>
+                            <AdPreviewCard 
+                                headlines={camp.adGroups[0].ads[0].headlines}
+                                descriptions={camp.adGroups[0].ads[0].descriptions}
+                                finalUrl={camp.adGroups[0].ads[0].finalUrl}
+                            />
+                        </div>
+                    )}
+
+                    <div className="text-sm text-gray-600 mt-2 grid grid-cols-3 gap-4 border-t pt-2">
                         <div>Ad Groups: <strong>{camp.adGroups.length}</strong></div>
                         <div>Keywords: <strong>{camp.adGroups.reduce((acc:any, g:any) => acc + g.keywords.length, 0)}</strong></div>
                         <div>Budget: <strong>${strategy.dailyBudget}/day</strong></div>
@@ -223,6 +300,13 @@ export default function AdsManager({ products }: AdsManagerProps) {
                 ))}
             </div>
         )}
+
+        <PushCampaignModal 
+            isOpen={pushModalOpen} 
+            onClose={() => setPushModalOpen(false)}
+            productSlug={selectedSlug}
+            productName={products.find(p => p.slug === selectedSlug)?.name || ''}
+        />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { AdsConfig } from '@/lib/ads/types';
 
 export const runtime = 'nodejs';
 
-export async function PUT(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function PUT(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
   try {
     // Validate Admin Token
     const authHeader = request.headers.get('Authorization');
@@ -16,6 +16,7 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
       }
     }
 
+    const params = await props.params;
     const slug = params.slug;
     const body = await request.json();
     const newAdsConfig = body as AdsConfig;

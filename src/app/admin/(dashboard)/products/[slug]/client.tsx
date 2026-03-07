@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import ProductForm from '@/components/ProductForm';
 import { ProductConfig } from '@/lib/config';
 
-export default function EditProductClient({ product }: { product: ProductConfig }) {
+export default function EditProductClient({ product, readOnly }: { product: ProductConfig; readOnly?: boolean }) {
   const router = useRouter();
 
   const handleSave = async (updatedProduct: ProductConfig) => {
@@ -25,7 +25,7 @@ export default function EditProductClient({ product }: { product: ProductConfig 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Edit Product: {product.name}</h1>
-      <ProductForm initialProduct={product} onSubmit={handleSave} readOnly={false} />
+      <ProductForm initialProduct={product} onSubmit={handleSave} readOnly={readOnly ?? false} />
     </div>
   );
 }

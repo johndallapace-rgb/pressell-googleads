@@ -3,8 +3,9 @@ import { getCampaignConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
   try {
+    const params = await props.params;
     const slug = params.slug;
     const config = await getCampaignConfig();
     const product = config.products[slug];

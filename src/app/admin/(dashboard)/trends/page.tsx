@@ -77,55 +77,157 @@ export default function MarketTrendsPage() {
   const router = useRouter();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('ClickBank');
   const [analyzing, setAnalyzing] = useState(false);
-  const [products, setProducts] = useState<TrendProduct[]>(MOCK_DATA);
+  const [products, setProducts] = useState<TrendProduct[]>([]); // Default empty until verified
+  const [config, setConfig] = useState<any>(null);
 
   // Persistence: Load Top 5 / Data on Mount
   useEffect(() => {
-    const saved = localStorage.getItem('marketTrends_data');
-    if (saved) {
-        try {
-            setProducts(JSON.parse(saved));
-        } catch (e) {
-            console.error('Failed to load trends:', e);
+    // 1. Fetch Config First to Verify Connection
+    fetch('/api/admin/config', { cache: 'no-store' }).then(res => res.json()).then(cfg => {
+        setConfig(cfg);
+        
+        // 2. Only load data if keys exist
+        // Note: We check if ANY platform key exists to allow partial functionality
+        // But for strict "Prova de Falha", we might want to check based on selectedPlatform
+        const hasKeys = cfg.api_keys?.clickbank_api_token || cfg.platforms?.digistore?.credentials?.affiliate_id;
+        
+        if (hasKeys) {
+            const saved = localStorage.getItem('marketTrends_data');
+            if (saved) {
+                try {
+                    setProducts(JSON.parse(saved));
+                } catch (e) { console.error(e); }
+            } else {
+                // Initial Mock Load only if configured
+                // In production, this would be empty until "Refresh" is clicked
+                setProducts(MOCK_DATA);
+            }
+        } else {
+            // FORCE CLEAR IF NO KEYS
+            setProducts([]);
+            localStorage.removeItem('marketTrends_data');
         }
-    }
+    }).catch(err => console.error('Config fetch failed', err));
   }, []);
 
   // Persistence: Save when updated
   useEffect(() => {
-      if (products !== MOCK_DATA) {
+      if (products.length > 0 && products !== MOCK_DATA) {
         localStorage.setItem('marketTrends_data', JSON.stringify(products));
       }
   }, [products]);
 
+  // Check current platform status
+  const isPlatformConfigured = (p: Platform) => {
+      if (!config) return false;
+      if (p === 'ClickBank') return !!(config.api_keys?.clickbank_api_token);
+      if (p === 'Digistore24') return !!(config.platforms?.digistore?.credentials?.affiliate_id);
+      if (p === 'BuyGoods') return !!(config.api_keys?.buygoods_api);
+      if (p === 'MaxWeb') return !!(config.api_keys?.maxweb_api);
+      return false;
+  };
+
   // Filter products by platform
-  const filteredProducts = products.filter(p => p.platform === selectedPlatform);
+  const filteredProducts = isPlatformConfigured(selectedPlatform) 
+      ? products.filter(p => p.platform === selectedPlatform)
+      : [];
   
   // Sort by AI Score for recommendations
   const topRecommendations = [...filteredProducts]
     .sort((a, b) => b.aiScore - a.aiScore)
     .slice(0, 5);
 
-  const handleFastDeploy = (product: TrendProduct) => {
-    // Check catalog for ID match
-    const catalogEntry = Object.entries(productCatalog.products).find(([key, val]) => 
-        val.name === product.name || product.name.includes(val.name)
-    );
+  const handleCreatePresell = async (product: TrendProduct) => {
+      // 1. Fetch Config for Nickname
+      let nickname = 'johnpace';
+      let affiliateUrl = product.url;
 
-    let queryParams = `import=${encodeURIComponent(product.url)}&name=${encodeURIComponent(product.name)}&vertical=${encodeURIComponent(product.vertical)}&platform=${encodeURIComponent(product.platform)}`;
-    
-    if (catalogEntry) {
-        const [slug, data] = catalogEntry;
-        // Inject Catalog ID automatically
-        queryParams += `&catalogId=${data.id}&catalogSlug=${slug}`;
-        console.log(`[FastDeploy] Matched Catalog Item: ${slug} (ID: ${data.id})`);
-    }
+      // Extract Vendor ID (Clean) - "Mitolyn" -> "mitolyn"
+      const vendorId = product.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // Redirect to create product with imported URL and Platform context
-    router.push(`/admin/products?${queryParams}`);
+      // CATALOG LOOKUP (Smart ID)
+      // Check if we have this product in our catalog to get the REAL ID
+      // @ts-ignore
+      const catalogItem = Object.values(productCatalog.products).find((p: any) => 
+          p.name.toLowerCase().includes(product.name.toLowerCase()) || 
+          product.name.toLowerCase().includes(p.name.toLowerCase())
+      ) as any;
+
+      try {
+        const configRes = await fetch('/api/admin/config');
+        const sysConfig = await configRes.json();
+        nickname = sysConfig.api_keys?.clickbank_nickname || sysConfig.affiliate_nickname || 'johnpace';
+        
+        // Construct Real Affiliate Link (Manual Construction)
+        if (catalogItem && catalogItem.id) {
+             // BEST CASE: We have the ID from catalog
+             const vendor = catalogItem.vendor || 'JohnPace'; // Use catalog vendor or default
+             const baseUrl = catalogItem.base_url || 'https://www.digistore24.com/redir';
+             
+             // PRIORITY: Check if catalog has specific affiliate_url defined (Direct Link Strategy)
+             if (catalogItem.affiliate_url) {
+                 affiliateUrl = catalogItem.affiliate_url;
+             }
+             // Construct correct link: base/id/vendor
+             else if (product.platform === 'Digistore24') {
+                 affiliateUrl = `${baseUrl}/${catalogItem.id}/${vendor}`;
+             } else {
+                 // Clickbank etc
+                 affiliateUrl = `${baseUrl}/${catalogItem.id}/${vendor}`; 
+             }
+             console.log(`[Trends] Catalog Match! Using ID ${catalogItem.id}`);
+        } else if (product.platform === 'ClickBank') {
+            affiliateUrl = `https://${nickname}.hop.clickbank.net/?affiliate=${nickname}&vendor=${vendorId}`;
+        } else if (product.platform === 'Digistore24') {
+            const dsId = sysConfig.platforms?.digistore?.credentials?.affiliate_id || nickname;
+            affiliateUrl = `https://www.digistore24.com/redir/PRODUCT_ID/${dsId}`; // Fallback if not in catalog
+        }
+      } catch (e) { console.error('Config fetch error', e); }
+
+      // 2. Resolve Official URL (Clean Tracking Garbage)
+      let officialUrl = product.url;
+      try {
+          const u = new URL(officialUrl);
+          // Remove ALL query params (tracking garbage like hopId, vtid, etc)
+          u.search = ''; 
+          
+          // Heuristic: Prefer text pages over video pages
+          // mitolyn.com/video.php -> mitolyn.com/text.php (common pattern) or just mitolyn.com
+          // STRATEGY: If .php is detected, try to strip to root OR append /welcome if generic
+          if (u.pathname.includes('video') || u.pathname.endsWith('.php')) {
+               const rootUrl = `${u.protocol}//${u.hostname}`;
+               
+               // Try to ping the root to see if it redirects or works
+               // Since we are client-side, we might just assume root is safer for scraping content
+               // Or append standard VSL bypass paths
+               
+               // For Mitolyn specifically (and many CB offers):
+               // video.php -> text.php OR root
+               officialUrl = rootUrl; // Default to root for safety
+               console.log(`[Trends] Cleaned URL from ${product.url} to ${officialUrl}`);
+          }
+          
+          officialUrl = officialUrl.replace(/\/$/, ''); // Remove trailing slash
+      } catch (e) {}
+
+      // 3. Navigate to Creator with PRE-FILLED Data
+      const query = new URLSearchParams({
+          url: officialUrl, // Clean Scraper Target
+          niche: product.vertical,
+          affiliate_url: affiliateUrl, // The constructed link
+          name: product.name, // Pass name
+          // No vendor_id needed in params anymore as we constructed the link
+      }).toString();
+
+      router.push(`/admin/products/new?${query}`);
   };
 
   const handleRefreshAnalysis = async () => {
+      if (!isPlatformConfigured(selectedPlatform)) {
+          alert(`Please configure ${selectedPlatform} keys first!`);
+          router.push('/admin/config');
+          return;
+      }
       setAnalyzing(true);
       
       try {
@@ -141,7 +243,7 @@ export default function MarketTrendsPage() {
                 // Add new "Scanned" items
                 const newItems: TrendProduct[] = [
                     { 
-                        id: 'ds-1', name: 'Advanced Amino Formula', vertical: 'Health', gravity: 42, 
+                        id: 'ds-1', name: 'Advanced Amino', vertical: 'Health', gravity: 42, 
                         aiScore: 94, aiReason: 'Top seller in Germany/UK. High recurring revenue.', 
                         platform: 'Digistore24', url: 'https://advancedamino.com',
                         avgPayout: 55, currency: 'EUR',
@@ -314,7 +416,15 @@ export default function MarketTrendsPage() {
           
           {topRecommendations.length === 0 ? (
               <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed text-gray-500">
-                  No data available for {selectedPlatform}.
+                  {!isPlatformConfigured(selectedPlatform) ? (
+                      <div className="flex flex-col items-center gap-2">
+                          <span className="text-red-500 font-bold">🚫 Connection Required</span>
+                          <span>Please configure {selectedPlatform} in "Config System" to view trends.</span>
+                          <button onClick={() => router.push('/admin/config')} className="text-blue-600 underline">Go to Settings</button>
+                      </div>
+                  ) : (
+                      <span>No data available for {selectedPlatform}. Click "Refresh Analysis".</span>
+                  )}
               </div>
           ) : (
               <div className="grid md:grid-cols-5 gap-4">
@@ -357,7 +467,7 @@ export default function MarketTrendsPage() {
 
                           <div className="flex gap-2">
                             <button 
-                                onClick={() => router.push(`/admin/products/new?url=${encodeURIComponent(product.url)}&niche=${encodeURIComponent(product.vertical)}`)}
+                                onClick={() => handleCreatePresell(product)}
                                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold py-2 rounded hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1"
                             >
                                 🚀 Create Pre-sell
@@ -430,7 +540,7 @@ export default function MarketTrendsPage() {
                               </td>
                               <td className="px-6 py-4 text-right">
                                   <button 
-                                    onClick={() => router.push(`/admin/products/new?url=${encodeURIComponent(product.url)}&niche=${encodeURIComponent(product.vertical)}`)}
+                                    onClick={() => handleCreatePresell(product)}
                                     className="text-blue-600 hover:text-blue-800 font-bold text-xs border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded transition-all flex items-center gap-1 ml-auto"
                                   >
                                       🚀 Create

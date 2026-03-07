@@ -42,7 +42,7 @@ export default async function DiagnosticsPage() {
     ADMIN_EMAIL: !!process.env.ADMIN_EMAIL,
     ADMIN_PASSWORD: !!process.env.ADMIN_PASSWORD,
     JWT_SECRET: !!process.env.JWT_SECRET,
-    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+    // GEMINI_API_KEY: !!process.env.GEMINI_API_KEY, // DISABLED - Managed by Config System
   };
 
   // Fetch from KV (Centralized)

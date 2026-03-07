@@ -112,14 +112,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Rewrite Logic - SIMPLIFIED: Just Pass Headers, No Rewrites to avoid loops
-  /*
-  if (subdomain || locale !== 'en') {
-      // ... Logic commented out to prevent any URL manipulation ...
+  const response = NextResponse.next();
+  if (subdomain) {
+    response.headers.set('x-vertical', subdomain);
   }
-  */
-  
-  // FINAL SAFETY CHECK: If we are not rewriting, just continue
-  return NextResponse.next();
+  return response;
 }
 
 export const config: MiddlewareConfig = {

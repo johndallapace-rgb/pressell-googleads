@@ -17,6 +17,8 @@ export default function CreateProductForm() {
   const importedPlatform = searchParams.get('platform');
   const importUrlParam = searchParams.get('import') || searchParams.get('url'); // Handle 'url' from Market Trends
   const nicheParam = searchParams.get('niche');
+  const affiliateUrlParam = searchParams.get('affiliate_url'); // Read affiliate_url from URL
+  const nameParam = searchParams.get('name'); // Read name from URL
   const catalogId = searchParams.get('catalogId');
   const catalogSlug = searchParams.get('catalogSlug');
   
@@ -30,7 +32,7 @@ export default function CreateProductForm() {
     template: 'editorial',
     affiliate_url: '',
     official_url: '',
-    youtube_review_url: '',
+    video_url: '', // Renamed from youtube_review_url
     status: 'active',
     set_as_active: false,
     // AI Content
@@ -40,6 +42,8 @@ export default function CreateProductForm() {
     pain_points: [] as string[],
     unique_mechanism: '',
     image_url: '',
+    sales_page_image_url: '', // NEW
+    digistore_product_id: '', // NEW: Manual override for Digistore24
     seo: null as any,
     // Tracking
     google_ads_id: '17850696537', // Default for scale
@@ -56,7 +60,28 @@ export default function CreateProductForm() {
   const [variantStrategy, setVariantStrategy] = useState<'standard' | 'pain' | 'dream'>('standard');
   const [competitorAds, setCompetitorAds] = useState('');
 
-  // Auto-fill from Catalog & Params
+  // Asset Library Modal
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [assetModalType, setAssetModalType] = useState<'image' | 'video'>('image');
+  const [targetField, setTargetField] = useState<'image_url' | 'sales_page_image_url' | 'video_url'>('image_url'); // Track which field to update
+  const [libraryAssets, setLibraryAssets] = useState<any[]>([]);
+
+  const fetchLibraryAssets = async () => {
+      try {
+          const res = await fetch('/api/admin/assets');
+          const data = await res.json();
+          if (Array.isArray(data)) setLibraryAssets(data);
+      } catch (e) { console.error(e); }
+  };
+
+  const openAssetModal = (type: 'image' | 'video', field: 'image_url' | 'sales_page_image_url' | 'video_url') => {
+      setAssetModalType(type);
+      setTargetField(field);
+      setShowAssetModal(true);
+      fetchLibraryAssets();
+  };
+
+  // Auto-fill from Catalog & Params & KV (Asset Memory)
   useEffect(() => {
     // 1. Auto-fill from Catalog ID if present
     if (catalogId && catalogSlug) {
@@ -78,17 +103,85 @@ export default function CreateProductForm() {
         setImportUrl(importUrlParam);
         setFormData(prev => ({ 
             ...prev, 
+            name: nameParam || prev.name,
             official_url: importUrlParam,
             vertical: nicheParam ? nicheParam.toLowerCase() : prev.vertical, // Pre-select Niche
-            affiliate_url: prev.affiliate_url || 'https://hop.clickbank.net/?affiliate=johnpace&vendor=VENDOR_ID', // Default JohnPace placeholder
+            affiliate_url: affiliateUrlParam || prev.affiliate_url || 'https://hop.clickbank.net/?affiliate=johnpace&vendor=VENDOR_ID', // Use param or fallback
             google_ads_id: prev.google_ads_id || '17850696537' // Default Pixel ID for Scale
         }));
+
+                // 3. SMART FILL: Check ASSET LIBRARY for existing assets (Priority over Config)
+                const checkAssets = async () => {
+                     try {
+                         // A. Fetch Library Assets (New System)
+                         const resLib = await fetch('/api/admin/assets');
+                         const libAssets = await resLib.json();
+                         
+                         // Try to match by name or slug
+                         let targetSlug = nameParam?.toLowerCase().replace(/[^a-z0-9]/g, '');
+                         if (!targetSlug && importUrlParam) {
+                             try {
+                                 const u = new URL(importUrlParam);
+                                 targetSlug = u.hostname.split('.')[0].replace(/www|get|try/g, '');
+                                 if (targetSlug.length < 3) targetSlug = u.hostname.split('.')[1];
+                             } catch {}
+                         }
+
+                         if (targetSlug && Array.isArray(libAssets)) {
+                             // Find assets for this product
+                             const matchedAssets = libAssets.filter(a => 
+                                 a.productId.includes(targetSlug!) || 
+                                 a.productName.toLowerCase().includes(targetSlug!)
+                             );
+
+                             if (matchedAssets.length > 0) {
+                                 // Sort by newest first
+                                 matchedAssets.sort((a, b) => b.createdAt - a.createdAt);
+
+                                 const bestImage = matchedAssets.find(a => a.type === 'image');
+                                 const bestVideo = matchedAssets.find(a => a.type === 'video');
+
+                                 if (bestImage || bestVideo) {
+                                     console.log(`[Smart Fill] Found assets in Library for ${targetSlug}`, { bestImage, bestVideo });
+                                     setFormData(prev => ({
+                                         ...prev,
+                                         image_url: bestImage?.url || prev.image_url,
+                                         video_url: bestVideo?.url || prev.video_url
+                                     }));
+                                     setMessage({ type: 'success', text: `📂 Asset Library: Auto-filled from your saved gallery!` });
+                                     return; // Stop here if found in library
+                                 }
+                             }
+                         }
+
+                         // B. Fallback to Config (Legacy System)
+                         const res = await fetch('/api/admin/config');
+                         const config = await res.json();
+                         const products = config.products || {};
+                         
+                         if (targetSlug) {
+                             const matchKey = Object.keys(products).find(k => k.includes(targetSlug!));
+                             if (matchKey) {
+                                 const p = products[matchKey];
+                                 if (p.product_image_url || p.video_url || p.youtube_review_id) {
+                                     setFormData(prev => ({
+                                         ...prev,
+                                         image_url: p.product_image_url || p.image_url || prev.image_url,
+                                         video_url: p.video_url || (p.youtube_review_id ? `https://www.youtube.com/watch?v=${p.youtube_review_id}` : prev.video_url)
+                                     }));
+                                     setMessage({ type: 'success', text: `📂 Legacy Memory: Auto-filled from previous product settings.` });
+                                 }
+                             }
+                         }
+                     } catch (e) { console.error('Smart Fill failed', e); }
+                };
+                checkAssets();
         
         if (nicheParam) {
             setMessage({ type: 'success', text: `🚀 Ready to Launch: ${nicheParam} Product Detected. Please verify Affiliate Link.` });
         }
     }
-  }, [catalogId, catalogSlug, importUrlParam, nicheParam]);
+  }, [catalogId, catalogSlug, importUrlParam, nicheParam, affiliateUrlParam, nameParam]);
 
   // Auto-fill Affiliate ID if Platform detected
   useEffect(() => {
@@ -184,18 +277,15 @@ export default function CreateProductForm() {
          return;
     }
     
-    if (!formData.official_url) {
-         setMessage({ type: 'error', text: '⛔ Critical: Official Product URL is required for AI Analysis!' });
-         setLoading(false);
-         return;
-    }
+    // Auto-fill official URL if missing (using affiliate as source)
+    const officialUrlToUse = formData.official_url || formData.affiliate_url;
 
     try {
       // 1. Auto-extract Name if missing
       let productName = formData.name;
       if (!productName) {
           try {
-              const urlObj = new URL(formData.official_url);
+              const urlObj = new URL(officialUrlToUse);
               // Try to guess from hostname or path
               // ex: prodentim.com -> prodentim
               // ex: site.com/prodentim -> prodentim
@@ -203,6 +293,13 @@ export default function CreateProductForm() {
               if (guess === 'www' || guess === 'get' || guess === 'try') {
                   guess = urlObj.hostname.split('.')[1];
               }
+              // If affiliate link (clickbank), this extraction is bad (hop.clickbank.net)
+              // We rely on backend smart extraction or user should input name?
+              // Let's rely on backend or simple fallback
+              if (guess.includes('clickbank') || guess.includes('digistore')) {
+                   guess = 'New Product';
+              }
+
               if (guess.length < 3) {
                   // Fallback to path
                   const pathPart = urlObj.pathname.split('/')[1];
@@ -215,7 +312,7 @@ export default function CreateProductForm() {
       }
 
       console.log('🚀 [Direct Auto-Create] Launching...', { 
-          importUrl: formData.official_url,
+          importUrl: officialUrlToUse,
           name: productName,
           country: formData.language.toUpperCase() 
       });
@@ -226,10 +323,16 @@ export default function CreateProductForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            importUrl: formData.official_url,
+            importUrl: officialUrlToUse, // Send affiliate link as importUrl if official is missing
             name: productName,
             competitorAds: competitorAds,
-            country: formData.language.toUpperCase() // e.g. "EN" -> "EN"
+            country: formData.language.toUpperCase(), // e.g. "EN" -> "EN"
+            affiliate_url: formData.affiliate_url, // PASS THIS
+            google_ads_id: formData.google_ads_id, // PASS THIS
+            image_url: formData.image_url, // PASS THIS
+            video_url: formData.video_url, // PASS THIS
+            sales_page_image_url: formData.sales_page_image_url, // PASS THIS (Fixed)
+            digistore_product_id: formData.digistore_product_id // PASS THIS (Manual Override)
         })
       });
 
@@ -239,28 +342,10 @@ export default function CreateProductForm() {
         throw new Error(data.error || 'Failed to auto-create product');
       }
 
-      // 2. Post-Save Update: Inject Critical Manual Fields
-      // Since auto-create might miss the affiliate link or pixel if not in catalog,
-      // we do a quick patch to ensure they are set.
-      if (data.slug) {
-          console.log('[CLIENT-DEBUG] Patching manual fields for:', data.slug);
-          const updateRes = await fetch('/api/admin/products/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  product: {
-                      slug: data.slug, // Key to find it
-                      affiliate_url: formData.affiliate_url,
-                      google_ads_id: formData.google_ads_id,
-                      google_ads_label: formData.google_ads_label,
-                      vertical: data.vertical || formData.vertical // Ensure vertical is consistent
-                      // We only send fields we want to merge/overwrite
-                  } 
-              })
-          });
-          if (!updateRes.ok) console.warn('Failed to patch manual fields, but product created.');
-      }
-
+      // 2. Post-Save Update: Removed redundant patch
+      // Auto-create now handles all fields including affiliate_url and image_url correctly.
+      // Calling save again was overwriting the product with partial data.
+      
       setMessage({ type: 'success', text: `Product created successfully! Redirecting to My Products...` });
       
       // Open Presell in new tab with CORRECT Subdomain
@@ -322,30 +407,11 @@ export default function CreateProductForm() {
 
             <div className="max-w-3xl mx-auto space-y-6 text-left">
                 
-                {/* 1. Official URL (Source of Truth) */}
-                <div>
-                    <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                        <span>🌐</span> Official Product Page URL
-                        <span className="text-xs font-normal text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100">AI Source</span>
-                    </label>
-                    <input 
-                        type="url" 
-                        value={formData.official_url}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            setFormData(prev => ({ ...prev, official_url: val }));
-                            setImportUrl(val); // Sync for AI
-                        }}
-                        placeholder="https://official-product-site.com"
-                        className="w-full border-2 border-gray-300 rounded-xl px-5 py-4 text-xl text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
-                    />
-                </div>
-
-                {/* 2. Affiliate URL (Money Link) */}
+                {/* 1. Affiliate URL (Money Link) - Source of Truth */}
                 <div>
                     <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
                         <span>💰</span> Your Affiliate Link (JohnPace)
-                        <span className="text-xs font-normal text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">Commission Target</span>
+                        <span className="text-xs font-normal text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">Commission Target & AI Source</span>
                     </label>
                     <input 
                         type="url" 
@@ -354,14 +420,39 @@ export default function CreateProductForm() {
                         placeholder="https://hop.clickbank.net/?affiliate=johnpace..."
                         className={`w-full border-2 rounded-xl px-5 py-4 text-xl font-mono text-black outline-none transition-all ${!formData.affiliate_url ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-green-300 bg-green-50 focus:border-green-500'}`}
                     />
-                    {!formData.affiliate_url && (
+                    {!formData.affiliate_url ? (
                         <p className="text-red-600 font-bold mt-2 animate-pulse flex items-center gap-2">
-                            ⚠️ Required: Paste your commission link to unlock the button.
+                            ⚠️ Required: Paste your commission link. Gemini will read the destination page to write the copy.
+                        </p>
+                    ) : (
+                         <p className="text-green-600 font-bold mt-2 flex items-center gap-2">
+                            ✅ AI Ready: Destination content will be analyzed automatically.
                         </p>
                     )}
                 </div>
 
-                {/* 3. Pixel ID (Tracking) */}
+                {/* 1.5 Digistore24 Product ID (Optional Override) */}
+                {formData.affiliate_url && formData.affiliate_url.includes('digistore24') && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl animate-fade-in">
+                    <label className="block text-sm font-bold text-blue-800 mb-2 uppercase tracking-wide flex items-center gap-2">
+                        <span>🔢</span> Digistore24 Product ID (Manual Override)
+                    </label>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={formData.digistore_product_id}
+                            onChange={(e) => setFormData(prev => ({ ...prev, digistore_product_id: e.target.value.replace(/[^0-9]/g, '') }))}
+                            placeholder="e.g. 531355"
+                            className="w-full border border-blue-300 rounded-lg px-4 py-3 text-black font-mono text-lg bg-white focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                        />
+                        <div className="text-xs text-blue-600 max-w-[200px] leading-tight flex items-center">
+                            If AI fails to find the ID, enter the 6-digit number here to fix the link automatically.
+                        </div>
+                    </div>
+                </div>
+                )}
+
+                {/* 2. Pixel ID (Tracking) */}
                 <div>
                     <label className="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">
                         Google Ads Pixel ID (Optional)
@@ -375,6 +466,81 @@ export default function CreateProductForm() {
                     />
                 </div>
 
+                {/* 3. Media Assets */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Image */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span>🖼️</span> Image URL
+                            </label>
+                            <button 
+                                type="button"
+                                onClick={() => openAssetModal('image', 'image_url')}
+                                className="text-sm font-bold text-gray-600 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-blue-300 transition-all shadow-sm"
+                                title="Open Asset Gallery"
+                            >
+                                <span>🖼️</span> Select from Gallery
+                            </button>
+                        </div>
+                        <input 
+                            type="url" 
+                            value={formData.image_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                        />
+                    </div>
+
+                    {/* Sales Page Preview (Background) */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span>🖥️</span> Sales Page Preview (Background)
+                            </label>
+                            <button 
+                                type="button"
+                                onClick={() => openAssetModal('image', 'sales_page_image_url')}
+                                className="text-sm font-bold text-gray-600 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-blue-300 transition-all shadow-sm"
+                                title="Open Asset Gallery"
+                            >
+                                <span>🖼️</span> Select
+                            </button>
+                        </div>
+                        <input 
+                            type="url" 
+                            value={formData.sales_page_image_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, sales_page_image_url: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                        />
+                    </div>
+
+                    {/* Video */}
+                    <div className="md:col-span-2">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span>🎥</span> Video URL
+                            </label>
+                            <button 
+                                type="button"
+                                onClick={() => openAssetModal('video', 'video_url')}
+                                className="text-sm font-bold text-gray-600 hover:text-red-600 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-all shadow-sm"
+                                title="Open Video Gallery"
+                            >
+                                <span>🎥</span> Select from Gallery
+                            </button>
+                        </div>
+                        <input 
+                            type="url" 
+                            value={formData.video_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                            placeholder="https://..."
+                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
             </div>
 
             {/* Action Area */}
@@ -385,8 +551,8 @@ export default function CreateProductForm() {
                     type="button"
                     onClick={async (e) => {
                         e.preventDefault();
-                        if (!formData.official_url || !formData.affiliate_url) {
-                            setMessage({ type: 'error', text: 'URLs are required for Dry Run.' });
+                        if (!formData.affiliate_url) {
+                            setMessage({ type: 'error', text: 'Affiliate URL is required for Dry Run.' });
                             return;
                         }
                         
@@ -396,19 +562,21 @@ export default function CreateProductForm() {
                             let name = formData.name;
                             if (!name) {
                                 try {
-                                    const u = new URL(formData.official_url);
+                                    const u = new URL(formData.affiliate_url);
                                     const parts = u.hostname.split('.');
                                     name = (parts.length > 2 ? parts[1] : parts[0]);
                                     name = name.charAt(0).toUpperCase() + name.slice(1);
                                 } catch { name = 'Test Product'; }
                             }
 
+                            // 1. Manual Save (Route Test)
                             const res = await fetch('/api/admin/products', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     ...formData,
                                     name,
+                                    official_url: formData.affiliate_url, // Use affiliate as official for dry run
                                     headline: 'Route Test Successful',
                                     subheadline: 'This is a placeholder content to verify domain routing.',
                                     bullets: ['Route Active', 'KV Connected', 'Ready for AI'],
@@ -441,7 +609,7 @@ export default function CreateProductForm() {
                 {/* 2. Main AI Button (UNLOCKED) */}
                 <button 
                     type="submit"
-                    disabled={loading || !formData.affiliate_url || !formData.official_url}
+                    disabled={loading || !formData.affiliate_url}
                     className="w-full max-w-2xl mx-auto py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-3"
                 >
                     {loading ? (
@@ -471,6 +639,73 @@ export default function CreateProductForm() {
         </div>
 
       </form>
+
+      {/* Asset Selection Modal */}
+      {showAssetModal && (
+          <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden max-h-[80vh] flex flex-col animate-scale-in">
+                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                      <div>
+                          <h3 className="font-bold text-xl text-gray-800">Select {assetModalType === 'image' ? 'Image' : 'Video'} Asset</h3>
+                          <p className="text-xs text-gray-500">Choose from your saved library</p>
+                      </div>
+                      <button 
+                          onClick={() => setShowAssetModal(false)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                          ✕
+                      </button>
+                  </div>
+                  
+                  <div className="p-6 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {libraryAssets.filter(a => a.type === assetModalType).map((asset) => (
+                          <div 
+                              key={asset.id}
+                              onClick={() => {
+                                  // Dynamic Field Update
+                                  if (assetModalType === 'image') {
+                                      // Check target field to decide where to put the image
+                                      if (targetField === 'sales_page_image_url') {
+                                          setFormData(prev => ({ ...prev, sales_page_image_url: asset.url }));
+                                      } else {
+                                          setFormData(prev => ({ ...prev, image_url: asset.url }));
+                                      }
+                                  }
+                                  else {
+                                      setFormData(prev => ({ ...prev, video_url: asset.url }));
+                                  }
+                                  setShowAssetModal(false);
+                              }}
+                              className="group cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-xl overflow-hidden relative transition-all"
+                          >
+                              <div className="aspect-video bg-gray-100 relative">
+                                  {asset.type === 'image' ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img src={asset.url} alt={asset.label} className="w-full h-full object-contain p-2" />
+                                  ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-red-500">
+                                          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                      </div>
+                                  )}
+                              </div>
+                              <div className="p-3 bg-gray-50 group-hover:bg-blue-50 transition-colors">
+                                  <p className="font-bold text-sm truncate">{asset.label || 'Untitled'}</p>
+                                  <p className="text-[10px] text-gray-500 uppercase">{asset.productName}</p>
+                                  {asset.notes && <p className="text-[10px] text-blue-600 mt-1 truncate">📝 {asset.notes}</p>}
+                              </div>
+                          </div>
+                      ))}
+                      
+                      {libraryAssets.filter(a => a.type === assetModalType).length === 0 && (
+                          <div className="col-span-full py-10 text-center text-gray-400">
+                              <p>No {assetModalType}s found in library.</p>
+                              <a href="/admin/assets" target="_blank" className="text-blue-600 hover:underline text-sm">Go to Asset Manager to add one.</a>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 }

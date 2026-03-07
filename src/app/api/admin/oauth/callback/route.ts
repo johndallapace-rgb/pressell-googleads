@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCampaignConfig, updateCampaignConfig } from '@/lib/config';
+import fs from 'fs';
+import path from 'path';
 
 export const runtime = 'nodejs';
 
@@ -56,6 +59,45 @@ export async function GET(request: NextRequest) {
               error: 'No Refresh Token returned.', 
               hint: 'Did you revoke access? Try clearing permissions in Google Account or use prompt=consent.' 
           }, { status: 400 });
+      }
+
+      // Update KV with new token
+      try {
+          const config = await getCampaignConfig();
+          if (!config.system) config.system = { api_keys: {}, platforms: {} };
+          if (!config.system.api_keys) config.system.api_keys = {};
+          
+          config.system.api_keys.google_ads_refresh_token = refreshToken;
+          await updateCampaignConfig(config);
+          console.log('[OAuth] Refresh Token saved to KV');
+
+          // FALLBACK: Save to .env.local if running locally
+          if (isLocal) {
+              try {
+                  const envPath = path.join(process.cwd(), '.env.local');
+                  let envContent = '';
+                  if (fs.existsSync(envPath)) {
+                      envContent = fs.readFileSync(envPath, 'utf8');
+                  }
+                  
+                  if (envContent.includes('GOOGLE_ADS_REFRESH_TOKEN=')) {
+                      envContent = envContent.replace(
+                          /GOOGLE_ADS_REFRESH_TOKEN=.*/,
+                          `GOOGLE_ADS_REFRESH_TOKEN=${refreshToken}`
+                      );
+                  } else {
+                      envContent += `\nGOOGLE_ADS_REFRESH_TOKEN=${refreshToken}\n`;
+                  }
+                  
+                  fs.writeFileSync(envPath, envContent);
+                  console.log('[OAuth] Refresh Token saved to .env.local');
+              } catch (localErr) {
+                  console.warn('[OAuth] Failed to write to .env.local:', localErr);
+              }
+          }
+
+      } catch (kvError) {
+          console.error('[OAuth] Failed to save token to KV:', kvError);
       }
 
       // Redirect back to settings with token

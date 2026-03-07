@@ -20,7 +20,7 @@ export function BrandHeader({ locale = 'en' }: BrandHeaderProps) {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 py-4 shadow-sm">
+    <header className="relative z-50 bg-white border-b border-gray-200 py-4 shadow-sm">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <Link href="/" className={`text-xl md:text-2xl font-bold text-gray-900 tracking-tight ${inter.className}`}>
           {brandSettings.logo_text.replace('Official', '')}<span className="text-blue-700">Official</span>

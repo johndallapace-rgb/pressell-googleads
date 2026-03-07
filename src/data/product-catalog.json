@@ -1,12 +1,24 @@
 {
     "products": {
         "advanced-amino": {
-            "id": "472942",
-            "name": "Advanced Amino Formula",
+            "id": "531355",
+            "name": "Advanced Amino",
             "vendor": "JohnPace",
             "base_url": "https://www.digistore24.com/redir",
+            "official_url": "https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm",
+            "affiliate_url": "https://www.advancedbionutritionals.com/DS24/Advanced-Amino/Muscle-Mass-Loss/HD.htm#aff=JohnPace",
             "google_ads_id": "AW-111222333",
             "google_ads_label": "AminoConversionLabel"
+        },
+        "keto-meal-plan": {
+            "id": "keto-meal-plan", 
+            "name": "Keto Meal Plan",
+            "vendor": "JohnPace",
+            "base_url": "",
+            "official_url": "https://www.claudiacaldwell.com/oto-uf61a?el=splittest-1214-bradflow-control",
+            "affiliate_url": "https://www.claudiacaldwell.com/oto-uf61a?el=splittest-1214-bradflow-control#aff=JohnPace",
+            "google_ads_id": "AW-111222333",
+            "google_ads_label": "KetoConversionLabel"
         },
         "tube-mastery": {
             "id": "299134",

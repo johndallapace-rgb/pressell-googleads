@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import Tracker from "@/components/Tracker";
-import SWRegister from "@/components/SWRegister";
 import { Suspense } from "react";
 import { getVerticalFromHost } from "@/lib/host";
 
@@ -29,7 +28,6 @@ export async function generateMetadata(): Promise<Metadata> {
       default: "TopProductDigest - Independent Reviews",
     },
     description: "Expert reviews and independent analysis of top-rated products.",
-    manifest: "/site.webmanifest",
     icons: {
       icon: [
         { url: `${iconPath}/favicon-16x16.png`, sizes: "16x16", type: "image/png" },
@@ -83,7 +81,6 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={inter.variable}>
       <body className="antialiased bg-gray-50 font-sans">
-        <SWRegister />
         <Suspense fallback={null}>
           <Tracker />
         </Suspense>

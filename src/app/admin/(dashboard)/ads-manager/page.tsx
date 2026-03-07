@@ -1,27 +1,48 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PushCampaignModal from '@/components/admin/PushCampaignModal';
 
-// Mock Data for MVP
-const MOCK_LOGS = [
-  { id: 1, date: '2024-05-20 10:00', campaign: 'Mitolyn - Search', type: 'Conversion', details: 'Purchase (Value: $120)', cost: 1.50 },
-];
+// Mock Data REMOVED
+// const MOCK_LOGS = [];
 
 export default function AdsManagerPage() {
-  const [logs, setLogs] = useState(MOCK_LOGS);
+  const [logs, setLogs] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeProducts, setActiveProducts] = useState<any[]>([]);
+  const [selectedProductForAnalysis, setSelectedProductForAnalysis] = useState<string>('');
+  const [pushModalOpen, setPushModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
         try {
+            // 1. Fetch Products
+            const prodRes = await fetch('/api/admin/products');
+            const prodData = await prodRes.json();
+            if (prodData.products) {
+                // Convert Object to Array if needed
+                const productsArray = Array.isArray(prodData.products) 
+                    ? prodData.products 
+                    : Object.values(prodData.products);
+                
+                const active = productsArray.filter((p: any) => p.status !== 'archived');
+                setActiveProducts(active);
+                
+                // Auto-select first product for analysis
+                if (active.length > 0) {
+                    setSelectedProductForAnalysis(active[0].slug);
+                }
+            }
+
+            // 2. Fetch Metrics (if online)
             const res = await fetch('/api/admin/ads/metrics');
             const data = await res.json();
             if (data.success) {
                 setMetrics(data.metrics);
             }
         } catch (e) {
-            console.error('Failed to fetch metrics', e);
+            console.error('Failed to fetch data', e);
         } finally {
             setLoading(false);
         }
@@ -36,24 +57,37 @@ export default function AdsManagerPage() {
 
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [generatedAds, setGeneratedAds] = useState<any>(null); // Store AI Ads
 
   const handleAnalyzeLogs = async () => {
-      const summary = logs.map(l => 
+      // If a product is selected, we include its context
+      let analysisContext = logs.map(l => 
           `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`
       ).join('\n');
       
+      const product = activeProducts.find(p => p.slug === selectedProductForAnalysis);
+      if (product) {
+          analysisContext = `PRODUCT CONTEXT:\nName: ${product.name}\nVertical: ${product.vertical}\nHeadlines: ${product.headline}\n\nCAMPAIGN LOGS:\n${analysisContext || 'No logs yet.'}`;
+      }
+
       setAnalyzing(true);
       setAnalysisResult(null);
+      setGeneratedAds(null);
 
       try {
           const res = await fetch('/api/admin/ads/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ logs: summary })
+              body: JSON.stringify({ logs: analysisContext })
           });
           const data = await res.json();
           if (data.analysis) {
               setAnalysisResult(data.analysis);
+              if (data.rsaAssets) {
+                  setGeneratedAds(data.rsaAssets);
+                  // Auto-save to product context in background? 
+                  // For now, we pass it to the modal.
+              }
           } else {
               alert('Analysis failed: ' + (data.error || 'Unknown error'));
           }
@@ -65,11 +99,29 @@ export default function AdsManagerPage() {
       }
   };
 
+  const handleResetSession = async () => {
+      if (!confirm('Are you sure you want to clear the Google Ads session? This will disconnect the integration.')) return;
+      
+      try {
+          await fetch('/api/admin/system/reset-token', { method: 'POST' });
+          alert('Session Reset! Please reconnect.');
+          window.location.reload();
+      } catch (e) {
+          alert('Failed to reset session');
+      }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Ads Performance Manager</h1>
         <div className="flex gap-2">
+            <button 
+                onClick={handleResetSession}
+                className="bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200 flex items-center gap-2 text-sm font-bold border border-red-200"
+            >
+                🗑️ Reset Session
+            </button>
             <button 
                 onClick={() => window.open('/api/admin/verify-google-ads', '_blank')}
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2 text-sm font-bold"
@@ -89,6 +141,19 @@ export default function AdsManagerPage() {
                 <p className="text-sm text-purple-700 mt-1">
                    Paste your raw Google Ads CSV or text logs here. We'll generate actionable optimization advice.
                 </p>
+                {activeProducts.length > 0 && (
+                    <div className="mt-2">
+                        <select 
+                            value={selectedProductForAnalysis}
+                            onChange={(e) => setSelectedProductForAnalysis(e.target.value)}
+                            className="text-xs border-purple-300 rounded p-1 bg-white text-purple-900"
+                        >
+                            {activeProducts.map(p => (
+                                <option key={p.slug} value={p.slug}>Target: {p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
               </div>
               <button 
                 onClick={handleAnalyzeLogs}
@@ -103,22 +168,42 @@ export default function AdsManagerPage() {
               <textarea 
                 className="w-full h-48 p-4 text-base font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black"
                 placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
-                defaultValue={logs.map(l => `[${l.date}] ${l.campaign} | ${l.type}: ${l.details} | Cost: $${l.cost}`).join('\n')}
+                defaultValue={""}
                 onChange={(e) => {
                     // Update logs state or just use value for analysis
                 }}
               />
               
               {analysisResult && (
-                  <div className="bg-white p-4 rounded border border-purple-200 h-48 overflow-y-auto shadow-inner">
-                      <h4 className="font-bold text-purple-800 mb-2 text-sm uppercase">Optimization Plan</h4>
-                      <div className="prose prose-base text-black whitespace-pre-wrap selection:bg-purple-200 selection:text-black">
-                          {analysisResult}
+                  <div className="bg-white p-4 rounded border border-purple-200 h-48 overflow-y-auto shadow-inner flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-bold text-purple-800 mb-2 text-sm uppercase">Optimization Plan</h4>
+                        <div className="prose prose-base text-black whitespace-pre-wrap selection:bg-purple-200 selection:text-black mb-4">
+                            {analysisResult}
+                        </div>
                       </div>
+                      
+                      {/* Push Button - Only if Analysis is ready/context is valid */}
+                      {selectedProductForAnalysis && (
+                          <button 
+                              onClick={() => setPushModalOpen(true)}
+                              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded font-bold shadow-md hover:from-blue-700 hover:to-indigo-700 flex items-center justify-center gap-2 transform transition-transform hover:scale-105"
+                          >
+                              🚀 Push to Google Ads
+                          </button>
+                      )}
                   </div>
               )}
           </div>
       </div>
+
+      <PushCampaignModal 
+          isOpen={pushModalOpen} 
+          onClose={() => setPushModalOpen(false)}
+          productSlug={selectedProductForAnalysis}
+          productName={activeProducts.find(p => p.slug === selectedProductForAnalysis)?.name || 'Product'}
+          initialAds={generatedAds}
+      />
 
       {/* Product List Status */}
       <div className="bg-white rounded shadow-sm overflow-hidden mb-6 border border-gray-200">
@@ -137,20 +222,33 @@ export default function AdsManagerPage() {
                   </tr>
               </thead>
               <tbody>
-                  <tr className="bg-white border-b">
-                      <td className="px-6 py-4 font-medium text-gray-900">Mitolyn</td>
-                      <td className="px-6 py-4"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Health</span></td>
-                      <td className="px-6 py-4 text-green-600 font-bold">● Active</td>
-                      <td className="px-6 py-4">45</td>
-                      <td className="px-6 py-4 font-mono text-xs">DPCoCMK5h9wbENmG8L9C</td>
-                  </tr>
-                  <tr className="bg-white border-b">
-                      <td className="px-6 py-4 font-medium text-gray-900">Teds Woodworking</td>
-                      <td className="px-6 py-4"><span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">DIY</span></td>
-                      <td className="px-6 py-4 text-green-600 font-bold">● Active</td>
-                      <td className="px-6 py-4">12</td>
-                      <td className="px-6 py-4 font-mono text-xs">-</td>
-                  </tr>
+                  {activeProducts.length > 0 ? (
+                      activeProducts.map((product: any) => (
+                      <tr key={product.slug} className="bg-white border-b">
+                          <td className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
+                          <td className="px-6 py-4">
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                  {product.vertical}
+                              </span>
+                          </td>
+                          <td className="px-6 py-4">
+                              {product.google_ads_id ? (
+                                  <span className="text-green-600 font-bold">● Active</span>
+                              ) : (
+                                  <span className="text-gray-400">○ Pending</span>
+                              )}
+                          </td>
+                          <td className="px-6 py-4">-</td>
+                          <td className="px-6 py-4 font-mono text-xs">{product.google_ads_label || '-'}</td>
+                      </tr>
+                      ))
+                  ) : (
+                      <tr>
+                          <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                              No active products found. <a href="/admin/my-products" className="text-blue-600 underline">Add a product</a> to get started.
+                          </td>
+                      </tr>
+                  )}
               </tbody>
           </table>
       </div>
@@ -183,7 +281,15 @@ export default function AdsManagerPage() {
           {loading ? (
               <div className="p-6 text-center text-gray-500">Loading metrics from Google Ads...</div>
           ) : metrics.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No active campaigns found in account 338-031-9096.</div>
+              <div className="p-6 text-center text-gray-500">
+                  <p className="mb-4">No active campaigns found in account 338-031-9096.</p>
+                  <button 
+                      onClick={() => window.open('/api/admin/oauth/google', '_blank')}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold inline-flex items-center gap-2"
+                  >
+                      🔄 Reconnect Google Ads
+                  </button>
+              </div>
           ) : (
               <table className="w-full text-sm text-left text-gray-500">
                   <thead className="text-xs text-gray-700 uppercase bg-gray-50">

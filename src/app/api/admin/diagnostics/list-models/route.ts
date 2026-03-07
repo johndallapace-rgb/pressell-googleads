@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
+import { getSystemConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -9,9 +10,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const config = await getSystemConfig();
+  const apiKey = config.api_keys?.gemini;
+  
   if (!apiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY not set' }, { status: 500 });
+      return NextResponse.json({ error: 'GEMINI_API_KEY not configured in System Config' }, { status: 500 });
   }
 
   try {

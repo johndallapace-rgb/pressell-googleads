@@ -74,11 +74,11 @@ export async function POST(request: NextRequest) {
     const baseContext = await scrapeAndClean(baseProduct.official_url);
 
     const targetLocales = ['de', 'fr', 'it', 'es']; // UK is 'en' usually, or separate 'uk' locale
-    const results = [];
+    const results: string[] = [];
 
     // Parallel Generation
     await Promise.all(targetLocales.map(async (lang) => {
-        const adapted = await adaptContent(baseContext, lang, baseProduct);
+        const adapted = await adaptContent(baseContext.text, lang, baseProduct);
         
         if (!adapted) return;
 

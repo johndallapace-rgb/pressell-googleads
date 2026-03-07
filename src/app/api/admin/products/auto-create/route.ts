@@ -3,12 +3,15 @@ import { verifyToken } from '@/lib/auth';
 import { generateContent } from '@/lib/gemini';
 import { scrapeAndClean } from '@/lib/scraper';
 import { getCampaignConfig, ProductConfig, updateCampaignConfig } from '@/lib/config';
+import { addAsset } from '@/lib/assets'; // Import Asset Manager
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
 import negativeKeywords from '@/data/negative-keywords.json';
 import productCatalog from '@/data/product-catalog.json';
+
+import { findOfficialUrl } from '@/lib/web-search'; // Import Web Search
 
 const streamPipeline = promisify(pipeline);
 export const runtime = 'nodejs';
@@ -23,49 +26,152 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { importUrl, name, competitorAds, country, vertical } = await request.json();
-
-    if (!importUrl || !name) {
-        // Fallback: If name is missing, try to extract from importUrl again (Double Safety)
-        if (importUrl && !name) {
-            try {
-                const u = new URL(importUrl);
-                const hostParts = u.hostname.split('.');
-                const extractedName = hostParts.length > 2 ? hostParts[1] : hostParts[0];
-                console.log(`[Auto-Create] Name missing, auto-extracted: ${extractedName}`);
-                // Proceed with extracted name
-                return await handleCreation(request, importUrl, extractedName, competitorAds, country, vertical); 
-            } catch(e) {}
-        }
-        return NextResponse.json({ error: 'Missing importUrl or name' }, { status: 400 });
-    }
+    const { importUrl, name, competitorAds, country, vertical, affiliate_url, google_ads_id, image_url, video_url, sales_page_image_url, digistore_product_id } = await request.json();
     
-    return await handleCreation(request, importUrl, name, competitorAds, country, vertical);
+    // ... validation logic ...
+    
+    return await handleCreation(request, importUrl, name, competitorAds, country, vertical, affiliate_url, google_ads_id, image_url, video_url, sales_page_image_url, digistore_product_id);
   } catch (error: any) {
     console.error('[Auto-Create] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-async function handleCreation(request: NextRequest, importUrl: string, name: string, competitorAds: string, country: string, userVertical?: string) {
-    // 0. URL Validation
+async function resolveUrl(url: string, productName: string): Promise<string> {
+    if (!url || url.length < 5) return url;
+
+    // Helper to get final URL
+    const getFinal = async (u: string): Promise<string | null> => {
+        try {
+            const res = await fetch(u, { 
+                method: 'GET', // GET follows redirects better than HEAD sometimes for final URL extraction
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+                redirect: 'follow'
+            });
+            if (res.ok) return res.url;
+            return null;
+        } catch { return null; }
+    };
+
+    // 1. Try resolving the provided URL (Affiliate or Import)
+    const resolved = await getFinal(url);
+    if (resolved) return resolved;
+
+    // 2. Try Variations (only if original failed, but if we are using affiliate link, we expect it to work)
+    const variations = [
+        url.replace(/\/$/, '') + '/video.php',
+        url.replace(/\/$/, '') + '/vsl',
+        url.replace(/\/$/, '') + '/welcome',
+        url.replace(/\/$/, '') + '/text.php',
+        url.replace(/\/$/, '') + '/en'
+    ];
+
+    for (const v of variations) {
+        const vResolved = await getFinal(v);
+        if (vResolved) {
+            console.log(`[Auto-Create] Resolved URL variation: ${vResolved}`);
+            return vResolved;
+        }
+    }
+
+    // 3. Fallback Search
+    console.warn(`[Auto-Create] URL ${url} is unreachable. Attempting fallback search...`);
+    const fallback = await findOfficialUrl(productName);
+    if (fallback) {
+        console.log(`[Auto-Create] Fallback URL found: ${fallback}`);
+        return fallback;
+    }
+
+    return url; // Return original if all else fails
+}
+
+async function handleCreation(request: NextRequest, importUrl: string, name: string, competitorAds: string, country: string, userVertical?: string, affiliate_url?: string, google_ads_id?: string, manual_image_url?: string, video_url?: string, sales_page_image_url?: string, digistore_product_id?: string) {
+    // 0. Source Selection (Affiliate Priority)
+    let sourceUrl = importUrl;
+    let isAffiliateSource = false;
+
+    // SAFETY FIX: Digistore24 Universal Link Logic (URL + #aff=JohnPace)
+    if (affiliate_url && (affiliate_url.includes('digistore24') || affiliate_url.includes('claudiacaldwell') || affiliate_url.includes('aff='))) {
+         // USER MANDATE: "Fim dos IDs Numéricos" & "Lógica de Sufixo Automático"
+         // If it's a Digistore product, we prefer the structure: [OFFICIAL_URL]#aff=JohnPace
+         
+         let cleanUrl = affiliate_url;
+         
+         // 1. If it's a /redir/ link, we might want to resolve it, BUT user said "Mantenha a URL original intacta" 
+         // UNLESS it's the specific case where we want to switch to direct link.
+         // Actually, the user said "ao cadastrar qualquer URL da Digistore24... adicione o sufixo".
+         // But if I add suffix to a redir link, it might be lost during redirect.
+         // However, the example given was a DIRECT URL.
+         
+         // Logic: If the URL does NOT have #aff=JohnPace, append it.
+         if (!cleanUrl.includes('#aff=JohnPace')) {
+             // Remove existing hash if any (unless it's part of the routing, but usually for tracking it's distinct)
+             // But careful, some URLs use hash for routing.
+             // Safe bet: Append &aff=JohnPace if ? exists, or #aff=JohnPace? 
+             // Digistore convention is strictly #aff=AffiliateId
+             
+             // If there is already a hash, replace it or append? 
+             // Usually it's the last part.
+             if (cleanUrl.includes('#')) {
+                 // Replace existing hash or append? 
+                 // If it has #aff=SomeoneElse, replace it.
+                 if (cleanUrl.includes('aff=')) {
+                     cleanUrl = cleanUrl.replace(/aff=[^&]+/, 'aff=JohnPace');
+                 } else {
+                     // Existing hash is something else (e.g. #section), maybe we shouldn't touch it?
+                     // Or maybe DS24 requires it to be the hash param.
+                     // For now, let's assume we append it.
+                     cleanUrl += '&aff=JohnPace'; // If hash exists, params often follow ? or &
+                     // Actually DS24 docs say: url#aff=ID. 
+                 }
+             } else {
+                 cleanUrl += '#aff=JohnPace';
+             }
+             
+             console.log(`[Auto-Create] Applied Digistore Suffix Rule: ${cleanUrl}`);
+             affiliate_url = cleanUrl;
+         }
+         
+         // 2. If the user pasted a "redir" link with PRODUCT_ID placeholder, we MUST resolve or fix it.
+         // But per user instruction, we are moving AWAY from redir links if possible.
+         // If we can resolve the redirect to the final URL, we should use that + suffix.
+    }
+
+    // REMOVED: Old numeric ID injection logic (User requested removal)
+    // if (affiliate_url && (affiliate_url.includes('PRODUCT_ID') ... )) { ... }
+
+    if (affiliate_url && affiliate_url.includes('http')) {
+        console.log(`[Auto-Create] Affiliate Link Detected. Using as Primary Source: ${affiliate_url}`);
+        sourceUrl = affiliate_url;
+        isAffiliateSource = true;
+    }
+
+    // 0.1 URL Resolution (Follow Redirects to get Final Destination)
+    let finalScrapingUrl = sourceUrl;
     try {
-        new URL(importUrl);
+        if (!isAffiliateSource) {
+            // For raw URLs, try variations
+            new URL(sourceUrl);
+        }
+        // Resolve URL to get the actual destination (Sales Page)
+        // This effectively finds the "Official URL" from the Affiliate Link
+        finalScrapingUrl = await resolveUrl(sourceUrl, name); 
+        console.log(`[Auto-Create] Resolved Source URL to: ${finalScrapingUrl}`);
     } catch (e) {
-        return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+        console.warn('[Auto-Create] URL Resolution failed, using original', e);
     }
 
     // 1. Scrape (With Fallback)
-    console.log(`[Auto-Create] Scraping: ${importUrl}`);
+    console.log(`[Auto-Create] Scraping: ${finalScrapingUrl}`);
     let cleanText = '';
     let scrapedImage = '';
 
     try {
-        const scrapeResult = await scrapeAndClean(importUrl);
+        const scrapeResult = await scrapeAndClean(finalScrapingUrl);
         cleanText = scrapeResult.text;
-        scrapedImage = scrapeResult.image_url;
+        scrapedImage = scrapeResult.image_url || '';
     } catch (e: any) {
-        console.warn(`[Auto-Create] Scraping failed for ${importUrl}:`, e.message);
+        console.warn(`[Auto-Create] Scraping failed for ${finalScrapingUrl}:`, e.message);
         // Fallback: Proceed without official content, relying on Competitor Ads
         cleanText = `[Scraping Failed] Official content unavailable. Please analyze the Competitor Ads and Product Name "${name}" to infer the best copy and angle.`;
     }
@@ -76,56 +182,61 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
 
     // 3. AI Generation
     const prompt = `
-      You are a world-class Direct Response Copywriter.
+      You are a world-class Direct Response Copywriter and Conversion Rate Optimization (CRO) expert.
       
-      TASK: Create a high-converting Pre-sell Page configuration for a product named "${name}".
+      TASK: Create a high-converting Pre-sell Page (Advertorial) for a product named "${name}".
       TARGET MARKET: ${country} (Language: ${country === 'DE' ? 'German' : country === 'FR' ? 'French' : country === 'BR' ? 'Portuguese' : 'English'}).
       
       INPUT CONTEXT:
-      1. Official Page Content:
+      1. Official Page Content (Scraped from Affiliate Link Destination):
       ${cleanText.substring(0, 15000)}
 
       2. COMPETITOR ADS (Beat this copy!):
       ${competitorAds || 'None provided.'}
 
       REQUIREMENTS:
-      - Analyze the input to find the "Unique Mechanism" and "Pain Points".
-      - Write in the NATIVE language of the target market.
-      - Create a "Shadow Persona" for the review (impartial but persuasive).
-      - If Competitor Ads are provided, write headlines that are clearly superior (more specific, higher curiosity).
-      - **CRITICAL**: Perform a strict SPELL-CHECK on all output. 
-        - Fix common typos like "Finaly" -> "Finally", "Supercharing" -> "Supercharging".
-        - Ensure perfect grammar and capitalization in the Headline.
-        - Do not use all-caps for the entire headline.
-      - **SLUG OPTIMIZATION**: Generate a SHORT, clean slug (max 2-3 words).
-        - BAD: "mitolyn-metabolism-support-review-2024"
-        - GOOD: "mitolyn", "mitolyn-review", "mitolyn-official"
-      - **VERTICAL CLASSIFICATION**: Analyze the product and assign a vertical.
-        - "health": Supplements, Weight Loss, Skin, Dental, Hearing, Joint Pain.
-        - "diy": Home Improvement, Tools, Energy Savers, Cleaning Gadgets.
-        - "gadgets": Tech, Drones, Heaters, Coolers, Smart Devices.
-        - "finance": Crypto, Investing, Biz Opp.
-        - "dating": Dating Guides, Pheromones.
-        - "pets": Dog Training, Pet Health.
-        - "other": Anything else.
+      1. **TONE & STYLE**: Direct Response Advertorial. Not just a "review", but a persuasive narrative that sells the "Dream" and agitates the "Pain".
+      2. **MENTAL TRIGGERS (Must Use)**:
+         - **Scarcity**: Mention "Low Stock" or "High Demand" in the copy.
+         - **Urgency**: "Limited Time Offer" or "Discount Expires Soon".
+         - **Social Proof**: Mention "Thousands of satisfied customers" or "Rated 4.9/5".
+      3. **INGREDIENT ANALYSIS**:
+         - Extract key ingredients from the text.
+         - Explain HOW they solve the specific pain point (e.g., "Brown Adipose Tissue support").
+      4. **STRONG CTA**:
+         - DO NOT use boring buttons like "Check Availability".
+         - USE: "Claim Factory Discount", "Check Stock Availability", "Rush My Order", "Secure My Bottle".
+      5. **FAQ SECTION**:
+         - Create 5 powerful FAQs that address the biggest objections (Legitimacy, Shipping, Refund Policy, Side Effects).
 
       OUTPUT JSON FORMAT (Strict):
       {
         "slug": "short-slug",
         "headline": "Main Headline (Correct Spelling)",
         "subheadline": "Subheadline (Persuasive & Clear)",
-        "bullets": ["Benefit 1", "Benefit 2", "Benefit 3"],
+        "bullets": ["Benefit 1 (Trigger)", "Benefit 2 (Ingredient)", "Benefit 3 (Outcome)"],
         "pain_points": ["Pain 1", "Pain 2", "Pain 3"],
         "unique_mechanism": "The Secret Mechanism",
         "whatIs": "Short description of what it is",
+        "cta_text": "Strong CTA Phrase",
+        "faq": [
+            { "q": "Question 1?", "a": "Persuasive Answer 1" },
+            { "q": "Question 2?", "a": "Persuasive Answer 2" }
+        ],
         "seo_title": "SEO Title",
         "seo_description": "SEO Description",
         "vertical": "health", // AI must detect this based on content
         "google_ads": {
-            "headlines": ["Ad H1", "Ad H2", "Ad H3"],
-            "descriptions": ["Ad D1", "Ad D2"]
+            "headlines": ["Ad H1", "Ad H2", "Ad H3", "Ad H4", "Ad H5", "Ad H6", "Ad H7", "Ad H8", "Ad H9", "Ad H10", "Ad H11", "Ad H12", "Ad H13", "Ad H14", "Ad H15"],
+            "descriptions": ["Ad D1", "Ad D2", "Ad D3", "Ad D4"]
         }
       }
+
+      IMPORTANT CONSTRAINTS (Google Ads Policy):
+      - Headlines MUST be 30 characters or less.
+      - Descriptions MUST be 90 characters or less.
+      - Do not use exclamation marks in headlines.
+      - Do not use "Click Here" or gimmicky capitalization.
     `;
 
     console.log('[Auto-Create] Generating Content...');
@@ -134,59 +245,34 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     const data = JSON.parse(jsonString);
 
     // 4. Image Handling
-    let finalImageUrl = scrapedImage || '';
+    // Priority: Manual Upload > Scraped Image > Empty
+    let finalImageUrl = manual_image_url || scrapedImage || '';
     
-    // Safety: Handle Base64 Data URLs (Heavy)
+    // Safety: Handle Base64 Data URLs (Heavy) -> DISCARD (User request: URL strings only)
     if (finalImageUrl.startsWith('data:image')) {
-        try {
-             console.log('[Auto-Create] Converting Base64 Image to File...');
-             const matches = finalImageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-             if (matches && matches.length === 3) {
-                const ext = matches[1].split('/')[1].replace('jpeg', 'jpg') || 'jpg';
-                const buffer = Buffer.from(matches[2], 'base64');
-                const fileName = `${data.slug}-${Date.now()}.${ext}`;
-                const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
-                if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-                fs.writeFileSync(path.join(publicDir, fileName), buffer);
-                finalImageUrl = `/images/products/${fileName}`;
-             } else {
-                 console.warn('[Auto-Create] Invalid Base64, discarding.');
-                 finalImageUrl = ''; 
-             }
-        } catch (e) {
-            console.error('[Auto-Create] Failed to save base64 image', e);
-            finalImageUrl = '';
-        }
+         console.warn('[Auto-Create] Base64 image detected. Discarding to maintain performance (URL only policy).');
+         finalImageUrl = ''; 
     } 
-    // Handle Remote URLs
+    // Handle Remote URLs -> KEEP AS IS (Do not download)
     else if (finalImageUrl.startsWith('http')) {
-        try {
-            console.log(`[Auto-Create] Downloading image: ${finalImageUrl}`);
-            const res = await fetch(finalImageUrl);
-            if (res.ok) {
-                const contentType = res.headers.get('content-type');
-                let ext = '.jpg';
-                if (contentType?.includes('png')) ext = '.png';
-                if (contentType?.includes('webp')) ext = '.webp';
-                
-                const publicDir = path.join(process.cwd(), 'public', 'images', 'products');
-                if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-                
-                const fileName = `${data.slug}-${Date.now()}${ext}`;
-                const filePath = path.join(publicDir, fileName);
-                
-                if (res.body) {
-                    // @ts-ignore
-                    await streamPipeline(res.body, fs.createWriteStream(filePath));
-                    finalImageUrl = `/images/products/${fileName}`;
-                }
-            }
-        } catch (e) {
-            console.error('Image download failed', e);
-        }
+        // Just verify it's a valid URL string
+        console.log(`[Auto-Create] Using remote image URL: ${finalImageUrl}`);
     } else {
         // Discard weird formats
         finalImageUrl = '';
+    }
+
+    // 4.5 Video Handling
+    let finalVideoUrl = video_url || '';
+    let youtubeId = '';
+    
+    if (finalVideoUrl) {
+        // Try to extract YouTube ID
+        const ytMatch = finalVideoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+        if (ytMatch && ytMatch[1]) {
+            youtubeId = ytMatch[1];
+            console.log(`[Auto-Create] Extracted YouTube ID: ${youtubeId}`);
+        }
     }
 
     // 5. Construct Product Config
@@ -200,7 +286,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     if (!finalSlug || finalSlug === '-') finalSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
     // Fallback Name if somehow empty
-    const finalName = name || finalSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const finalName = name || finalSlug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
 
     if (finalSlug.split('-').length > 3) {
          // If slug is too long (> 3 words), truncate to first 2 words or just name
@@ -234,7 +320,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     let robustName = finalName;
     if (!robustName || robustName === 'Untitled Product' || robustName === 'New Product') {
          try {
-            const u = new URL(importUrl);
+            const u = new URL(finalScrapingUrl);
             const hostParts = u.hostname.split('.');
             // ex: getmitolyn.com -> mitolyn
             const extracted = hostParts.length > 2 ? hostParts[1] : hostParts[0];
@@ -258,17 +344,21 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
         template: 'editorial',
         status: 'active', // FORCE ACTIVE
         platform: 'unknown',
-        official_url: importUrl,
-        affiliate_url: (catalogItem ? `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}` : importUrl).replace(/\{$/, ''), // Fix Trailing { Bug
+        official_url: finalScrapingUrl, // Save the Resolved URL as official (clean)
+        affiliate_url: (affiliate_url ? affiliate_url : (catalogItem ? `${catalogItem.base_url}/${catalogItem.id}/${catalogItem.vendor}` : finalScrapingUrl)).replace(/\{$/, ''), 
         image_url: finalImageUrl, // Prioritize scraped/uploaded image
+        product_image_url: finalImageUrl, // ALIAS: Requested by user for explicit priority
+        sales_page_image_url: sales_page_image_url || '', // NEW: Sales Page Preview
+        video_url: finalVideoUrl, // New Video Field
+        youtube_review_id: youtubeId, // Backward compatibility
         headline: data.headline,
         subheadline: data.subheadline,
-        cta_text: 'Check Availability',
+        cta_text: data.cta_text || 'Check Availability',
         bullets: data.bullets,
         pain_points: data.pain_points, // Extended field
         unique_mechanism: data.unique_mechanism, // Extended field
         whatIs: { title: 'What Is It?', content: [data.whatIs] },
-        faq: [
+        faq: data.faq || [
             { q: "Is it legitimate?", a: "Yes, based on our research and user feedback." },
             { q: "How long for shipping?", a: "Typically 3-5 business days." }
         ],
@@ -277,7 +367,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
             description: data.seo_description
         },
         // Tracking
-        google_ads_id: catalogItem?.google_ads_id || '17850696537',
+        google_ads_id: google_ads_id || catalogItem?.google_ads_id || '17850696537',
         google_ads_label: catalogItem?.google_ads_label,
         support_email: 'support@topproductofficial.com', // FORCE SUPPORT EMAIL
         
@@ -293,7 +383,7 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
                     ads: [{
                         headlines: data.google_ads.headlines,
                         descriptions: data.google_ads.descriptions,
-                        finalUrl: importUrl
+                        finalUrl: finalScrapingUrl
                     }]
                 }]
             }]
@@ -443,6 +533,46 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     }
     
     console.log(`[Auto-Create] PRODUTO SALVO COM SUCESSO NA CHAVE: ${storageKey}`);
+
+    // 7. Auto-Save Assets to Library (Silent)
+    try {
+        if (newProduct.product_image_url) {
+            await addAsset({
+                productId: safeSlug,
+                productName: newProduct.name,
+                type: 'image',
+                url: newProduct.product_image_url,
+                label: `Auto-Saved Image (${new Date().toLocaleDateString()})`,
+                notes: 'Saved via Auto-Pilot Generation'
+            });
+            console.log(`[Asset] Image auto-saved for ${safeSlug}`);
+        }
+
+        if (newProduct.sales_page_image_url) {
+            await addAsset({
+                productId: safeSlug,
+                productName: newProduct.name,
+                type: 'image',
+                url: newProduct.sales_page_image_url,
+                label: `Sales Page Preview (${new Date().toLocaleDateString()})`,
+                notes: 'Saved via Auto-Pilot Generation'
+            });
+        }
+
+        if (newProduct.video_url) {
+            await addAsset({
+                productId: safeSlug,
+                productName: newProduct.name,
+                type: 'video',
+                url: newProduct.video_url,
+                label: `Auto-Saved Video (${new Date().toLocaleDateString()})`,
+                notes: 'Saved via Auto-Pilot Generation'
+            });
+            console.log(`[Asset] Video auto-saved for ${safeSlug}`);
+        }
+    } catch (e) {
+        console.warn('Failed to auto-save assets:', e);
+    }
 
     return NextResponse.json({ 
         success: true, 

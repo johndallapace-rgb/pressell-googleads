@@ -1,13 +1,13 @@
 export const AFFILIATE_MAPPING = {
     'ClickBank': {
-        defaultId: 'johnpace',
+        defaultId: '', // Removed hardcoded 'johnpace'
         idField: 'affiliate_id',
         urlPattern: 'https://hop.clickbank.net/?vendor=PRODUCT_VENDOR&affiliate=AFFILIATE_ID'
     },
     'Digistore24': {
-        defaultId: 'JohnPace',
+        defaultId: '', 
         idField: 'affiliate_id',
-        urlPattern: 'https://www.digistore24.com/redir/PRODUCT_ID/AFFILIATE_ID'
+        urlPattern: '[OFFICIAL_URL]#aff=JohnPace' // STRATEGY: Direct Link + Suffix (No more /redir/ IDs)
     },
     'BuyGoods': {
         defaultId: '',

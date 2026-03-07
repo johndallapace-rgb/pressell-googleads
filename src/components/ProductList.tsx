@@ -36,8 +36,10 @@ export default function ProductList({ products }: ProductListProps) {
 
               updates[p.slug] = {
                   domain: domainStatus,
-                  pixel: !!p.google_ads_id, // Static Check for now
-                  affiliate: !!p.affiliate_url && p.affiliate_url.length > 10,
+                  // VALIDATE PIXEL ID (Google OR Meta)
+                  pixel: (!!p.google_ads_id && !p.google_ads_id.includes('PIXEL_ID')) || (!!p.meta_pixel_id && !p.meta_pixel_id.includes('PIXEL_ID')), 
+                  // VALIDATE AFFILIATE LINK
+                  affiliate: !!p.affiliate_url && p.affiliate_url.length > 10 && !p.affiliate_url.includes('VENDOR_ID'),
                   ads: false // Placeholder for future Google Ads API integration
               };
           }
@@ -191,15 +193,19 @@ export default function ProductList({ products }: ProductListProps) {
                           </div>
 
                           {/* 2. Pixel Status */}
-                          <div className="flex items-center gap-1.5" title="Google Ads Pixel">
+                          <div className="flex items-center gap-1.5" title={statusMap[product.slug]?.pixel ? "Pixel Active" : "Missing Google Ads ID"}>
                               <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.pixel ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
-                              <span className="text-[10px] font-bold text-gray-500 uppercase">Pixel</span>
+                              <span className={`text-[10px] font-bold uppercase ${statusMap[product.slug]?.pixel ? 'text-gray-500' : 'text-red-600'}`}>
+                                  {statusMap[product.slug]?.pixel ? 'Pixel OK' : 'Pixel OFF'}
+                              </span>
                           </div>
 
                           {/* 3. Affiliate Link */}
-                          <div className="flex items-center gap-1.5" title="Affiliate Link Integrity">
-                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.affiliate ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
-                              <span className="text-[10px] font-bold text-gray-500 uppercase">Link</span>
+                          <div className="flex items-center gap-1.5" title={statusMap[product.slug]?.affiliate ? "Link Configured" : "Missing Affiliate ID or VENDOR_ID detected"}>
+                              <div className={`w-2.5 h-2.5 rounded-full ${statusMap[product.slug]?.affiliate ? 'bg-[#22c55e]' : 'bg-[#ef4444] animate-pulse'}`}></div>
+                              <span className={`text-[10px] font-bold uppercase ${statusMap[product.slug]?.affiliate ? 'text-gray-500' : 'text-red-600'}`}>
+                                  {statusMap[product.slug]?.affiliate ? 'Link' : 'Config Pendente'}
+                              </span>
                           </div>
 
                           {/* 4. Ads Status (Placeholder) */}

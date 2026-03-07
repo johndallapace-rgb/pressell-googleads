@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCampaignConfig, ProductConfig, updateCampaignConfig, deleteProductKey } from '@/lib/config';
 import { extractYoutubeId } from '@/lib/youtube';
 import { verifyToken } from '@/lib/auth';
+import { addAsset } from '@/lib/assets'; // Added Asset Manager
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
@@ -15,7 +16,11 @@ export const runtime = 'nodejs';
 async function checkAuth(request: NextRequest) {
     // 1. Check Cookie (Browser)
     const cookieToken = request.cookies.get('admin_token')?.value;
-    if (cookieToken && await verifyToken(cookieToken)) return true;
+    if (cookieToken) {
+        const payload = await verifyToken(cookieToken);
+        if (payload) return true;
+        console.warn('[Auth] Invalid Cookie Token');
+    }
 
     // 2. Check Header (API)
     const authHeader = request.headers.get('Authorization');
@@ -23,9 +28,14 @@ async function checkAuth(request: NextRequest) {
         const token = authHeader.split(' ')[1];
         // Support both JWT and raw ADMIN_TOKEN for flexibility
         if (token === process.env.ADMIN_TOKEN) return true;
-        if (await verifyToken(token)) return true;
+        
+        const payload = await verifyToken(token);
+        if (payload) return true;
+        
+        console.warn('[Auth] Invalid Bearer Token');
     }
 
+    console.warn('[Auth] Access Denied. Cookie:', !!cookieToken, 'Header:', !!authHeader);
     return false;
 }
 
@@ -70,7 +80,8 @@ export async function POST(request: NextRequest) {
        google_ads_label,
        support_email,
        image_url,
-       pain_points,
+      sales_page_image_url, // Added
+      pain_points,
       unique_mechanism,
       seo
     } = body;
@@ -148,7 +159,7 @@ export async function POST(request: NextRequest) {
       vertical: vertical.toLowerCase(),
       language,
       template: template || 'editorial',
-      status: status || 'active',
+      status: 'active' as const, // FORCE ACTIVE ALWAYS
       platform: 'unknown',
       affiliate_url,
       official_url,
@@ -162,6 +173,7 @@ export async function POST(request: NextRequest) {
 
        // Content (Prefer passed values, fallback to defaults)
       image_url: finalImageUrl,
+      sales_page_image_url: sales_page_image_url || undefined, // Store new field
       headline: headline || `${name} Review: Key Facts, Benefits, and Who It’s For`,
       subheadline: subheadline || 'Independent-style overview based on official info and user feedback.',
       cta_text: 'Check Availability',
@@ -213,6 +225,37 @@ export async function POST(request: NextRequest) {
     };
 
     // 6. Fetch Current Config & Merge
+    // 6.1 Save INDIVIDUAL Product to KV first (Side A)
+    // This ensures full content is available immediately
+    const { saveProduct } = await import('@/lib/config');
+    await saveProduct(newProduct);
+
+    // 6.1.5 Save Assets to Library (Silent)
+    try {
+        if (newProduct.sales_page_image_url) {
+            await addAsset({
+                productId: finalSlug,
+                productName: newProduct.name,
+                type: 'image',
+                url: newProduct.sales_page_image_url,
+                label: `Sales Page Preview (${new Date().toLocaleDateString()})`,
+                notes: 'Saved via Admin Manual Save'
+            });
+        }
+        if (newProduct.image_url && newProduct.image_url.startsWith('http')) {
+             await addAsset({
+                productId: finalSlug,
+                productName: newProduct.name,
+                type: 'image',
+                url: newProduct.image_url,
+                label: `Product Image (${new Date().toLocaleDateString()})`,
+                notes: 'Saved via Admin Manual Save'
+            });
+        }
+    } catch (e) {
+        console.warn('Failed to save assets to library during manual save:', e);
+    }
+
     const currentConfig = await getCampaignConfig();
     
     // Ensure products object exists
@@ -228,7 +271,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Add/Overwrite product
-    currentConfig.products[finalSlug] = newProduct;
+    // FIX: Use vertical:slug key format
+    const storageKey = `${vertical.toLowerCase()}:${finalSlug}`;
+    console.log('[SISTEMA] Salvando produto com a chave oficial: ' + storageKey);
+    currentConfig.products[storageKey] = newProduct;
 
     // Optional: Set as Active
     // DEPRECATED: active_product_slug is removed. We use status 'active' per product now.
