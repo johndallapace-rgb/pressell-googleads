@@ -1,8 +1,7 @@
-import { getCampaignConfig } from '@/lib/config';
+import { listProducts } from '@/lib/config';
 
 export default async function AdminDashboard() {
-  const config = await getCampaignConfig();
-  const products = Object.values(config.products || {});
+  const products = await listProducts();
   const activeProducts = products.filter(p => p.status === 'active');
   const activeCount = activeProducts.length;
 

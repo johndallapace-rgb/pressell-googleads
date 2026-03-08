@@ -1,4 +1,3 @@
-import fs from 'fs';
 import path from 'path';
 
 /**
@@ -14,11 +13,20 @@ import path from 'path';
  * - Rotates files weekly or by size check if needed (simple implementation here)
  */
 
-const LOG_DIR = path.resolve(process.cwd(), 'logs');
+let fs: any;
+try {
+    if (typeof window === 'undefined') {
+        fs = require('fs');
+    }
+} catch (e) {
+    // Ignore fs import error on client
+}
+
+const LOG_DIR = typeof process !== 'undefined' ? path.resolve(process.cwd(), 'logs') : '';
 
 // Ensure log directory exists (Sync is fine for init)
 try {
-    if (typeof window === 'undefined' && !fs.existsSync(LOG_DIR)) {
+    if (typeof window === 'undefined' && fs && !fs.existsSync(LOG_DIR)) {
         fs.mkdirSync(LOG_DIR, { recursive: true });
     }
 } catch (e) {
@@ -78,7 +86,7 @@ function sanitize(obj: any): any {
 
 function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload) {
     // Skip if not in Node environment (Vercel Edge or Browser)
-    if (typeof window !== 'undefined' || typeof process === 'undefined') return;
+    if (typeof window !== 'undefined' || typeof process === 'undefined' || !fs) return;
     
     // In Vercel Production (Serverless), filesystem is read-only usually, 
     // except /tmp. But we want LOCAL persistent logs.
@@ -103,7 +111,7 @@ function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload
 
         const line = JSON.stringify(logEntry) + '\n';
         
-        fs.appendFile(filePath, line, (err) => {
+        fs.appendFile(filePath, line, (err: any) => {
             if (err) console.error('[Logger] Write failed:', err);
         });
 

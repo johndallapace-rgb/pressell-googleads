@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ProductConfig } from '@/lib/config';
+import type { ProductConfig } from '@/lib/config';
 
 interface ProductListProps {
   products: ProductConfig[];
