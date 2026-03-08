@@ -187,7 +187,10 @@ export async function POST(request: NextRequest) {
             video_url: finalVideo // Replicate Video
         };
 
-        // Save Individual Product (Side A)
+        // Save Individual Product (Side A) - DUAL WRITE
+        // This helper now handles both keys (vertical:slug + slug)
+        // Ensure we pass the full object.
+        console.log(`[Scale] Saving canonical keys for: ${newSlug}`);
         await saveProduct(newProduct);
         
         // Add to Index (Side B)

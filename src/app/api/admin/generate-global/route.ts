@@ -121,6 +121,22 @@ export async function POST(request: NextRequest) {
     }));
 
     // Save ALL
+    // CRITICAL: DUAL WRITE FOR GLOBAL SCALE (Canonical + Prefixed)
+    // The previous loop only updated the 'config' object which saves to the Index.
+    // It did NOT save the individual canonical keys to KV.
+    // We must iterate and save each new product using saveProduct (which handles dual-write).
+    
+    const { saveProduct } = await import('@/lib/config');
+    
+    // We iterate over the results (slugs) to find the objects in the config and save them
+    for (const slug of results) {
+        const product = config.products[slug];
+        if (product) {
+            console.log(`[Global-Gen] Saving canonical keys for: ${slug}`);
+            await saveProduct(product);
+        }
+    }
+
     await updateCampaignConfig(config);
 
     // Run Health Check on Generated Links (Internal Mock)

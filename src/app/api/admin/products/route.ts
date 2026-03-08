@@ -227,8 +227,24 @@ export async function POST(request: NextRequest) {
     // 6. Fetch Current Config & Merge
     // 6.1 Save INDIVIDUAL Product to KV first (Side A)
     // This ensures full content is available immediately
-    const { saveProduct } = await import('@/lib/config');
+    const { saveProduct, kv } = await import('@/lib/config');
+    
+    // CRITICAL FIX: DUAL WRITE FOR MANUAL SAVE
+    // Ensure we write both vertical:slug and canonical slug
+    console.log(`[Manual-Create] Performing Dual-Write for ${newProduct.slug}...`);
+    
+    const storageKey = `${vertical.toLowerCase()}:${finalSlug}`;
+    
+    // 1. Use the helper (which now supports dual write, but let's be explicit)
     await saveProduct(newProduct);
+    
+    // 2. Explicit Safety Net (Direct KV)
+    if (kv) {
+        const p1 = kv.set(storageKey, newProduct);
+        const p2 = kv.set(finalSlug, newProduct);
+        await Promise.all([p1, p2]);
+        console.log(`[Manual-Create] Dual-Write Success: ${storageKey} & ${finalSlug}`);
+    }
 
     // 6.1.5 Save Assets to Library (Silent)
     try {
@@ -272,9 +288,10 @@ export async function POST(request: NextRequest) {
     
     // Add/Overwrite product
     // FIX: Use vertical:slug key format
-    const storageKey = `${vertical.toLowerCase()}:${finalSlug}`;
-    console.log('[SISTEMA] Salvando produto com a chave oficial: ' + storageKey);
-    currentConfig.products[storageKey] = newProduct;
+    // Use canonicalStorageKey to avoid redeclaration conflict
+    const canonicalStorageKey = `${vertical.toLowerCase()}:${finalSlug}`;
+    console.log('[SISTEMA] Salvando produto com a chave oficial: ' + canonicalStorageKey);
+    currentConfig.products[canonicalStorageKey] = newProduct;
 
     // Optional: Set as Active
     // DEPRECATED: active_product_slug is removed. We use status 'active' per product now.

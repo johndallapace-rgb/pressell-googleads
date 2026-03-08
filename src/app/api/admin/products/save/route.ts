@@ -43,10 +43,13 @@ export async function POST(request: NextRequest) {
     // This ensures the product page has all data (bullets, content, etc.)
     await saveProduct(product);
     
-    // DIRECT KV SAVE (Safety Net)
+    // DIRECT KV SAVE (Safety Net - Dual Write)
     if (kv) {
         console.log(`[Save API] Direct KV Set for key: ${storageKey}`);
-        await kv.set(storageKey, product);
+        const p1 = kv.set(storageKey, product);
+        // Also save canonical slug-only key for robust routing
+        const p2 = kv.set(product.slug, product);
+        await Promise.all([p1, p2]);
     }
 
     // 3. Update Campaign Config Index (Side B - Directory)
@@ -64,14 +67,15 @@ export async function POST(request: NextRequest) {
         delete config.products[oldKey];
     }
 
-    // Create Lightweight Index Entry
+    // Create Lightweight Index Entry (Side B)
     // CRITICAL: Ensure 'name' is preserved for the Admin Dashboard
+    // But keep SEO for better admin context
     config.products[storageKey] = {
         ...product,
-        name: product.name || config.products[storageKey]?.name || 'Untitled Product', // Fallback to existing or default
+        name: product.name || config.products[storageKey]?.name || 'Untitled Product', // Fallback
         slug: storageKey.includes(':') ? storageKey.split(':')[1] : storageKey, // Ensure clean slug
         vertical: product.vertical || 'health',
-        // STRIP HEAVY FIELDS for the index
+        // STRIP HEAVY FIELDS for the index ONLY
         whatIs: undefined,
         howItWorks: undefined,
         prosCons: undefined,
@@ -81,8 +85,19 @@ export async function POST(request: NextRequest) {
         headline: undefined,
         subheadline: undefined,
         ads: undefined,
-        seo: undefined
+        // seo: undefined // KEPT for Admin Context
     };
+    
+    // Explicitly delete heavy properties to be sure they are not saved in the index
+    delete config.products[storageKey].whatIs;
+    delete config.products[storageKey].howItWorks;
+    delete config.products[storageKey].prosCons;
+    delete config.products[storageKey].testimonials;
+    delete config.products[storageKey].faq;
+    delete config.products[storageKey].bullets;
+    delete config.products[storageKey].headline;
+    delete config.products[storageKey].subheadline;
+    delete config.products[storageKey].ads;
 
     const success = await updateCampaignConfig(config);
     
