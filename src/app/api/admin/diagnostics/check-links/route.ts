@@ -18,16 +18,29 @@ export async function POST(request: NextRequest) {
     const results = await Promise.all(urls.map(async (url) => {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased to 8s
             
+            // Log for debugging
+            // console.log(`[CheckLink] Pinging: ${url}`);
+
             const res = await fetch(url, { 
                 method: 'HEAD', 
                 signal: controller.signal,
-                headers: { 'User-Agent': 'PressellBot/1.0' }
+                headers: { 
+                    'User-Agent': 'PressellBot/1.0',
+                    'Cache-Control': 'no-cache, no-store' // Bypass Vercel Cache
+                }
             });
             clearTimeout(timeoutId);
             
-            return { url, status: res.status, ok: res.ok };
+            // Allow 200, 301, 302, 307, 308
+            const isOk = res.ok || (res.status >= 300 && res.status < 400);
+            
+            if (!isOk) {
+                console.log(`[CheckLink] Failed: ${url} -> ${res.status}`);
+            }
+
+            return { url, status: res.status, ok: isOk };
         } catch (e: any) {
             return { url, status: 0, ok: false, error: e.message };
         }
