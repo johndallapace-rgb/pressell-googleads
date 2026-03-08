@@ -9,7 +9,10 @@
     "lint": "eslint",
     "monitor": "node scripts/health-check.js",
     "validate-europe": "node scripts/validate-europe.js",
-    "ship": "git add . && git commit -m \"Auto-deploy: Updates\" && git push origin main"
+    "ship": "git add . && git commit -m \"Auto-deploy: Updates\" && git push origin main",
+    "debug:snapshot": "node scripts/snapshot.js",
+    "debug:pack": "node scripts/snapshot.js && echo \"Snapshot + Logs ready in ./debug/\"",
+    "debug:zip": "node scripts/debug-pack.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

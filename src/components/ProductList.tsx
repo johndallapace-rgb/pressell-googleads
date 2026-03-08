@@ -13,7 +13,33 @@ export default function ProductList({ products }: ProductListProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [repairing, setRepairing] = useState(false);
+  const [zipping, setZipping] = useState(false);
   const [statusMap, setStatusMap] = useState<Record<string, { domain: boolean; pixel: boolean; affiliate: boolean; ads: boolean }>>({});
+
+  const handleZip = async () => {
+    if (!confirm('Generate AI Debug Pack?\nThis will create a ZIP with structure and logs for debugging.')) return;
+    
+    setZipping(true);
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('admin_token') : '';
+        const res = await fetch('/api/admin/debug/export-pack', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message || 'Debug pack generated successfully!');
+        } else {
+            throw new Error(data.error || 'Generation failed');
+        }
+    } catch (e: any) {
+        alert('Zip failed: ' + e.message);
+    } finally {
+        setZipping(false);
+    }
+  };
 
   const handleRepair = async () => {
     if (!confirm('Are you sure you want to repair KV keys?\nThis will remove ghost keys and ensure canonical keys exist.')) return;
@@ -147,6 +173,16 @@ export default function ProductList({ products }: ProductListProps) {
             </span>
         </div>
         <div className="flex items-center gap-3">
+            <button 
+                onClick={handleZip}
+                disabled={zipping}
+                className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold px-3 py-2 rounded flex items-center gap-2 border border-gray-700 transition-colors disabled:opacity-50"
+            >
+                <svg className={`w-3 h-3 ${zipping ? 'animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                {zipping ? 'PACKING...' : 'DEBUG PACK'}
+            </button>
             <button 
                 onClick={handleRepair}
                 disabled={repairing}

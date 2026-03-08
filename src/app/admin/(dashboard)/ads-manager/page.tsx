@@ -111,11 +111,25 @@ export default function AdsManagerPage() {
       }
   };
 
+  const handleAnalyzePerformance = () => {
+    // Placeholder for future Gemini performance analysis integration
+    // This will connect to src/lib/ads-ai/index.ts -> analyzeCampaignPerformance()
+    alert('Analyze Performance: This feature will use Gemini to analyze your campaign metrics and suggest optimizations. Coming soon!');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Ads Performance Manager</h1>
         <div className="flex gap-2">
+            <button 
+                onClick={handleAnalyzePerformance}
+                disabled={true}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2 text-sm font-bold shadow-sm opacity-50 cursor-not-allowed"
+                title="Coming Soon: AI Campaign Optimization"
+            >
+                📊 Analyze Performance (AI)
+            </button>
             <button 
                 onClick={handleResetSession}
                 className="bg-red-100 text-red-700 px-4 py-2 rounded hover:bg-red-200 flex items-center gap-2 text-sm font-bold border border-red-200"
