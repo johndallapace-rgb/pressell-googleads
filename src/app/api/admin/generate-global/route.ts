@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         const product = config.products[slug];
         if (product) {
             console.log(`[Global-Gen] Saving canonical keys for: ${slug}`);
-            await saveProduct(product);
+            await saveProduct(product, 'Global-Gen');
         }
     }
 

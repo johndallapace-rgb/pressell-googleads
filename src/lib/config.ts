@@ -434,7 +434,7 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
     }
 }
 
-export async function saveProduct(product: ProductConfig): Promise<boolean> {
+export async function saveProduct(product: ProductConfig, source: string = 'Generic'): Promise<boolean> {
     if (!kv || !product.slug) return false;
     try {
         // Determine Primary Key (Vertical-Prefixed)
@@ -443,19 +443,56 @@ export async function saveProduct(product: ProductConfig): Promise<boolean> {
              key = `${product.vertical}:${product.slug}`;
         }
         
-        console.log(`[KV-Save] Saving FULL product to key: ${key}`);
+        console.log(`[SAVE_PRODUCT]`, {
+            source,
+            vertical: product.vertical,
+            slug: product.slug,
+            key: key
+        });
         
         // 1. Save to Primary Key (Side A - Prefixed)
-        const p1 = kv.set(key, product);
+        try {
+            await kv.set(key, product);
+        } catch (error: any) {
+            console.error("[SAVE_PRODUCT_ERROR]", {
+                source,
+                vertical: product.vertical,
+                slug: product.slug,
+                key: key,
+                error: error?.message
+            });
+            throw error; // Propagate error to outer catch block which returns false
+        }
         
         // 2. Save to Canonical Key (Side A - Global Slug) - BACKFILL FIX
-        // This ensures lookup by /slug works even if vertical is not detected from subdomain
-        const p2 = kv.set(product.slug, product);
+        try {
+            await kv.set(product.slug, product);
+        } catch (error: any) {
+             console.error("[SAVE_PRODUCT_FALLBACK_ERROR]", {
+                source,
+                slug: product.slug,
+                key: product.slug,
+                error: error?.message
+             });
+             // Do NOT throw here to allow partial success if primary key worked
+        }
         
-        await Promise.all([p1, p2]);
+        if (key !== product.slug) {
+             console.log(`[SAVE_PRODUCT_FALLBACK]`, {
+                source,
+                slug: product.slug,
+                key: product.slug
+             });
+        }
+        
         return true;
-    } catch (e) {
-        console.error('[KV-Save] Error:', e);
+    } catch (e: any) {
+        // This catch block handles the re-thrown error from primary key or unexpected errors
+        // DO NOT log here again, as we logged structured error above for primary failure.
+        // But if it was an unexpected error outside the try blocks (e.g. log formatting), we should log.
+        if (!e.message?.includes('SAVE_PRODUCT_ERROR')) {
+             console.error('[KV-Save] Unexpected Error:', e);
+        }
         return false;
     }
 }

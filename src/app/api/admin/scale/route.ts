@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
         // This helper now handles both keys (vertical:slug + slug)
         // Ensure we pass the full object.
         console.log(`[Scale] Saving canonical keys for: ${newSlug}`);
-        await saveProduct(newProduct);
+        await saveProduct(newProduct, 'Global-Scale');
         
         // Add to Index (Side B)
         config.products[storageKey] = newProduct;

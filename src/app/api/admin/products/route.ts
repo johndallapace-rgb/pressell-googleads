@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
     const storageKey = `${vertical.toLowerCase()}:${finalSlug}`;
     
     // 1. Use the helper (which now supports dual write, but let's be explicit)
-    await saveProduct(newProduct);
+    await saveProduct(newProduct, 'Manual-Create');
     
     // 2. Explicit Safety Net (Direct KV)
     if (kv) {

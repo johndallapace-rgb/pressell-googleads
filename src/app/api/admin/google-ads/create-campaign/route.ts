@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
                 };
 
                 const { saveProduct } = await import('@/lib/config');
-                await saveProduct(productData);
+                await saveProduct(productData, 'Google-Ads-AutoSave');
                 console.log(`[GoogleAds] Auto-saved generated ads for ${productData.slug}`);
             } catch (saveErr) {
                 console.warn('[GoogleAds] Failed to auto-save generated ads', saveErr);

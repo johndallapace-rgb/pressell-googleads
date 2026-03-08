@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Save FULL Product to KV (Side A - Content)
     // This ensures the product page has all data (bullets, content, etc.)
-    await saveProduct(product);
+    await saveProduct(product, 'Admin-Save');
     
     // DIRECT KV SAVE (Safety Net - Dual Write)
     if (kv) {

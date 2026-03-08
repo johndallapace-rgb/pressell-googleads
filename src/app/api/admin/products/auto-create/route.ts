@@ -397,14 +397,9 @@ async function handleCreation(request: NextRequest, importUrl: string, name: str
     
     // 6.1 Direct KV Save (Canonical + Prefixed)
     try {
-        const { kv } = require('@vercel/kv'); // Dynamic import to avoid build issues if not used
-        if (kv) {
-            console.log(`[Auto-Create] Performing Dual-Write for ${storageKey}...`);
-            const p1 = kv.set(storageKey, newProduct);
-            const p2 = kv.set(safeSlug, newProduct); // Canonical Key
-            await Promise.all([p1, p2]);
-            console.log(`[Auto-Create] Dual-Write Success: ${storageKey} & ${safeSlug}`);
-        }
+        const { saveProduct } = require('@/lib/config');
+        await saveProduct(newProduct, 'Auto-Pilot');
+        console.log(`[Auto-Create] Dual-Write Success via saveProduct`);
     } catch (kvError) {
         console.error('[Auto-Create] Dual-Write Failed:', kvError);
         // Continue to update config index as fallback
