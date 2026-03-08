@@ -12,7 +12,34 @@ interface ProductListProps {
 export default function ProductList({ products }: ProductListProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [repairing, setRepairing] = useState(false);
   const [statusMap, setStatusMap] = useState<Record<string, { domain: boolean; pixel: boolean; affiliate: boolean; ads: boolean }>>({});
+
+  const handleRepair = async () => {
+    if (!confirm('Are you sure you want to repair KV keys?\nThis will remove ghost keys and ensure canonical keys exist.')) return;
+    
+    setRepairing(true);
+    try {
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('admin_token') : '';
+        const res = await fetch('/api/admin/cleanup', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message || 'KV keys repaired successfully!');
+            router.refresh();
+        } else {
+            throw new Error(data.error || 'Repair failed');
+        }
+    } catch (e: any) {
+        alert('Repair failed: ' + e.message);
+    } finally {
+        setRepairing(false);
+    }
+  };
 
   useEffect(() => {
       // Background Health Check on Load
@@ -119,13 +146,25 @@ export default function ProductList({ products }: ProductListProps) {
                 {products.length} Active
             </span>
         </div>
-        <Link 
-            href="/admin/products/new" 
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded flex items-center gap-2 transition-colors"
-        >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            NEW PRE-SELL
-        </Link>
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={handleRepair}
+                disabled={repairing}
+                className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold px-3 py-2 rounded flex items-center gap-2 border border-gray-700 transition-colors disabled:opacity-50"
+            >
+                <svg className={`w-3 h-3 ${repairing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {repairing ? 'REPAIRING...' : 'REPAIR KEYS'}
+            </button>
+            <Link 
+                href="/admin/products/new" 
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded flex items-center gap-2 transition-colors"
+            >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                NEW PRE-SELL
+            </Link>
+        </div>
       </div>
       
       {products.length === 0 ? (

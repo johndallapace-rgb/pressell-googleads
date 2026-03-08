@@ -5,7 +5,7 @@ import { EditorialTemplate } from '@/components/templates/EditorialTemplate';
 import { StoryTemplate } from '@/components/templates/StoryTemplate';
 import { ComparisonTemplate } from '@/components/templates/ComparisonTemplate';
 import { InteractiveCookie } from '@/components/templates/InteractiveCookie';
-import { getProduct, debugKV } from '@/lib/config'; // New Vercel KV Import
+import { getProduct, debugKV, ensureCanonicalKeys } from '@/lib/config'; // New Vercel KV Import
 import LayoutShell from '@/components/LayoutShell';
 import { getVerticalFromHost } from '@/lib/host';
 import { headers } from 'next/headers';
@@ -197,6 +197,14 @@ export default async function CatchAllProductPage({ params }: PageProps) {
         console.log(`- KV Key: ${queryKey}`);
         console.log(`- Product Name: ${product.name}`);
         console.log(`- Status: ${product.status}`);
+
+        // --- SELF-HEALING LOGIC ---
+        // Ensure canonical keys exist for this product (Repair if missing)
+        // Fire-and-forget to not block rendering, but log results
+        ensureCanonicalKeys(product, 'Route-CatchAll').catch(err => {
+             console.error('[Route-CatchAll] Self-heal failed:', err);
+        });
+        
     } else {
         console.log(`[MISS/404] Product NOT found or inactive: ${slug}`);
         return notFound();

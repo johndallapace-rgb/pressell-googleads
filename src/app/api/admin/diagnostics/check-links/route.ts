@@ -1,23 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { getCampaignConfig, ensureCanonicalKeys } from '@/lib/config';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
-export async function POST(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value;
-  if (!token || !(await verifyToken(token))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function POST(req: NextRequest) {
+    try {
+        const { urls } = await req.json();
+        const config = await getCampaignConfig();
+        const products = config.products || {};
 
-  try {
-    const { urls } = await request.json();
-    if (!Array.isArray(urls)) {
-        return NextResponse.json({ error: 'Invalid URLs array' }, { status: 400 });
-    }
+        if (!urls || !Array.isArray(urls)) {
+            return NextResponse.json({ error: 'Invalid URLs' }, { status: 400 });
+        }
 
-    const results = await Promise.all(urls.map(async (url) => {
-        try {
-            const controller = new AbortController();
+        const results = await Promise.all(urls.map(async (url: string) => {
+            // ... fetch logic ...
+            // SELF-HEAL TRIGGER
+            // If we can identify the product from the URL, try to ensure its keys
+            try {
+                // Extract slug from URL (e.g. health.site.com/slug)
+                const urlObj = new URL(url);
+                const slug = urlObj.pathname.replace(/^\/|\/$/g, ''); // trim slashes
+                
+                // Find product in config
+                let product = products[slug];
+                // Try finding by slug property if key doesn't match
+                if (!product) {
+                    product = Object.values(products).find(p => p.slug === slug) as any;
+                }
+
+                if (product) {
+                    // Fire-and-forget self-heal check
+                    // We don't await this to keep the check fast
+                    ensureCanonicalKeys(product, 'Checker-SelfHeal').catch(e => console.error(e));
+                }
+            } catch (e) {
+                // Ignore URL parsing errors
+            }
+
+            try {
+                const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased to 8s
             
             // Log for debugging

@@ -436,7 +436,26 @@ export async function getCampaignMetrics(): Promise<CampaignMetrics> {
 
 export async function saveProduct(product: ProductConfig, source: string = 'Generic'): Promise<boolean> {
     if (!kv || !product.slug) return false;
+
+    // Concurrency Lock
+    const lockKey = `lock:save:${product.vertical || 'generic'}:${product.slug}`;
+    let lockAcquired = false;
+
     try {
+        // Try to acquire lock with 15s TTL
+        // nx: true ensures we only set if key doesn't exist
+        // ex: 15 sets expiration in seconds
+        const result = await kv.set(lockKey, 'locked', { nx: true, ex: 15 });
+        lockAcquired = result === 'OK' || result === 1 || result === true; // Vercel KV returns 'OK' or 1 depending on client
+
+        if (!lockAcquired) {
+            console.warn(`[SAVE_LOCK_SKIPPED] Lock held for ${product.slug}`, { source });
+            // Fail gracefully - another save is in progress
+            return false;
+        }
+
+        console.log(`[SAVE_LOCK_ACQUIRED] ${product.slug}`, { source });
+
         // Determine Primary Key (Vertical-Prefixed)
         let key = product.slug;
         if (product.vertical) {
@@ -494,6 +513,16 @@ export async function saveProduct(product: ProductConfig, source: string = 'Gene
              console.error('[KV-Save] Unexpected Error:', e);
         }
         return false;
+    } finally {
+        // Release Lock
+        if (lockAcquired) {
+            try {
+                await kv.del(lockKey);
+                console.log(`[SAVE_LOCK_RELEASED] ${product.slug}`);
+            } catch (e) {
+                console.error('[SAVE_LOCK_ERROR] Failed to release lock', e);
+            }
+        }
     }
 }
 
@@ -591,5 +620,59 @@ export async function debugKV() {
         return keys.slice(0, 5);
     } catch (e) {
         return [`Error: ${e}`];
+    }
+}
+
+// ------------------------------------------------------------------
+// SELF-HEALING MECHANISM (Safe Mode)
+// ------------------------------------------------------------------
+
+/**
+ * Ensures that a product has its canonical KV keys written.
+ * If the product was found via index/helper but the direct keys are missing,
+ * this function repairs them.
+ */
+export async function ensureCanonicalKeys(product: ProductConfig, source: string = 'Self-Heal'): Promise<boolean> {
+    if (!kv || !product.slug) return false;
+
+    // Safety Check: Only repair if product looks valid
+    if (!product.vertical || product.status !== 'active') {
+        // console.log(`[SELF_HEAL_SKIP] Product ${product.slug} invalid or inactive.`, { source });
+        return false;
+    }
+
+    const verticalKey = `${product.vertical}:${product.slug}`;
+    const slugKey = product.slug;
+
+    try {
+        // Check existence without fetching full data to save bandwidth
+        // Using exists() is efficient
+        const existsVertical = await kv.exists(verticalKey);
+        const existsSlug = await kv.exists(slugKey);
+
+        if (existsVertical && existsSlug) {
+            // All good, no repair needed
+            return true;
+        }
+
+        console.log(`[SELF_HEAL_TRIGGERED] Missing keys for ${product.slug}. Repairing...`, {
+            missingVertical: !existsVertical,
+            missingSlug: !existsSlug,
+            source
+        });
+
+        // Use standard save to repair
+        // This writes both keys and logs structured success/error
+        await saveProduct(product, source);
+
+        console.log(`[SELF_HEAL_SUCCESS] Repaired keys for ${product.slug}`, { source });
+        return true;
+
+    } catch (e: any) {
+        console.error(`[SELF_HEAL_ERROR] Failed to repair ${product.slug}`, {
+            error: e.message,
+            source
+        });
+        return false;
     }
 }

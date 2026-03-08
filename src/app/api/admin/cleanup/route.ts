@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cleanupGhostKeys } from '@/lib/config';
+import { cleanupGhostKeys, getCampaignConfig, ensureCanonicalKeys } from '@/lib/config';
 import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -21,14 +21,51 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        console.log('[Cleanup API] Starting KV cleanup...');
-        const result = await cleanupGhostKeys();
-        console.log(`[Cleanup API] Deleted ${result.deleted.length} keys.`);
+        console.log('[Cleanup API] Starting KV cleanup & Repair...');
+        
+        // 1. Cleanup Ghost Keys
+        const cleanupResult = await cleanupGhostKeys();
+        console.log(`[Cleanup API] Deleted ${cleanupResult.deleted.length} ghost keys.`);
+        
+        // 2. REPAIR KEYS (Ensure Canonical)
+        // Scan all active products and ensure keys exist
+        const config = await getCampaignConfig();
+        const products = config.products || {};
+        const repaired = [];
+        const skipped = [];
+        const errors = [];
+
+        console.log(`[Cleanup API] Scanning ${Object.keys(products).length} products for canonical key repair...`);
+        
+        for (const [key, product] of Object.entries(products)) {
+            if (!product.slug) continue;
+            
+            try {
+                // ensureCanonicalKeys handles the check and only writes if missing
+                const didRepair = await ensureCanonicalKeys(product, 'Admin-Repair-All');
+                if (didRepair) {
+                    repaired.push(product.slug);
+                } else {
+                    skipped.push(product.slug);
+                }
+            } catch (err: any) {
+                errors.push({ slug: product.slug, error: err.message });
+            }
+        }
         
         return NextResponse.json({ 
             success: true, 
-            message: `Cleanup complete. Deleted ${result.deleted.length} ghost keys.`,
-            details: result
+            message: `Maintenance complete. Deleted ${cleanupResult.deleted.length} ghosts. Repaired ${repaired.length} products.`,
+            details: {
+                cleanup: cleanupResult,
+                repair: {
+                    total: Object.keys(products).length,
+                    repairedCount: repaired.length,
+                    repairedSlugs: repaired,
+                    skippedCount: skipped.length,
+                    errorCount: errors.length
+                }
+            }
         });
     } catch (e: any) {
         console.error('[Cleanup API] Error:', e);
