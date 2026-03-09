@@ -152,24 +152,60 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     // WAIT. If `params.slug` is `['index.html']` (maybe due to a rewrite rule in vercel.json or middleware?),
     // then we definitely don't want to look up a product named "index".
     
-    // Let's add a check:
+    // ----------------------------------------------------------------------
+    // SLUG NORMALIZATION & RECOVERY
+    // ----------------------------------------------------------------------
+    const headerList = await headers();
+    
+    // 1. Initial Extraction
+    let slug = slugParts[0];
+    
+    // 2. Recovery Strategy (if slug is bad)
+    const isBadSlug = !slug || slug === 'index.html' || slug === 'index' || slug === '/';
+    
+    if (isBadSlug) {
+        // Try to recover from headers
+        const nextUrl = headerList.get('next-url'); // e.g. /mitolyn-metabolism-boost
+        const invokePath = headerList.get('x-invoke-path');
+        const matchedPath = headerList.get('x-matched-path');
+        
+        // Prefer next-url as it's usually the original requested path
+        const candidatePath = nextUrl || invokePath || matchedPath;
+        
+        if (candidatePath) {
+            // Remove leading slash and query params
+            // Example: /mitolyn-metabolism-boost?foo=bar -> mitolyn-metabolism-boost
+            let cleanPath = candidatePath.split('?')[0];
+            cleanPath = cleanPath.replace(/^\//, ''); // Remove leading slash
+            
+            // Safety check: don't recover to "index"
+            if (cleanPath && cleanPath !== 'index' && cleanPath !== 'index.html') {
+                slug = cleanPath;
+                console.log(`[CatchAll] Recovered slug from headers: ${slug}`);
+            }
+        }
+    }
+    
+    // 3. Final Cleaning
+    slug = slug.replace(/\.(php|html)$/, '').trim();
+    slug = slug.replace(/\/$/, '');
+
+    // 4. Debug Log
+    logger.info('public-route', {
+        event: 'ROUTE_DEBUG_PATH_INPUT',
+        rawParamsSlug: slugParts,
+        nextUrl: headerList.get('next-url'),
+        matchedPath: headerList.get('x-matched-path'),
+        invokePath: headerList.get('x-invoke-path'),
+        recoveredSlug: slug !== slugParts[0] ? slug : undefined,
+        finalSlug: slug
+    });
+
+    // 5. Final Block
     if (slug === 'index' || slug === 'index.html' || !slug || slug === '/') {
-         // This is likely a system artifact.
-         // We should NOT look up this product.
-         // Return 404 immediately.
          console.log('[CatchAll] Blocked "index" or empty slug.');
          return notFound();
     }
-    
-    // Normalize: remove trailing slash if any (though trim() handles whitespace)
-    slug = slug.replace(/\/$/, '');
-
-    logger.info('public-route', {
-        event: 'ROUTE_DEBUG_NORMALIZED_SLUG',
-        rawParamsSlug: slugParts,
-        normalizedSlug: slug,
-        finalSlug: slug
-    });
     
     // The user says "Ensure the slug is derived correctly from params.slug".
     // The current code ALREADY does `slug = slugParts[0]...`.

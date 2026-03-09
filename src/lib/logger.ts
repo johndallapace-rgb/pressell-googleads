@@ -22,15 +22,36 @@ try {
     // Ignore fs import error on client
 }
 
-const LOG_DIR = (typeof process !== 'undefined' && process.cwd) ? path.resolve(process.cwd(), 'logs') : '';
+const isVercel = process.env.VERCEL === '1';
+const isProduction = process.env.NODE_ENV === 'production';
+const allowFileLogging = !isVercel && !isProduction; // ONLY allow in local dev? Or local prod too?
+// User requirement: "Localhost/dev: may write logs to ./logs". "Vercel/production: must only log to console".
+// User also said: "In localhost/dev only: optional file logging is allowed".
+// And: "Use a guard like: const allowFileLogging = process.env.NODE_ENV !== 'production' && !process.env.VERCEL;"
 
-// Ensure log directory exists (Sync is fine for init)
+// Wait, earlier the user said "localhost can still log safely for debugging".
+// If I run `npm run start` locally (production mode), do I want logs?
+// The user said: "If we are in Local Production (npm run start), we CAN write." in my previous reasoning.
+// But the NEW requirement says: "In localhost/dev only: optional file logging is allowed".
+// And explicitly suggests: `process.env.NODE_ENV !== 'production' && !process.env.VERCEL`.
+// This implies disabling logs in `npm run start` locally too?
+// Let's stick to the EXPLICIT guard requested: `process.env.NODE_ENV !== 'production' && !process.env.VERCEL`.
+
+const allowFileLogging = process.env.NODE_ENV !== 'production' && !process.env.VERCEL;
+
+// Safe LOG_DIR initialization
+// ABSOLUTELY NO process.cwd() at top level if not allowed
+const LOG_DIR = (typeof process !== 'undefined' && process.cwd && allowFileLogging) 
+    ? path.resolve(process.cwd(), 'logs') 
+    : '';
+
+// Ensure log directory exists (Sync is fine for init ONLY if allowed)
 try {
-    if (typeof window === 'undefined' && fs && !fs.existsSync(LOG_DIR)) {
+    if (typeof window === 'undefined' && fs && allowFileLogging && LOG_DIR && !fs.existsSync(LOG_DIR)) {
         fs.mkdirSync(LOG_DIR, { recursive: true });
     }
 } catch (e) {
-    console.error('[Logger] Failed to create log directory', e);
+    // Silent fail in production/vercel just in case
 }
 
 export type LogCategory = 
@@ -86,23 +107,13 @@ function sanitize(obj: any): any {
 }
 
 function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload) {
-    // Skip if not in Node environment (Vercel Edge or Browser)
+    // 1. Guard against non-node
     if (typeof window !== 'undefined' || typeof process === 'undefined' || !fs) return;
     
-    // Vercel Detection
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    // Safety Check:
-    // If we are in Vercel Production, we MUST NOT write to FS (ReadOnly / Ephemeral).
-    // If we are in Local Production (npm run start), we CAN write.
-    // If we are in Local Dev (npm run dev), we CAN write.
-    
-    if (isVercel) return;
+    // 2. STRICTLY ENFORCE FILE LOGGING POLICY
+    // Vercel/serverless uses a read-only filesystem, so file logging must remain disabled in production.
+    if (!allowFileLogging || !LOG_DIR) return;
 
-    // For local dev/prod, we proceed.
-    // Note: We already checked for `fs` presence above.
-    
     try {
         const date = new Date();
         const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -119,11 +130,15 @@ function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload
         const line = JSON.stringify(logEntry) + '\n';
         
         fs.appendFile(filePath, line, (err: any) => {
-            if (err) console.error('[Logger] Write failed:', err);
+            if (err) {
+                // Fallback to console warning if local write fails (e.g. permission error)
+                console.warn('[Logger] Local write failed:', err.message);
+            }
         });
 
     } catch (e) {
-        console.error('[Logger] Unexpected error:', e);
+        // Never throw
+        console.warn('[Logger] Unexpected error:', e);
     }
 }
 
