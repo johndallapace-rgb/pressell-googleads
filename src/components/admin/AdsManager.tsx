@@ -6,6 +6,10 @@ import { getStrategyRecommendation, generateLaunchChecklist, StrategySettings, A
 import { convertToCsv } from '@/lib/ads/csv';
 import PushCampaignModal from './PushCampaignModal';
 import AdPreviewCard from './AdPreviewCard';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
+import { FormSelect } from '@/components/ui/FormSelect';
 
 interface AdsManagerProps {
   products: ProductConfig[];
@@ -146,12 +150,12 @@ export default function AdsManager({ products }: AdsManagerProps) {
         
         <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Product</label>
-                    <select 
+                <FormField>
+                    <FormLabel>Select Product</FormLabel>
+                    <FormSelect 
                         value={selectedSlug} 
                         onChange={(e) => setSelectedSlug(e.target.value)}
-                        className="w-full border rounded px-3 py-2 bg-gray-50 font-medium text-gray-900"
+                        className="bg-gray-50 font-medium text-gray-900"
                     >
                         <option value="" disabled>-- Select a Product to Advertise --</option>
                         {products
@@ -161,48 +165,39 @@ export default function AdsManager({ products }: AdsManagerProps) {
                                 {p.name} ({p.vertical.toUpperCase()})
                             </option>
                         ))}
-                    </select>
-                </div>
+                    </FormSelect>
+                </FormField>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Daily Budget</label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-2 text-gray-500">$</span>
-                            <input 
-                                type="number" 
-                                value={strategy.dailyBudget}
-                                onChange={e => setStrategy({...strategy, dailyBudget: Number(e.target.value)})}
-                                className="w-full border rounded pl-7 pr-3 py-2"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">CPC Limit</label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-2 text-gray-500">$</span>
-                            <input 
-                                type="number" step="0.1"
-                                value={strategy.cpcLimit}
-                                onChange={e => setStrategy({...strategy, cpcLimit: Number(e.target.value)})}
-                                className="w-full border rounded pl-7 pr-3 py-2"
-                            />
-                        </div>
-                    </div>
+                    <FormField>
+                        <FormLabel>Daily Budget ($)</FormLabel>
+                        <FormInput 
+                            type="number" 
+                            value={strategy.dailyBudget}
+                            onChange={e => setStrategy({...strategy, dailyBudget: Number(e.target.value)})}
+                        />
+                    </FormField>
+                    <FormField>
+                        <FormLabel>CPC Limit ($)</FormLabel>
+                        <FormInput 
+                            type="number" step="0.1"
+                            value={strategy.cpcLimit}
+                            onChange={e => setStrategy({...strategy, cpcLimit: Number(e.target.value)})}
+                        />
+                    </FormField>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bid Strategy</label>
-                    <select 
+                <FormField>
+                    <FormLabel>Bid Strategy</FormLabel>
+                    <FormSelect 
                         value={strategy.bidStrategy}
                         onChange={e => setStrategy({...strategy, bidStrategy: e.target.value as any})}
-                        className="w-full border rounded px-3 py-2"
                     >
                         <option value="Manual CPC">Manual CPC (Recommended for Start)</option>
                         <option value="Maximize Clicks">Maximize Clicks</option>
                         <option value="Maximize Conversions">Maximize Conversions</option>
-                    </select>
-                </div>
+                    </FormSelect>
+                </FormField>
             </div>
 
             <div className="space-y-4 bg-gray-50 p-4 rounded border border-gray-100">

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -45,26 +48,24 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
+          <FormField>
+            <FormLabel>Email</FormLabel>
+            <FormInput
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
               required
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input
+          </FormField>
+          <FormField>
+            <FormLabel>Password</FormLabel>
+            <FormInput
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
               required
             />
-          </div>
+          </FormField>
           <button
             type="submit"
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"

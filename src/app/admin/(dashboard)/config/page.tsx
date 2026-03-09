@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { SystemConfig } from '@/lib/config';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
 
 export default function ConfigSystemPage() {
   const [activeTab, setActiveTab] = useState<'api' | 'platforms' | 'health'>('api');
@@ -221,20 +224,20 @@ export default function ConfigSystemPage() {
                     
                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Affiliate Nickname (Global)</label>
-                                <input 
+                            <FormField>
+                                <FormLabel className="text-gray-700">Affiliate Nickname (Global)</FormLabel>
+                                <FormInput 
                                     type="text" 
                                     value={safeConfig.affiliate_nickname || ''}
                                     onChange={e => setConfig({...safeConfig, affiliate_nickname: e.target.value})}
-                                    className="block w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all shadow-sm font-medium"
                                     placeholder="johnpace"
+                                    className="font-medium"
                                 />
                                 <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     Usado para gerar links automáticos em todas as plataformas.
                                 </p>
-                            </div>
+                            </FormField>
                         </div>
                     </div>
                 </div>
@@ -245,61 +248,61 @@ export default function ConfigSystemPage() {
                     
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Gemini API Key <span className="text-red-500">*</span></label>
-                                <input 
+                            <FormField>
+                                <FormLabel className="text-gray-700" required>Gemini API Key</FormLabel>
+                                <FormInput 
                                     type="password" 
                                     value={safeConfig.api_keys?.gemini || ''}
                                     onChange={e => setConfig({
                                         ...safeConfig, 
                                         api_keys: { ...safeConfig.api_keys, gemini: e.target.value }
                                     })}
-                                    className="block w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all shadow-sm font-mono text-sm"
                                     placeholder="AIzaSy..."
+                                    className="font-mono text-sm"
                                 />
-                            </div>
+                            </FormField>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Google Search API Key</label>
-                                    <input 
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Google Search API Key</FormLabel>
+                                    <FormInput 
                                         type="password" 
                                         value={safeConfig.api_keys?.google_search_key || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, google_search_key: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all shadow-sm font-mono text-sm"
                                         placeholder="AIzaSy..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Search Engine ID (CX)</label>
-                                    <input 
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Search Engine ID (CX)</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         value={safeConfig.api_keys?.google_search_cx || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, google_search_cx: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all shadow-sm font-mono text-sm"
                                         placeholder="012345..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
+                                </FormField>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Vercel Token (Optional)</label>
-                                <input 
+                            <FormField>
+                                <FormLabel className="text-gray-700">Vercel Token (Optional)</FormLabel>
+                                <FormInput 
                                     type="password" 
                                     value={safeConfig.api_keys?.vercel || ''}
                                     onChange={e => setConfig({
                                         ...safeConfig, 
                                         api_keys: { ...safeConfig.api_keys, vercel: e.target.value }
                                     })}
-                                    className="block w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all shadow-sm font-mono text-sm"
+                                    className="font-mono text-sm"
                                 />
-                            </div>
+                            </FormField>
                         </div>
                     </div>
                 </div>
@@ -332,32 +335,32 @@ export default function ConfigSystemPage() {
                             </div>
                             
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">ClickBank API Token (Unified)</label>
-                                    <input 
+                                <FormField>
+                                    <FormLabel className="text-gray-700">ClickBank API Token (Unified)</FormLabel>
+                                    <FormInput 
                                         type="password" 
                                         value={safeConfig.api_keys?.clickbank_api_token || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, clickbank_api_token: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono text-sm"
                                         placeholder="API-..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Account Nickname</label>
-                                    <input 
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Account Nickname</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         value={safeConfig.api_keys?.clickbank_nickname || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, clickbank_nickname: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-medium"
                                         placeholder="e.g. johnpace"
+                                        className="font-medium"
                                     />
-                                </div>
+                                </FormField>
                             </div>
                         </div>
 
@@ -379,9 +382,9 @@ export default function ConfigSystemPage() {
                             </div>
                             
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Digistore API Key</label>
-                                    <input 
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Digistore API Key</FormLabel>
+                                    <FormInput 
                                         type="password" 
                                         value={safeConfig.platforms?.digistore?.credentials?.api_key || ''}
                                         onChange={e => setConfig({
@@ -399,13 +402,13 @@ export default function ConfigSystemPage() {
                                                 }
                                             }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono text-sm"
                                         placeholder="API-..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Affiliate ID (Nickname)</label>
-                                    <input 
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Affiliate ID (Nickname)</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         value={safeConfig.platforms?.digistore?.credentials?.affiliate_id || ''}
                                         onChange={e => setConfig({
@@ -423,10 +426,10 @@ export default function ConfigSystemPage() {
                                                 }
                                             }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-medium"
                                         placeholder="e.g. JohnPace"
+                                        className="font-medium"
                                     />
-                                </div>
+                                </FormField>
                             </div>
                         </div>
 
@@ -448,32 +451,32 @@ export default function ConfigSystemPage() {
                             </div>
                             
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">BuyGoods API Key</label>
-                                    <input 
+                                <FormField>
+                                    <FormLabel className="text-gray-700">BuyGoods API Key</FormLabel>
+                                    <FormInput 
                                         type="password" 
                                         value={safeConfig.api_keys?.buygoods_api || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, buygoods_api: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono text-sm"
                                         placeholder="bg_..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Account ID</label>
-                                    <input 
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Account ID</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         value={safeConfig.api_keys?.buygoods_account_id || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, buygoods_account_id: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-medium"
                                         placeholder="e.g. 12345"
+                                        className="font-medium"
                                     />
-                                </div>
+                                </FormField>
                             </div>
                         </div>
 
@@ -495,32 +498,32 @@ export default function ConfigSystemPage() {
                             </div>
                             
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">MaxWeb API Key</label>
-                                    <input 
+                                <FormField>
+                                    <FormLabel className="text-gray-700">MaxWeb API Key</FormLabel>
+                                    <FormInput 
                                         type="password" 
                                         value={safeConfig.api_keys?.maxweb_api || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, maxweb_api: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono text-sm"
                                         placeholder="mw_..."
+                                        className="font-mono text-sm"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-1">Affiliate ID</label>
-                                    <input 
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Affiliate ID</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         value={safeConfig.api_keys?.maxweb_affiliate_id || ''}
                                         onChange={e => setConfig({
                                             ...safeConfig, 
                                             api_keys: { ...safeConfig.api_keys, maxweb_affiliate_id: e.target.value }
                                         })}
-                                        className="block w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-medium"
                                         placeholder="e.g. mw_12345"
+                                        className="font-medium"
                                     />
-                                </div>
+                                </FormField>
                             </div>
                         </div>
                     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import PushCampaignModal from '@/components/admin/PushCampaignModal';
+import { FormTextarea } from '@/components/ui/FormTextarea';
 
 // Mock Data REMOVED
 // const MOCK_LOGS = [];
@@ -179,8 +180,8 @@ export default function AdsManagerPage() {
           </div>
           
           <div className="grid md:grid-cols-2 gap-6">
-              <textarea 
-                className="w-full h-48 p-4 text-base font-mono border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black"
+              <FormTextarea 
+                className="h-48 font-mono bg-white text-black placeholder:text-gray-500 selection:bg-purple-200 selection:text-black border-gray-300 focus:ring-purple-500"
                 placeholder="Paste campaign logs here (Date, Campaign, Cost, Conv. Value...)"
                 defaultValue={""}
                 onChange={(e) => {

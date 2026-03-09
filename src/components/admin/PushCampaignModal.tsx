@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
+import { FormSelect } from '@/components/ui/FormSelect';
 
 interface PushCampaignModalProps {
   isOpen: boolean;
@@ -141,18 +144,20 @@ export default function PushCampaignModal({ isOpen, onClose, productSlug, produc
                 )}
 
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Google Ads Account</label>
-                    <select 
-                        className="w-full border rounded p-2 bg-gray-50"
-                        value={selectedCustomer}
-                        onChange={(e) => setSelectedCustomer(e.target.value)}
-                        disabled={loading || customers.length === 0}
-                    >
-                        <option value="">Select Account...</option>
-                        {customers.map(c => (
-                            <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
-                        ))}
-                    </select>
+                    <FormField>
+                        <FormLabel className="text-gray-700">Select Google Ads Account</FormLabel>
+                        <FormSelect 
+                            value={selectedCustomer}
+                            onChange={(e) => setSelectedCustomer(e.target.value)}
+                            disabled={loading || customers.length === 0}
+                            className="bg-gray-50"
+                        >
+                            <option value="">Select Account...</option>
+                            {customers.map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                            ))}
+                        </FormSelect>
+                    </FormField>
                 </div>
 
                 <div className="flex justify-end gap-3">

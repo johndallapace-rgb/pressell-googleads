@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
 
 interface PlatformConfigModalProps {
   platform: string;
@@ -57,80 +60,74 @@ export default function PlatformConfigModal({ platform, onClose, onSave }: Platf
           
           {isClickBank ? (
             <>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Nickname *</label>
-                    <input 
+                <FormField>
+                    <FormLabel>Account Nickname *</FormLabel>
+                    <FormInput 
                         type="text" 
                         required
                         value={formData.affiliateId}
                         onChange={(e) => setFormData({...formData, affiliateId: e.target.value})}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                         placeholder="e.g. nickname123"
                     />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer API Key *</label>
-                    <input 
+                </FormField>
+                <FormField>
+                    <FormLabel>Developer API Key *</FormLabel>
+                    <FormInput 
                         type="password" 
                         required
                         value={formData.devKey}
                         onChange={(e) => setFormData({...formData, devKey: e.target.value})}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                         placeholder="DEV-..."
                     />
                     <p className="text-xs text-gray-500 mt-1">Found in Account Settings -{'>'} My Account -{'>'} Developer API Keys</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Clerk API Key *</label>
-                    <input 
+                </FormField>
+                <FormField>
+                    <FormLabel>Clerk API Key *</FormLabel>
+                    <FormInput 
                         type="password" 
                         required
                         value={formData.clerkKey}
                         onChange={(e) => setFormData({...formData, clerkKey: e.target.value})}
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                         placeholder="API-..."
                     />
                      <p className="text-xs text-gray-500 mt-1">Required for Orders/Sales data validation.</p>
-                </div>
+                </FormField>
             </>
           ) : (
             <>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Marketplace Feed URL *</label>
-                    <input 
+                <FormField>
+                    <FormLabel>Marketplace Feed URL *</FormLabel>
+                    <FormInput 
                     type="url" 
                     required
                     value={formData.marketplaceUrl}
                     onChange={(e) => setFormData({...formData, marketplaceUrl: e.target.value})}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                     placeholder={`https://${platform.toLowerCase()}.com/marketplace/feed`}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                     We will scrape this URL to find top products, Gravity, and Rank.
                     </p>
-                </div>
+                </FormField>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate ID / Nickname</label>
-                    <input 
+                <FormField>
+                    <FormLabel>Affiliate ID / Nickname</FormLabel>
+                    <FormInput 
                     type="text" 
                     value={formData.affiliateId}
                     onChange={(e) => setFormData({...formData, affiliateId: e.target.value})}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                     placeholder="e.g. john123"
                     />
-                </div>
+                </FormField>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">API Key (Optional)</label>
-                    <input 
+                <FormField>
+                    <FormLabel>API Key (Optional)</FormLabel>
+                    <FormInput 
                     type="password" 
                     value={formData.apiKey}
                     onChange={(e) => setFormData({...formData, apiKey: e.target.value})}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-black"
                     placeholder="••••••••••••"
                     />
-                </div>
+                </FormField>
 
                 {isDigistore && (
                     <div className="flex items-center gap-2 mt-4 bg-gray-50 p-3 rounded border border-gray-200">

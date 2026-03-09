@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import { ProductConfig, FaqItem } from '@/lib/config';
 import { templates, getTemplate, VerticalType, TemplateType } from '@/lib/templates';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
+import { FormSelect } from '@/components/ui/FormSelect';
+import { FormTextarea } from '@/components/ui/FormTextarea';
 
 import { AdsConfig } from '@/lib/ads/types';
 
@@ -492,50 +497,47 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
 
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
-          <input
+        <FormField>
+          <FormLabel>Slug <span className="text-red-500">*</span></FormLabel>
+          <FormInput
             type="text"
             value={product.slug}
             onChange={e => handleChange('slug', e.target.value)}
             disabled={!isNew || readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50 disabled:opacity-60"
+            className="bg-gray-50 disabled:opacity-60"
             placeholder="e.g. mitolyn"
           />
           <p className="text-xs text-gray-500 mt-1">URL-friendly ID (a-z, 0-9, hyphens)</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Name <span className="text-red-500">*</span></label>
-          <input
+        </FormField>
+        <FormField>
+          <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
+          <FormInput
             type="text"
             value={product.name}
             onChange={e => handleChange('name', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Platform</label>
-          <select
+        </FormField>
+        <FormField>
+          <FormLabel>Platform</FormLabel>
+          <FormSelect
             value={product.platform}
             onChange={e => handleChange('platform', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           >
             <option value="clickbank">ClickBank</option>
             <option value="digistore24">Digistore24</option>
             <option value="buygoods">BuyGoods</option>
             <option value="maxweb">MaxWeb</option>
             <option value="other">Other</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Language <span className="text-red-500">*</span></label>
-          <select
+          </FormSelect>
+        </FormField>
+        <FormField>
+          <FormLabel>Language <span className="text-red-500">*</span></FormLabel>
+          <FormSelect
             value={product.language}
             onChange={e => handleChange('language', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -543,15 +545,14 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             <option value="fr">French</option>
             <option value="de">German</option>
             <option value="it">Italian</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Vertical</label>
-          <select
+          </FormSelect>
+        </FormField>
+        <FormField>
+          <FormLabel>Vertical</FormLabel>
+          <FormSelect
             value={product.vertical}
             onChange={e => handleChange('vertical', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           >
             <option value="health">Health</option>
             <option value="diy">DIY</option>
@@ -559,21 +560,20 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             <option value="dating">Dating</option>
             <option value="finance">Finance</option>
             <option value="other">Other</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Template</label>
-          <select
+          </FormSelect>
+        </FormField>
+        <FormField>
+          <FormLabel>Template</FormLabel>
+          <FormSelect
             value={product.template}
             onChange={e => handleChange('template', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           >
             <option value="editorial">Editorial (Review)</option>
             <option value="story">Story (Personal Journey)</option>
             <option value="comparison">Comparison (Versus)</option>
-          </select>
-        </div>
+          </FormSelect>
+        </FormField>
       </div>
 
       {/* Draft Generator & Import */}
@@ -632,67 +632,62 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                     </p>
                 </div>
                 <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                        <input 
+                    <FormField>
+                        <FormLabel>Product Name *</FormLabel>
+                        <FormInput 
                             type="text" 
                             value={aiPromptData.productName}
                             onChange={e => setAiPromptData({...aiPromptData, productName: e.target.value})}
-                            className="w-full border rounded px-3 py-2"
                             placeholder="e.g. Sugar Defender"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Niche *</label>
-                        <select 
+                    </FormField>
+                    <FormField>
+                        <FormLabel>Niche *</FormLabel>
+                        <FormSelect 
                             value={aiPromptData.niche}
                             onChange={e => setAiPromptData({...aiPromptData, niche: e.target.value})}
-                            className="w-full border rounded px-3 py-2 bg-white"
                         >
                             <option value="health">Health / Supplements</option>
                             <option value="diy">DIY / Home Improvement</option>
                             <option value="finance">Finance / Crypto</option>
                             <option value="dating">Dating / Relationships</option>
                             <option value="software">Software / SaaS</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Competitor URL or Text (Optional)</label>
-                        <textarea 
+                        </FormSelect>
+                    </FormField>
+                    <FormField>
+                        <FormLabel>Competitor URL or Text (Optional)</FormLabel>
+                        <FormTextarea 
                             value={aiPromptData.competitorText}
                             onChange={e => setAiPromptData({...aiPromptData, competitorText: e.target.value})}
-                            className="w-full border rounded px-3 py-2"
                             placeholder="Paste VSL transcript, competitor copy, or 'Big Promise' to analyze..."
                             rows={3}
                         />
                         <p className="text-xs text-purple-600 mt-1">🕵️ Competitor Espionage: AI will analyze this to counter their angle.</p>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tone of Voice</label>
-                        <select 
+                    </FormField>
+                    <FormField>
+                        <FormLabel>Tone of Voice</FormLabel>
+                        <FormSelect 
                             value={aiPromptData.tone}
                             onChange={e => setAiPromptData({...aiPromptData, tone: e.target.value})}
-                            className="w-full border rounded px-3 py-2 bg-white"
                         >
                             <option value="persuasive">Persuasive (Default)</option>
                             <option value="aggressive">Aggressive (Hard Sell)</option>
                             <option value="informative">Informative / Educational</option>
                             <option value="friendly">Friendly / Relatable</option>
                             <option value="urgent">Urgent / Scarcity</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Layout Strategy</label>
-                        <select 
+                        </FormSelect>
+                    </FormField>
+                    <FormField>
+                        <FormLabel>Layout Strategy</FormLabel>
+                        <FormSelect 
                             value={aiPromptData.layout}
                             onChange={e => setAiPromptData({...aiPromptData, layout: e.target.value})}
-                            className="w-full border rounded px-3 py-2 bg-white"
                         >
                             <option value="editorial">Editorial / Text (Standard)</option>
                             <option value="story">Advertorial (Storytelling)</option>
                             <option value="quiz">Interactive Quiz (High Engagement)</option>
-                        </select>
-                    </div>
+                        </FormSelect>
+                    </FormField>
                 </div>
                 <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
                     <button 
@@ -723,18 +718,19 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                 </div>
                 <div className="p-6 space-y-4">
                     {!importResult ? (
-                        <div className="flex gap-2">
-                            <input 
-                                type="url" 
-                                value={importUrl}
-                                onChange={e => setImportUrl(e.target.value)}
-                                placeholder="https://official-product-page.com"
-                                className="flex-1 border p-2 rounded"
-                            />
+                        <div className="flex gap-2 items-end">
+                            <div className="flex-1">
+                                <FormInput 
+                                    type="url" 
+                                    value={importUrl}
+                                    onChange={e => setImportUrl(e.target.value)}
+                                    placeholder="https://official-product-page.com"
+                                />
+                            </div>
                             <button 
                                 onClick={handleImport}
                                 disabled={isImporting}
-                                className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                                className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 h-[42px]"
                             >
                                 {isImporting ? 'Scanning...' : 'Scan URL'}
                             </button>
@@ -753,12 +749,12 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                             </div>
                             
                             {importResult.headline_suggestions.length > 0 && (
-                                <div>
-                                    <label className="block text-sm font-bold mb-1">Headline Suggestions:</label>
-                                    <select className="w-full border p-2 rounded text-sm">
+                                <FormField>
+                                    <FormLabel>Headline Suggestions:</FormLabel>
+                                    <FormSelect>
                                         {importResult.headline_suggestions.map((h: string, i: number) => <option key={i}>{h}</option>)}
-                                    </select>
-                                </div>
+                                    </FormSelect>
+                                </FormField>
                             )}
 
                              {importResult.bullets_suggestions.length > 0 && (
@@ -797,50 +793,48 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
         <h3 className="text-lg font-medium text-gray-900">Links & Assets</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Affiliate URL (Redirect Target) <span className="text-red-500">*</span></label>
-            <input
-              type="url"
-              value={product.affiliate_url}
-              onChange={e => handleChange('affiliate_url', e.target.value)}
-              disabled={readOnly}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              placeholder="https://hop.clickbank.net/..."
-            />
+            <FormField>
+                <FormLabel>Affiliate URL (Redirect Target) <span className="text-red-500">*</span></FormLabel>
+                <FormInput
+                  type="url"
+                  value={product.affiliate_url}
+                  onChange={e => handleChange('affiliate_url', e.target.value)}
+                  disabled={readOnly}
+                  placeholder="https://hop.clickbank.net/..."
+                />
+            </FormField>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Official URL (Fallback) <span className="text-red-500">*</span></label>
-            <input
+          <FormField>
+            <FormLabel>Official URL (Fallback) <span className="text-red-500">*</span></FormLabel>
+            <FormInput
               type="url"
               value={product.official_url}
               onChange={e => handleChange('official_url', e.target.value)}
               disabled={readOnly}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               placeholder="https://product.com..."
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">YouTube Review ID</label>
-            <input
+          </FormField>
+          <FormField>
+            <FormLabel>YouTube Review ID</FormLabel>
+            <FormInput
               type="text"
               value={product.youtube_review_id || ''}
               onChange={e => handleChange('youtube_review_id', e.target.value)}
               disabled={readOnly}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
               placeholder="e.g. dQw4w9WgXcQ (or full URL)"
             />
-          </div>
+          </FormField>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Image URL <span className="text-red-500">*</span></label>
-            <div className="flex gap-2">
-                <input
+            <FormField>
+                <FormLabel>Image URL <span className="text-red-500">*</span></FormLabel>
+                <FormInput
                   type="text"
                   value={product.image_url}
                   onChange={e => handleChange('image_url', e.target.value)}
                   disabled={readOnly}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                   placeholder="https://... (or use File Upload below)"
                 />
-            </div>
+            </FormField>
             {/* Simple File to Data URL Converter */}
             <div className="mt-2">
                  <label className="text-xs font-bold text-gray-500 uppercase">Or Upload File (Auto-Converts to URL)</label>
@@ -866,25 +860,27 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             </div>
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">AI Image Prompt (Suggestion)</label>
-            <div className="flex gap-2">
-                <textarea
-                  value={product.image_prompt || ''}
-                  onChange={e => handleChange('image_prompt', e.target.value)}
-                  disabled={readOnly}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm text-gray-600 bg-gray-50"
-                  placeholder="AI will suggest an image prompt here..."
-                  rows={2}
-                />
-                <button 
-                    type="button"
-                    onClick={() => setAiModalOpen(true)} // Re-open modal to generate image prompt? Or just use main generation
-                    className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded text-xs hover:bg-gray-200"
-                    title="Generate content to get a prompt"
-                >
-                    🎨 Suggest
-                </button>
-            </div>
+            <FormField>
+                <FormLabel>AI Image Prompt (Suggestion)</FormLabel>
+                <div className="flex gap-2">
+                    <FormTextarea
+                      value={product.image_prompt || ''}
+                      onChange={e => handleChange('image_prompt', e.target.value)}
+                      disabled={readOnly}
+                      className="bg-gray-50 h-20"
+                      placeholder="AI will suggest an image prompt here..."
+                      rows={2}
+                    />
+                    <button 
+                        type="button"
+                        onClick={() => setAiModalOpen(true)} // Re-open modal to generate image prompt? Or just use main generation
+                        className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded text-xs hover:bg-gray-200 h-fit"
+                        title="Generate content to get a prompt"
+                    >
+                        🎨 Suggest
+                    </button>
+                </div>
+            </FormField>
           </div>
         </div>
       </div>
@@ -892,14 +888,13 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
       {/* Tracking */}
       <div className="space-y-4 border-t pt-4">
         <h3 className="text-lg font-medium text-gray-900">Tracking</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Google Ads Conversion ID (Pixel)</label>
-          <input
+        <FormField>
+          <FormLabel>Google Ads Conversion ID (Pixel)</FormLabel>
+          <FormInput
             type="text"
             value={product.google_ads_id || ''}
             onChange={e => handleChange('google_ads_id', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             placeholder="AW-XXXXXXXX"
           />
           {(!product.google_ads_id || product.google_ads_id.includes('PIXEL_ID')) && (
@@ -909,107 +904,100 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             If provided, <code>gtag.js</code> will be injected automatically. 
             Clicks on checkout buttons will trigger a <code>conversion</code> event.
           </p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Meta Pixel ID (Facebook)</label>
-          <input
+        </FormField>
+        <FormField>
+          <FormLabel>Meta Pixel ID (Facebook)</FormLabel>
+          <FormInput
             type="text"
             value={product.meta_pixel_id || ''}
             onChange={e => handleChange('meta_pixel_id', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             placeholder="XXXXXXXXX"
           />
           {(!product.meta_pixel_id || product.meta_pixel_id.includes('PIXEL_ID')) && (
               <p className="text-xs text-red-600 font-bold mt-1">⚠️ Atenção: Sem pixel do Facebook, você perderá dados de otimização.</p>
           )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Google Ads Conversion Label (Optional)</label>
-          <input
+        </FormField>
+        <FormField>
+          <FormLabel>Google Ads Conversion Label (Optional)</FormLabel>
+          <FormInput
             type="text"
             value={product.google_ads_label || ''}
             onChange={e => handleChange('google_ads_label', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             placeholder="e.g. DPCoCMK5h9wbENmG8L9C"
           />
-        </div>
+        </FormField>
         
         {/* Negative Keywords Editor */}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Negative Keywords (One per line)</label>
-            <textarea
+        <FormField>
+            <FormLabel>Negative Keywords (One per line)</FormLabel>
+            <FormTextarea
                 value={negatives.join('\n')}
                 onChange={(e) => setNegatives(e.target.value.split('\n'))}
                 disabled={readOnly}
-                className="w-full border border-gray-300 rounded-md shadow-sm p-2 font-mono text-sm"
+                className="font-mono text-sm"
                 rows={5}
                 placeholder="free&#10;scam&#10;login"
             />
             <p className="text-xs text-gray-500 mt-1">
                 These keywords prevent ads from showing on irrelevant searches.
             </p>
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Support Email</label>
-          <input
+        <FormField>
+          <FormLabel>Support Email</FormLabel>
+          <FormInput
             type="email"
             value={product.support_email || 'support@topproductofficial.com'}
             onChange={e => handleChange('support_email', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             placeholder="support@topproductofficial.com"
           />
-        </div>
+        </FormField>
       </div>
 
       {/* Content */}
       <div className="space-y-4 border-t pt-4">
         <h3 className="text-lg font-medium text-gray-900">Content</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Headline <span className="text-red-500">*</span></label>
-          <input
+        <FormField>
+          <FormLabel>Headline <span className="text-red-500">*</span></FormLabel>
+          <FormInput
             type="text"
             value={product.headline}
             onChange={e => handleChange('headline', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Subheadline</label>
-          <input
+        </FormField>
+        <FormField>
+          <FormLabel>Subheadline</FormLabel>
+          <FormInput
             type="text"
             value={product.subheadline}
             onChange={e => handleChange('subheadline', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">CTA Text</label>
-          <input
+        </FormField>
+        <FormField>
+          <FormLabel>CTA Text</FormLabel>
+          <FormInput
             type="text"
             value={product.cta_text}
             onChange={e => handleChange('cta_text', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
-        </div>
+        </FormField>
         
         {/* Bullets */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Bullets</label>
+          <FormLabel className="mb-2">Bullets</FormLabel>
           {product.bullets.map((bullet, i) => (
             <div key={i} className="flex gap-2 mb-2">
-              <input
+              <FormInput
                 type="text"
                 value={bullet}
                 onChange={e => handleArrayChange('bullets', i, e.target.value)}
                 disabled={readOnly}
-                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
               />
               {!readOnly && <button type="button" onClick={() => removeArrayItem('bullets', i)} className="text-red-500 px-2">×</button>}
             </div>
@@ -1027,19 +1015,18 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
                <span className="text-sm font-bold text-gray-500">Q#{i+1}</span>
                {!readOnly && <button type="button" onClick={() => removeFaq(i)} className="text-red-500 text-sm">Remove</button>}
             </div>
-            <input
+            <FormInput
               type="text"
               value={item.q}
               onChange={e => handleFaqChange(i, 'q', e.target.value)}
               disabled={readOnly}
-              className="block w-full border border-gray-300 rounded-md shadow-sm p-2 mb-2"
+              className="mb-2"
               placeholder="Question"
             />
-            <textarea
+            <FormTextarea
               value={item.a}
               onChange={e => handleFaqChange(i, 'a', e.target.value)}
               disabled={readOnly}
-              className="block w-full border border-gray-300 rounded-md shadow-sm p-2"
               placeholder="Answer"
               rows={2}
             />
@@ -1051,26 +1038,24 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
       {/* SEO */}
       <div className="space-y-4 border-t pt-4">
         <h3 className="text-lg font-medium text-gray-900">SEO</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Meta Title <span className="text-red-500">*</span></label>
-          <input
+        <FormField>
+          <FormLabel>Meta Title <span className="text-red-500">*</span></FormLabel>
+          <FormInput
             type="text"
             value={product.seo.title}
             onChange={e => handleSeoChange('title', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Meta Description <span className="text-red-500">*</span></label>
-          <textarea
+        </FormField>
+        <FormField>
+          <FormLabel>Meta Description <span className="text-red-500">*</span></FormLabel>
+          <FormTextarea
             value={product.seo.description}
             onChange={e => handleSeoChange('description', e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             rows={3}
           />
-        </div>
+        </FormField>
       </div>
 
       {/* A/B Testing */}

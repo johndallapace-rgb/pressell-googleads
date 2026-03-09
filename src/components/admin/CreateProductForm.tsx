@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getAffiliateId } from '@/lib/affiliate-mapping';
 import productCatalog from '@/data/product-catalog.json';
 import negativeKeywords from '@/data/negative-keywords.json';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
 
 export default function CreateProductForm() {
   const router = useRouter();
@@ -408,17 +411,18 @@ export default function CreateProductForm() {
             <div className="max-w-3xl mx-auto space-y-6 text-left">
                 
                 {/* 1. Affiliate URL (Money Link) - Source of Truth */}
-                <div>
-                    <label className="block text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                <FormField>
+                    <FormLabel className="text-lg flex items-center gap-2">
                         <span>💰</span> Your Affiliate Link (JohnPace)
                         <span className="text-xs font-normal text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-100">Commission Target & AI Source</span>
-                    </label>
-                    <input 
+                    </FormLabel>
+                    <FormInput 
                         type="url" 
                         value={formData.affiliate_url}
                         onChange={(e) => setFormData(prev => ({ ...prev, affiliate_url: e.target.value }))}
                         placeholder="https://hop.clickbank.net/?affiliate=johnpace..."
-                        className={`w-full border-2 rounded-xl px-5 py-4 text-xl font-mono text-black outline-none transition-all ${!formData.affiliate_url ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-green-300 bg-green-50 focus:border-green-500'}`}
+                        className={`text-xl font-mono ${!formData.affiliate_url ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-green-300 bg-green-50 focus:border-green-500'}`}
+                        error={!formData.affiliate_url}
                     />
                     {!formData.affiliate_url ? (
                         <p className="text-red-600 font-bold mt-2 animate-pulse flex items-center gap-2">
@@ -429,21 +433,21 @@ export default function CreateProductForm() {
                             ✅ AI Ready: Destination content will be analyzed automatically.
                         </p>
                     )}
-                </div>
+                </FormField>
 
                 {/* 1.5 Digistore24 Product ID (Optional Override) */}
                 {formData.affiliate_url && formData.affiliate_url.includes('digistore24') && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl animate-fade-in">
-                    <label className="block text-sm font-bold text-blue-800 mb-2 uppercase tracking-wide flex items-center gap-2">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl animate-fade-in mb-6">
+                    <FormLabel className="text-blue-800 uppercase tracking-wide flex items-center gap-2">
                         <span>🔢</span> Digistore24 Product ID (Manual Override)
-                    </label>
+                    </FormLabel>
                     <div className="flex gap-2">
-                        <input 
+                        <FormInput 
                             type="text" 
                             value={formData.digistore_product_id}
                             onChange={(e) => setFormData(prev => ({ ...prev, digistore_product_id: e.target.value.replace(/[^0-9]/g, '') }))}
                             placeholder="e.g. 531355"
-                            className="w-full border border-blue-300 rounded-lg px-4 py-3 text-black font-mono text-lg bg-white focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                            className="font-mono text-lg bg-white border-blue-300 focus:ring-blue-200"
                         />
                         <div className="text-xs text-blue-600 max-w-[200px] leading-tight flex items-center">
                             If AI fails to find the ID, enter the 6-digit number here to fix the link automatically.
@@ -453,27 +457,27 @@ export default function CreateProductForm() {
                 )}
 
                 {/* 2. Pixel ID (Tracking) */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">
+                <FormField>
+                    <FormLabel className="text-gray-600 uppercase tracking-wide">
                         Google Ads Pixel ID (Optional)
-                    </label>
-                    <input 
+                    </FormLabel>
+                    <FormInput 
                         type="text" 
                         value={formData.google_ads_id}
                         onChange={(e) => setFormData(prev => ({ ...prev, google_ads_id: e.target.value }))}
                         placeholder="AW-XXXXXXXX"
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black font-mono text-sm bg-gray-50 focus:bg-white transition-colors"
+                        className="font-mono text-sm bg-gray-50 focus:bg-white"
                     />
-                </div>
+                </FormField>
 
                 {/* 3. Media Assets */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Image */}
-                    <div>
+                    <FormField>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <FormLabel className="text-lg text-gray-800 flex items-center gap-2 mb-0">
                                 <span>🖼️</span> Image URL
-                            </label>
+                            </FormLabel>
                             <button 
                                 type="button"
                                 onClick={() => openAssetModal('image', 'image_url')}
@@ -483,21 +487,21 @@ export default function CreateProductForm() {
                                 <span>🖼️</span> Select from Gallery
                             </button>
                         </div>
-                        <input 
+                        <FormInput 
                             type="url" 
                             value={formData.image_url}
                             onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
                             placeholder="https://..."
-                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                            className="text-base text-black placeholder:text-gray-500"
                         />
-                    </div>
+                    </FormField>
 
                     {/* Sales Page Preview (Background) */}
-                    <div>
+                    <FormField>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <FormLabel className="text-lg text-gray-800 flex items-center gap-2 mb-0">
                                 <span>🖥️</span> Sales Page Preview (Background)
-                            </label>
+                            </FormLabel>
                             <button 
                                 type="button"
                                 onClick={() => openAssetModal('image', 'sales_page_image_url')}
@@ -507,37 +511,39 @@ export default function CreateProductForm() {
                                 <span>🖼️</span> Select
                             </button>
                         </div>
-                        <input 
+                        <FormInput 
                             type="url" 
                             value={formData.sales_page_image_url}
                             onChange={(e) => setFormData(prev => ({ ...prev, sales_page_image_url: e.target.value }))}
                             placeholder="https://..."
-                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                            className="text-base text-black placeholder:text-gray-500"
                         />
-                    </div>
+                    </FormField>
 
                     {/* Video */}
                     <div className="md:col-span-2">
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <span>🎥</span> Video URL
-                            </label>
-                            <button 
-                                type="button"
-                                onClick={() => openAssetModal('video', 'video_url')}
-                                className="text-sm font-bold text-gray-600 hover:text-red-600 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-all shadow-sm"
-                                title="Open Video Gallery"
-                            >
-                                <span>🎥</span> Select from Gallery
-                            </button>
-                        </div>
-                        <input 
-                            type="url" 
-                            value={formData.video_url}
-                            onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
-                            placeholder="https://..."
-                            className="w-full border-2 border-gray-300 rounded-xl px-4 py-3 text-base text-black placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
-                        />
+                        <FormField>
+                            <div className="flex justify-between items-center mb-2">
+                                <FormLabel className="text-lg text-gray-800 flex items-center gap-2 mb-0">
+                                    <span>🎥</span> Video URL
+                                </FormLabel>
+                                <button 
+                                    type="button"
+                                    onClick={() => openAssetModal('video', 'video_url')}
+                                    className="text-sm font-bold text-gray-600 hover:text-red-600 flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 transition-all shadow-sm"
+                                    title="Open Video Gallery"
+                                >
+                                    <span>🎥</span> Select from Gallery
+                                </button>
+                            </div>
+                            <FormInput 
+                                type="url" 
+                                value={formData.video_url}
+                                onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                                placeholder="https://..."
+                                className="text-base text-black placeholder:text-gray-500"
+                            />
+                        </FormField>
                     </div>
                 </div>
 

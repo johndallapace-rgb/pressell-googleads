@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormLabel } from '@/components/ui/FormLabel';
+import { FormField } from '@/components/ui/FormField';
+import { FormSelect } from '@/components/ui/FormSelect';
+import { FormTextarea } from '@/components/ui/FormTextarea';
 
 type Asset = {
     id: string;
@@ -146,13 +151,14 @@ export default function AssetManagerPage() {
                     </p>
                 </div>
                 <div className="flex gap-4">
-                    <input 
-                        type="text" 
-                        placeholder="Search assets..." 
-                        className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 w-64"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
+                    <div className="w-64">
+                        <FormInput 
+                            type="text" 
+                            placeholder="Search assets..." 
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                     <button 
                         onClick={() => setIsAdding(true)}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
@@ -171,10 +177,9 @@ export default function AssetManagerPage() {
                             <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600">✕</button>
                         </div>
                         <form onSubmit={handleAddAsset} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                                <select 
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                            <FormField>
+                                <FormLabel>Product</FormLabel>
+                                <FormSelect 
                                     value={newAsset.productId}
                                     onChange={e => setNewAsset({ ...newAsset, productId: e.target.value })}
                                     required
@@ -183,39 +188,36 @@ export default function AssetManagerPage() {
                                     {products.map(p => (
                                         <option key={p.slug} value={p.slug}>{p.name}</option>
                                     ))}
-                                </select>
-                            </div>
+                                </FormSelect>
+                            </FormField>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                                    <select 
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                                <FormField>
+                                    <FormLabel>Type</FormLabel>
+                                    <FormSelect 
                                         value={newAsset.type}
                                         onChange={e => setNewAsset({ ...newAsset, type: e.target.value as any })}
                                     >
                                         <option value="image">Image</option>
                                         <option value="video">Video</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
-                                    <input 
+                                    </FormSelect>
+                                </FormField>
+                                <FormField>
+                                    <FormLabel>Label</FormLabel>
+                                    <FormInput 
                                         type="text" 
                                         placeholder="e.g. White Background"
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                                         value={newAsset.label}
                                         onChange={e => setNewAsset({ ...newAsset, label: e.target.value })}
                                     />
-                                </div>
+                                </FormField>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Asset URL (Link Only)</label>
-                                <input 
+                            <FormField>
+                                <FormLabel>Asset URL (Link Only)</FormLabel>
+                                <FormInput 
                                     type="url" 
                                     placeholder="https://..."
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                                     value={newAsset.url}
                                     onChange={e => setNewAsset({ ...newAsset, url: e.target.value })}
                                     required
@@ -225,17 +227,17 @@ export default function AssetManagerPage() {
                                     <br/>
                                     <span className="text-blue-600">Tip: Right-click an image on Amazon/Sales Page and choose "Copy Image Address".</span>
                                 </p>
-                            </div>
+                            </FormField>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Performance Notes (Optional)</label>
-                                <textarea 
+                            <FormField>
+                                <FormLabel>Performance Notes (Optional)</FormLabel>
+                                <FormTextarea 
                                     placeholder="e.g. Best CTR on Mobile (3.5%)"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
+                                    className="h-20 resize-none"
                                     value={newAsset.notes}
                                     onChange={e => setNewAsset({ ...newAsset, notes: e.target.value })}
                                 />
-                            </div>
+                            </FormField>
 
                             <button 
                                 type="submit"

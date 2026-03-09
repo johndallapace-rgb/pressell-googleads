@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GeminiStatusBadge from '@/components/admin/GeminiStatusBadge';
+import { FormInput } from '@/components/ui/FormInput';
 import productCatalog from '@/data/product-catalog.json';
 
 type Platform = 'ClickBank' | 'Digistore24' | 'BuyGoods' | 'MaxWeb';
@@ -483,8 +484,8 @@ export default function MarketTrendsPage() {
       <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-800">Full Market List ({selectedPlatform})</h2>
-              <div className="flex gap-2">
-                  <input type="text" placeholder="Search products..." className="border rounded-lg px-3 py-1.5 text-sm text-black outline-none focus:ring-1 focus:ring-blue-500" />
+              <div className="w-64">
+                  <FormInput type="text" placeholder="Search products..." />
               </div>
           </div>
           
