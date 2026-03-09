@@ -89,24 +89,20 @@ function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload
     // Skip if not in Node environment (Vercel Edge or Browser)
     if (typeof window !== 'undefined' || typeof process === 'undefined' || !fs) return;
     
-    // In Vercel Production (Serverless), filesystem is read-only usually, 
-    // except /tmp. But we want LOCAL persistent logs.
-    // So we only log to file if we are in Development OR if we specifically enable it.
-    // For this request, we prioritize LOCAL inspection.
+    // Vercel Detection
+    const isVercel = process.env.VERCEL === '1';
+    const isProduction = process.env.NODE_ENV === 'production';
     
-    // FORCE ENABLE for debugging context even in "production" mode if running locally
-    // We check if process.cwd() is writable or just assume local if NODE_ENV is not 'production' 
-    // OR if we are explicitly in a debug session.
+    // Safety Check:
+    // If we are in Vercel Production, we MUST NOT write to FS (ReadOnly / Ephemeral).
+    // If we are in Local Production (npm run start), we CAN write.
+    // If we are in Local Dev (npm run dev), we CAN write.
     
-    // Relaxed check: Allow writing if we are not in a strictly read-only environment.
-    // Ideally we rely on NODE_ENV, but for the "localhost production offline" bug,
-    // the user might be running `npm run start` (production mode) locally.
-    
-    const isLocal = true; // FORCE ENABLE LOGS for diagnosis (since we check fs existence above)
-    // const isLocal = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_LOGS === 'true';
-    
-    if (!isLocal) return;
+    if (isVercel) return;
 
+    // For local dev/prod, we proceed.
+    // Note: We already checked for `fs` presence above.
+    
     try {
         const date = new Date();
         const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -132,12 +128,29 @@ function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload
 }
 
 export const logger = {
-    info: (category: LogCategory, payload: LogPayload) => writeToFile(category, 'info', payload),
-    warn: (category: LogCategory, payload: LogPayload) => writeToFile(category, 'warn', payload),
-    error: (category: LogCategory, payload: LogPayload) => writeToFile(category, 'error', payload),
+    info: (category: LogCategory, payload: LogPayload) => {
+        // Always console log for visibility
+        console.log(`[INFO][${category}]`, payload);
+        writeToFile(category, 'info', payload);
+    },
+    warn: (category: LogCategory, payload: LogPayload) => {
+        console.warn(`[WARN][${category}]`, payload);
+        writeToFile(category, 'warn', payload);
+    },
+    error: (category: LogCategory, payload: LogPayload) => {
+        console.error(`[ERROR][${category}]`, payload);
+        writeToFile(category, 'error', payload);
+    },
     
     // Helper to log save events specifically matching the requested format
     // event is optional here because we supply it
-    save: (payload: Omit<LogPayload, 'event'>) => writeToFile('save-product', 'info', { event: 'SAVE_PRODUCT', ...payload }),
-    lock: (payload: Record<string, any>) => writeToFile('save-product', 'info', { event: 'LOCK_EVENT', ...payload })
+    save: (payload: Omit<LogPayload, 'event'>) => {
+        console.log(`[SAVE]`, payload);
+        writeToFile('save-product', 'info', { event: 'SAVE_PRODUCT', ...payload });
+    },
+    lock: (payload: Record<string, any>) => {
+        // Locks are spammy, maybe skip console? No, debugging is active.
+        // console.log(`[LOCK]`, payload); 
+        writeToFile('save-product', 'info', { event: 'LOCK_EVENT', ...payload });
+    }
 };

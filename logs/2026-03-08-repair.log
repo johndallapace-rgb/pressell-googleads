@@ -1,4 +1,0 @@
-{"ts":"2026-03-08T21:14:50.133Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
-{"ts":"2026-03-08T21:14:50.815Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":1,"repaired":1,"skipped":0,"errors":0,"ghostsDeleted":0}
-{"ts":"2026-03-08T21:15:03.976Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
-{"ts":"2026-03-08T21:15:04.691Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":1,"repaired":1,"skipped":0,"errors":0,"ghostsDeleted":0}

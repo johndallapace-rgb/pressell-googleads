@@ -30,6 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# app logs
+logs/
+*.log
+debug/
+!debug/.gitkeep
+!debug/system-structure.json
+!debug/system-flows.md
+!debug/ai-tools-manifest.json
+!debug/ai-engineer-prompt.txt
+!debug/ai-chatgpt-analysis-prompt.txt
+!debug/ai-chatgpt-analysis-context.txt
+
 # env files (can opt-in for committing if needed)
 .env*
 
