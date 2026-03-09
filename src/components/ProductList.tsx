@@ -26,19 +26,22 @@ const getRealLink = (product: ProductConfig) => {
     
     // Check if product has a specific vertical that maps to a subdomain
     // This logic must match the generator and product creation flow
-    const rootDomain = 'topproductofficial.com';
-    let hostname = window.location.hostname;
-    
-    // In dev, we might be on localhost:3000
+    const hostname = window.location.hostname;
+
+    // 1. Dev Mode (localhost)
     if (hostname.includes('localhost')) {
         return `${window.location.origin}/${product.slug}`;
     }
 
-    // In production, we use subdomains
+    // 2. Production: Use Vertical Subdomain
+    // Hardcode the root domain to ensure we don't accidentally use 'www' or 'admin'
+    const rootDomain = 'topproductofficial.com';
+
     if (product.vertical && product.vertical !== 'other' && product.vertical !== 'general') {
         return `https://${product.vertical}.${rootDomain}/${product.slug}`;
     }
     
+    // 3. Fallback: Root Domain (No Subdomain)
     return `https://${rootDomain}/${product.slug}`;
 };
 
