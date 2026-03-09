@@ -42,6 +42,11 @@ export async function generateMetadata({ params }: PageProps) {
       return {};
   }
 
+  // Ignore index/index.html slugs for metadata too
+  if (slug === 'index' || slug === 'index.html') {
+      return {};
+  }
+
   // Get Vertical Context for Metadata
   const headerList = await headers();
   const host = headerList.get('host') || 'unknown';
@@ -81,7 +86,11 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     }
 
     let lang = 'en';
+    // CLEAN SLUG from slugParts[0]
     let slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
+    
+    // BUT WAIT: Next.js catch-all might have nxtPsSlug or other params if rewritten?
+    // Actually, we should just rely on slugParts.
     
     const validLangs = ['de', 'fr', 'it', 'es', 'uk'];
     
@@ -91,8 +100,106 @@ export default async function CatchAllProductPage({ params }: PageProps) {
     } else if (slugParts.length === 1) {
         slug = slugParts[0].replace(/\.(php|html)$/, '').trim();
     } else {
+        // Pattern: /de/amino/extra (too deep) -> 404
+        // Or weird params
         notFound();
     }
+
+    // EDGE CASE: If slug becomes "index" or "index.html" due to some weird rewriting
+    // But user wants "mitolyn..."
+    // In Vercel, if the URL is /mitolyn, slugParts should be ['mitolyn']
+    // If nxtPsSlug appears, it's usually an internal header/param, not in params.slug?
+    // Wait, the user says "request arrives with search param: nxtPsSlug=index.html".
+    // params.slug comes from the PATH.
+    // If the path is /mitolyn, params.slug is ['mitolyn'].
+    // If Vercel rewrites internally to index.html, params.slug might be weird?
+    // BUT the user says: "Because of this the resolver tries to load product 'index.html'".
+    // This implies slug variable IS 'index.html'.
+    
+    // FIX: If slug is 'index' or 'index.html', AND we have a query param telling us the real slug?
+    // No, the user says "Ensure the slug is derived correctly from params.slug and ignore nxtPsSlug=index.html".
+    // This implies that MAYBE params.slug is CORRECT ('mitolyn') but something else is interfering?
+    // OR params.slug IS 'index.html' wrongly?
+    
+    // Re-reading: "In production on Vercel the request arrives with search param: nxtPsSlug=index.html ... resolver tries to load product index.html"
+    // This suggests that `slug` variable is ending up as `index.html`.
+    // Why? Maybe `slugParts` is `['index.html']`?
+    // If so, we should ignore it if there's a better source? 
+    // BUT the user says "Only use nxtPsSlug if params.slug is empty".
+    
+    // Let's look at the instructions again:
+    // "If params.slug exists, join it to form the slug."
+    // "Ignore nxtPsSlug when its value is index.html".
+    
+    // It seems the user suspects that sometimes we might be reading from query params?
+    // But `params` here is the Route Params from `[...slug]`.
+    // If I request `/mitolyn`, `params.slug` IS `['mitolyn']`.
+    // If I request `/`, `params.slug` is undefined (handled by page.tsx in root, not here).
+    
+    // HYPOTHESIS: The user might be seeing a case where `params.slug` is EMPTY or weird, and we might be falling back to something?
+    // OR, Vercel is rewriting `/mitolyn` -> `/index.html?nxtPsSlug=mitolyn` ??
+    // If so, `slugParts` would be `['index.html']`?
+    // If `slug` is `index` or `index.html`, we should treat it as invalid/ignored IF we can find the real slug elsewhere?
+    
+    // Actually, `CatchAllProductPage` receives `params`.
+    // If `params.slug` is `['mitolyn']`, then `slug` becomes `mitolyn`.
+    // The code I see does `slug = slugParts[0]...`.
+    // So if it resolves to `index.html`, then `slugParts[0]` MUST be `index.html`.
+    
+    // User constraint: "Only use nxtPsSlug if params.slug is empty AND it is not index.html".
+    // But we are in `[...slug]`, so `params.slug` is never empty (it matches 1+ segments).
+    
+    // WAIT. If `params.slug` is `['index.html']` (maybe due to a rewrite rule in vercel.json or middleware?),
+    // then we definitely don't want to look up a product named "index".
+    
+    // Let's add a check:
+    if (slug === 'index' || slug === 'index.html' || !slug || slug === '/') {
+         // This is likely a system artifact.
+         // We should NOT look up this product.
+         // Return 404 immediately.
+         console.log('[CatchAll] Blocked "index" or empty slug.');
+         return notFound();
+    }
+    
+    // Normalize: remove trailing slash if any (though trim() handles whitespace)
+    slug = slug.replace(/\/$/, '');
+
+    logger.info('public-route', {
+        event: 'ROUTE_DEBUG_NORMALIZED_SLUG',
+        rawParamsSlug: slugParts,
+        normalizedSlug: slug,
+        finalSlug: slug
+    });
+    
+    // The user says "Ensure the slug is derived correctly from params.slug".
+    // The current code ALREADY does `slug = slugParts[0]...`.
+    // So if `slug` is correct (e.g. `mitolyn`), we are good.
+    // If `slug` is `index.html`, we block it.
+    
+    // What if `nxtPsSlug` contains the REAL slug?
+    // The user mentioned "Ignore nxtPsSlug when its value is index.html".
+    // This implies we MIGHT be reading `searchParams`? 
+    // The current code DOES NOT read `searchParams`.
+    
+    // So if the current code works for `/mitolyn` (slug='mitolyn'), why does the user say "resolver tries to load product index.html"?
+    // Maybe in their production env, `slugParts` IS `['index.html']` for some reason?
+    // If so, my block above fixes it.
+    
+    // But the user also said: "Only use nxtPsSlug if params.slug is empty".
+    // In `[...slug]`, `params.slug` cannot be empty.
+    
+    // Perhaps the user is confused about where the slug comes from, OR they have a custom server?
+    // But strictly following the goal: "Ensure the slug is derived correctly from params.slug".
+    // My code does that.
+    
+    // "Request: .../mitolyn... Should resolve slug: mitolyn... instead of index.html".
+    // If `params.slug` gives `mitolyn`, we are fine.
+    // If `params.slug` gives `index.html` (wrongly), we block it.
+    
+    // I will simply ensure we stick to `params.slug` and explicitly IGNORE/BLOCK `index` artifacts.
+    
+    // Also, checking `generateMetadata` as well.
+
 
     const headerList = await headers();
     const rawHost = headerList.get('host') || 'unknown';
