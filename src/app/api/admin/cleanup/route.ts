@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cleanupGhostKeys, getCampaignConfig, ensureCanonicalKeys } from '@/lib/config';
 import { verifyToken } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     try {
         console.log('[Cleanup API] Starting KV cleanup & Repair...');
+        logger.info('repair', { event: 'REPAIR_STARTED' });
         
         // 1. Cleanup Ghost Keys
         const cleanupResult = await cleanupGhostKeys();
@@ -34,12 +36,26 @@ export async function POST(request: NextRequest) {
         const repaired = [];
         const skipped = [];
         const errors = [];
+        const slugMismatches = [];
 
         console.log(`[Cleanup API] Scanning ${Object.keys(products).length} products for canonical key repair...`);
         
         for (const [key, product] of Object.entries(products)) {
             if (!product.slug) continue;
             
+            // Ghost Index Detection: If key is vertical:slug but product.slug doesn't match
+            // This suggests a rename happened but index wasn't fully cleaned
+            if (key.includes(':')) {
+                const [v, s] = key.split(':');
+                if (s !== product.slug) {
+                    slugMismatches.push({ key, slug: product.slug });
+                }
+            } else {
+                 if (key !== product.slug) {
+                     slugMismatches.push({ key, slug: product.slug });
+                 }
+            }
+
             try {
                 // ensureCanonicalKeys handles the check and only writes if missing
                 const didRepair = await ensureCanonicalKeys(product, 'Admin-Repair-All');
@@ -53,9 +69,19 @@ export async function POST(request: NextRequest) {
             }
         }
         
+        logger.info('repair', { 
+            event: 'REPAIR_COMPLETE',
+            scanned: Object.keys(products).length,
+            repaired: repaired.length,
+            skipped: skipped.length,
+            slugMismatches: slugMismatches.length,
+            errors: errors.length,
+            ghostsDeleted: cleanupResult.deleted.length
+        });
+        
         return NextResponse.json({ 
             success: true, 
-            message: `Maintenance complete. Deleted ${cleanupResult.deleted.length} ghosts. Repaired ${repaired.length} products.`,
+            message: `Maintenance complete. Deleted ${cleanupResult.deleted.length} ghosts. Repaired ${repaired.length} products. Found ${slugMismatches.length} mismatches.`,
             details: {
                 cleanup: cleanupResult,
                 repair: {
@@ -63,6 +89,7 @@ export async function POST(request: NextRequest) {
                     repairedCount: repaired.length,
                     repairedSlugs: repaired,
                     skippedCount: skipped.length,
+                    slugMismatches,
                     errorCount: errors.length
                 }
             }

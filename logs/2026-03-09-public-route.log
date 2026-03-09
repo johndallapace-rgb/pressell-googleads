@@ -1,0 +1,16 @@
+{"ts":"2026-03-09T00:39:08.823Z","level":"info","category":"public-route","event":"ROUTE_RESOLUTION_START","slug":"mitolyn-advertorial","host":"localhost:3000","forwardedHost":"localhost:3000","realHost":"localhost:3000","verticalHeader":null}
+{"ts":"2026-03-09T00:39:09.026Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:39:09.027Z","level":"info","category":"public-route","event":"PRODUCT_LOOKUP_RESULT","slug":"mitolyn-advertorial","found":true,"source":"canonical","attemptedKeys":"[REDACTED]","detectedVertical":null,"status":"active"}
+{"ts":"2026-03-09T00:39:09.026Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:39:09.117Z","level":"info","category":"public-route","event":"ROUTE_RESOLUTION_START","slug":"mitolyn-advertorial","host":"localhost:3000","forwardedHost":"localhost:3000","realHost":"localhost:3000","verticalHeader":null}
+{"ts":"2026-03-09T00:39:09.255Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:39:09.255Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:39:09.255Z","level":"info","category":"public-route","event":"PRODUCT_LOOKUP_RESULT","slug":"mitolyn-advertorial","found":true,"source":"canonical","attemptedKeys":"[REDACTED]","detectedVertical":null,"status":"active"}
+{"ts":"2026-03-09T00:40:23.666Z","level":"info","category":"public-route","event":"ROUTE_RESOLUTION_START","slug":"mitolyn-advertorial","host":"localhost:3000","forwardedHost":"localhost:3000","realHost":"localhost:3000","verticalHeader":null}
+{"ts":"2026-03-09T00:40:23.842Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:40:23.842Z","level":"info","category":"public-route","event":"PRODUCT_LOOKUP_RESULT","slug":"mitolyn-advertorial","found":true,"source":"canonical","attemptedKeys":"[REDACTED]","detectedVertical":null,"status":"active"}
+{"ts":"2026-03-09T00:40:23.842Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:42:43.676Z","level":"info","category":"public-route","event":"ROUTE_RESOLUTION_START","slug":"mitolyn-advertorial","host":"localhost:3000","forwardedHost":"localhost:3000","realHost":"localhost:3000","verticalHeader":null}
+{"ts":"2026-03-09T00:42:43.805Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}
+{"ts":"2026-03-09T00:42:43.805Z","level":"info","category":"public-route","event":"PRODUCT_LOOKUP_RESULT","slug":"mitolyn-advertorial","found":true,"source":"canonical","attemptedKeys":"[REDACTED]","detectedVertical":null,"status":"active"}
+{"ts":"2026-03-09T00:42:43.835Z","level":"info","category":"public-route","event":"PRODUCT_RESOLVED","slug":"mitolyn-advertorial","source":"canonical","status":"active"}

@@ -1,0 +1,808 @@
+{
+  "meta": {
+    "generatedAt": "2026-03-09T00:28:51.372Z",
+    "projectName": "pressell-googleads",
+    "nodeVersion": "v24.0.1"
+  },
+  "git": {
+    "commit": "d97081a",
+    "branch": "main"
+  },
+  "routes": {
+    "admin": [
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/ad-spy",
+        "file": "src/app/admin/(dashboard)/ad-spy/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/ads",
+        "file": "src/app/admin/(dashboard)/ads/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/ads/:slug",
+        "file": "src/app/admin/(dashboard)/ads/[slug]/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/ads-manager",
+        "file": "src/app/admin/(dashboard)/ads-manager/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/ai-engineering",
+        "file": "src/app/admin/(dashboard)/ai-engineering/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/analytics",
+        "file": "src/app/admin/(dashboard)/analytics/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/assets",
+        "file": "src/app/admin/(dashboard)/assets/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/config",
+        "file": "src/app/admin/(dashboard)/config/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/diagnostics",
+        "file": "src/app/admin/(dashboard)/diagnostics/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)",
+        "file": "src/app/admin/(dashboard)/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/platforms",
+        "file": "src/app/admin/(dashboard)/platforms/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/products/new",
+        "file": "src/app/admin/(dashboard)/products/new/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/products",
+        "file": "src/app/admin/(dashboard)/products/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/products/:slug",
+        "file": "src/app/admin/(dashboard)/products/[slug]/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/scale",
+        "file": "src/app/admin/(dashboard)/scale/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/settings",
+        "file": "src/app/admin/(dashboard)/settings/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/(dashboard)/trends",
+        "file": "src/app/admin/(dashboard)/trends/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/admin/login",
+        "file": "src/app/admin/login/page.tsx"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/analyze",
+        "file": "src/app/api/admin/ads/analyze/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/bulk/generate",
+        "file": "src/app/api/admin/ads/bulk/generate/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/generate",
+        "file": "src/app/api/admin/ads/generate/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/google/resources",
+        "file": "src/app/api/admin/ads/google/resources/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/list",
+        "file": "src/app/api/admin/ads/list/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/metrics",
+        "file": "src/app/api/admin/ads/metrics/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/publish",
+        "file": "src/app/api/admin/ads/publish/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/spy",
+        "file": "src/app/api/admin/ads/spy/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/:slug",
+        "file": "src/app/api/admin/ads/[slug]/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/assets",
+        "file": "src/app/api/admin/assets/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/assets/:id",
+        "file": "src/app/api/admin/assets/[id]/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/cleanup",
+        "file": "src/app/api/admin/cleanup/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/config",
+        "file": "src/app/api/admin/config/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/backfill",
+        "file": "src/app/api/admin/debug/backfill/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/export-pack",
+        "file": "src/app/api/admin/debug/export-pack/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/test-ads-permission",
+        "file": "src/app/api/admin/debug/test-ads-permission/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/test-ads-token",
+        "file": "src/app/api/admin/debug/test-ads-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/check-links",
+        "file": "src/app/api/admin/diagnostics/check-links/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/list-models",
+        "file": "src/app/api/admin/diagnostics/list-models/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-gemini",
+        "file": "src/app/api/admin/diagnostics/test-gemini/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-google-search",
+        "file": "src/app/api/admin/diagnostics/test-google-search/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-kv",
+        "file": "src/app/api/admin/diagnostics/test-kv/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-platform",
+        "file": "src/app/api/admin/diagnostics/test-platform/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-vercel",
+        "file": "src/app/api/admin/diagnostics/test-vercel/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/generate-copy",
+        "file": "src/app/api/admin/generate-copy/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/generate-global",
+        "file": "src/app/api/admin/generate-global/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/google-ads/create-campaign",
+        "file": "src/app/api/admin/google-ads/create-campaign/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/google-ads/status",
+        "file": "src/app/api/admin/google-ads/status/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/import",
+        "file": "src/app/api/admin/import/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/oauth/callback",
+        "file": "src/app/api/admin/oauth/callback/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/oauth/google",
+        "file": "src/app/api/admin/oauth/google/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/clickbank/search",
+        "file": "src/app/api/admin/platforms/clickbank/search/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/clickbank/test",
+        "file": "src/app/api/admin/platforms/clickbank/test/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/digistore/test",
+        "file": "src/app/api/admin/platforms/digistore/test/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/sync",
+        "file": "src/app/api/admin/platforms/sync/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/auto-create",
+        "file": "src/app/api/admin/products/auto-create/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/clone",
+        "file": "src/app/api/admin/products/clone/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products",
+        "file": "src/app/api/admin/products/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/save",
+        "file": "src/app/api/admin/products/save/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/save-ad",
+        "file": "src/app/api/admin/products/save-ad/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/:slug/ads",
+        "file": "src/app/api/admin/products/[slug]/ads/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/scale",
+        "file": "src/app/api/admin/scale/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/scrape",
+        "file": "src/app/api/admin/scrape/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/settings",
+        "file": "src/app/api/admin/settings/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/setup-mitolyn",
+        "file": "src/app/api/admin/setup-mitolyn/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/system/reset-token",
+        "file": "src/app/api/admin/system/reset-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/system/save-token",
+        "file": "src/app/api/admin/system/save-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/verify-google-ads",
+        "file": "src/app/api/admin/verify-google-ads/route.ts"
+      }
+    ],
+    "api": [
+      {
+        "type": "API",
+        "route": "/api/admin/ads/analyze",
+        "file": "src/app/api/admin/ads/analyze/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/bulk/generate",
+        "file": "src/app/api/admin/ads/bulk/generate/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/generate",
+        "file": "src/app/api/admin/ads/generate/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/google/resources",
+        "file": "src/app/api/admin/ads/google/resources/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/list",
+        "file": "src/app/api/admin/ads/list/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/metrics",
+        "file": "src/app/api/admin/ads/metrics/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/publish",
+        "file": "src/app/api/admin/ads/publish/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/spy",
+        "file": "src/app/api/admin/ads/spy/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/ads/:slug",
+        "file": "src/app/api/admin/ads/[slug]/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/assets",
+        "file": "src/app/api/admin/assets/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/assets/:id",
+        "file": "src/app/api/admin/assets/[id]/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/cleanup",
+        "file": "src/app/api/admin/cleanup/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/config",
+        "file": "src/app/api/admin/config/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/backfill",
+        "file": "src/app/api/admin/debug/backfill/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/export-pack",
+        "file": "src/app/api/admin/debug/export-pack/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/test-ads-permission",
+        "file": "src/app/api/admin/debug/test-ads-permission/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/debug/test-ads-token",
+        "file": "src/app/api/admin/debug/test-ads-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/check-links",
+        "file": "src/app/api/admin/diagnostics/check-links/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/list-models",
+        "file": "src/app/api/admin/diagnostics/list-models/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-gemini",
+        "file": "src/app/api/admin/diagnostics/test-gemini/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-google-search",
+        "file": "src/app/api/admin/diagnostics/test-google-search/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-kv",
+        "file": "src/app/api/admin/diagnostics/test-kv/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-platform",
+        "file": "src/app/api/admin/diagnostics/test-platform/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/diagnostics/test-vercel",
+        "file": "src/app/api/admin/diagnostics/test-vercel/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/generate-copy",
+        "file": "src/app/api/admin/generate-copy/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/generate-global",
+        "file": "src/app/api/admin/generate-global/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/google-ads/create-campaign",
+        "file": "src/app/api/admin/google-ads/create-campaign/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/google-ads/status",
+        "file": "src/app/api/admin/google-ads/status/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/import",
+        "file": "src/app/api/admin/import/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/oauth/callback",
+        "file": "src/app/api/admin/oauth/callback/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/oauth/google",
+        "file": "src/app/api/admin/oauth/google/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/clickbank/search",
+        "file": "src/app/api/admin/platforms/clickbank/search/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/clickbank/test",
+        "file": "src/app/api/admin/platforms/clickbank/test/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/digistore/test",
+        "file": "src/app/api/admin/platforms/digistore/test/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/platforms/sync",
+        "file": "src/app/api/admin/platforms/sync/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/auto-create",
+        "file": "src/app/api/admin/products/auto-create/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/clone",
+        "file": "src/app/api/admin/products/clone/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products",
+        "file": "src/app/api/admin/products/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/save",
+        "file": "src/app/api/admin/products/save/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/save-ad",
+        "file": "src/app/api/admin/products/save-ad/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/products/:slug/ads",
+        "file": "src/app/api/admin/products/[slug]/ads/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/scale",
+        "file": "src/app/api/admin/scale/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/scrape",
+        "file": "src/app/api/admin/scrape/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/settings",
+        "file": "src/app/api/admin/settings/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/setup-mitolyn",
+        "file": "src/app/api/admin/setup-mitolyn/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/system/reset-token",
+        "file": "src/app/api/admin/system/reset-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/system/save-token",
+        "file": "src/app/api/admin/system/save-token/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/admin/verify-google-ads",
+        "file": "src/app/api/admin/verify-google-ads/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/auth/login",
+        "file": "src/app/api/auth/login/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/auth/logout",
+        "file": "src/app/api/auth/logout/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/debug-kv",
+        "file": "src/app/api/debug-kv/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/diag",
+        "file": "src/app/api/diag/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/health",
+        "file": "src/app/api/health/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/track",
+        "file": "src/app/api/track/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/api/utils/check-iframe",
+        "file": "src/app/api/utils/check-iframe/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/go/:slug",
+        "file": "src/app/go/[slug]/route.ts"
+      },
+      {
+        "type": "API",
+        "route": "/sitemap.xml",
+        "file": "src/app/sitemap.xml/route.ts"
+      }
+    ],
+    "public": [
+      {
+        "type": "PAGE",
+        "route": "/about",
+        "file": "src/app/about/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/check",
+        "file": "src/app/check/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/contact",
+        "file": "src/app/contact/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/legal/disclaimer",
+        "file": "src/app/legal/disclaimer/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/legal/privacy",
+        "file": "src/app/legal/privacy/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/legal/terms",
+        "file": "src/app/legal/terms/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/page.tsx",
+        "file": "src/app/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/privacy-policy",
+        "file": "src/app/privacy-policy/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/terms",
+        "file": "src/app/terms/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/thanks",
+        "file": "src/app/thanks/page.tsx"
+      },
+      {
+        "type": "PAGE",
+        "route": "/:...slug",
+        "file": "src/app/[...slug]/page.tsx"
+      }
+    ]
+  },
+  "persistence": {
+    "strategy": "Vercel KV (Redis) + Dual-Write (Canonical + Prefixed)",
+    "canonicalSave": "src/lib/config.ts -> saveProduct",
+    "indexUpdate": "src/lib/config.ts -> updateCampaignConfig",
+    "selfHeal": "src/lib/config.ts -> ensureCanonicalKeys"
+  },
+  "ads_ai": {
+    "module": true,
+    "functions": [
+      "analyzeCampaignPerformance",
+      "generateImprovedAds",
+      "suggestNegativeKeywords",
+      "suggestNewKeywords",
+      "suggestTargetingImprovements"
+    ]
+  },
+  "flows": {
+    "auto-create": [
+      "src/app/admin/(dashboard)/ad-spy/page.tsx",
+      "src/app/api/admin/products/auto-create/route.ts",
+      "src/components/admin/CreateProductForm.tsx"
+    ],
+    "scale": [
+      "src/app/admin/(dashboard)/ads-manager/page.tsx",
+      "src/app/admin/(dashboard)/scale/page.tsx",
+      "src/app/admin/(dashboard)/trends/page.tsx",
+      "src/app/api/admin/platforms/clickbank/test/route.ts",
+      "src/app/api/admin/scale/route.ts",
+      "src/lib/ads/strategyPlanner.ts",
+      "src/lib/logger.ts",
+      "src/components/admin/CreateProductForm.tsx",
+      "src/components/CTAButton.tsx",
+      "src/components/ProductForm.tsx",
+      "src/components/ProductList.tsx",
+      "src/components/templates/EditorialTemplate.tsx",
+      "src/components/templates/InteractiveCookie.tsx",
+      "src/components/templates/StoryTemplate.tsx",
+      "src/components/VideoReview.tsx"
+    ],
+    "generate-global": [
+      "src/app/admin/(dashboard)/trends/page.tsx"
+    ],
+    "updateCampaignConfig": [
+      "src/app/api/admin/ads/bulk/generate/route.ts",
+      "src/app/api/admin/ads/generate/route.ts",
+      "src/app/api/admin/ads/publish/route.ts",
+      "src/app/api/admin/debug/test-ads-token/route.ts",
+      "src/app/api/admin/generate-global/route.ts",
+      "src/app/api/admin/oauth/callback/route.ts",
+      "src/app/api/admin/platforms/clickbank/test/route.ts",
+      "src/app/api/admin/platforms/digistore/test/route.ts",
+      "src/app/api/admin/products/auto-create/route.ts",
+      "src/app/api/admin/products/clone/route.ts",
+      "src/app/api/admin/products/route.ts",
+      "src/app/api/admin/products/save/route.ts",
+      "src/app/api/admin/products/save-ad/route.ts",
+      "src/app/api/admin/products/[slug]/ads/route.ts",
+      "src/app/api/admin/scale/route.ts",
+      "src/app/api/admin/settings/route.ts",
+      "src/app/api/admin/setup-mitolyn/route.ts",
+      "src/app/api/admin/system/reset-token/route.ts",
+      "src/lib/config.ts"
+    ],
+    "ensureCanonicalKeys": [
+      "src/app/api/admin/cleanup/route.ts",
+      "src/app/api/admin/diagnostics/check-links/route.ts",
+      "src/app/[...slug]/page.tsx",
+      "src/lib/config.ts"
+    ],
+    "cleanupGhostKeys": [
+      "src/app/api/admin/cleanup/route.ts",
+      "src/lib/config.ts"
+    ],
+    "saveProduct": [
+      "src/app/api/admin/debug/backfill/route.ts",
+      "src/app/api/admin/generate-global/route.ts",
+      "src/app/api/admin/google-ads/create-campaign/route.ts",
+      "src/app/api/admin/products/auto-create/route.ts",
+      "src/app/api/admin/products/route.ts",
+      "src/app/api/admin/products/save/route.ts",
+      "src/app/api/admin/scale/route.ts",
+      "src/lib/config.ts"
+    ],
+    "kv.set": [
+      "src/app/api/admin/diagnostics/test-kv/route.ts",
+      "src/app/api/admin/products/route.ts",
+      "src/app/api/admin/products/save/route.ts",
+      "src/app/api/debug-kv/route.ts",
+      "src/lib/assets.ts",
+      "src/lib/config.ts"
+    ],
+    "dual-write": [
+      "src/app/api/admin/generate-global/route.ts"
+    ]
+  },
+  "envVars": [
+    "KV_REST_API_URL",
+    "KV_REST_API_TOKEN",
+    "REDIS_URL",
+    "REDIS_TOKEN",
+    "GEMINI_API_KEY",
+    "ADMIN_TOKEN",
+    "ENABLE_LOCAL_LOGS",
+    "RESCUE_MODE"
+  ],
+  "logging": {
+    "location": "./logs/",
+    "strategy": "Local JSON Lines (Dev) / Console (Prod)",
+    "categories": [
+      "admin-actions",
+      "save-product",
+      "public-route",
+      "checker",
+      "self-heal",
+      "repair",
+      "global-scale",
+      "errors"
+    ]
+  }
+}

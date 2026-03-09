@@ -86,18 +86,19 @@ export async function POST(request: NextRequest) {
         subheadline: undefined,
         ads: undefined,
         // seo: undefined // KEPT for Admin Context
-    };
+    } as any;
     
     // Explicitly delete heavy properties to be sure they are not saved in the index
-    delete config.products[storageKey].whatIs;
-    delete config.products[storageKey].howItWorks;
-    delete config.products[storageKey].prosCons;
-    delete config.products[storageKey].testimonials;
-    delete config.products[storageKey].faq;
-    delete config.products[storageKey].bullets;
-    delete config.products[storageKey].headline;
-    delete config.products[storageKey].subheadline;
-    delete config.products[storageKey].ads;
+    const pRef = config.products[storageKey] as any;
+    delete pRef.whatIs;
+    delete pRef.howItWorks;
+    delete pRef.prosCons;
+    delete pRef.testimonials;
+    delete pRef.faq;
+    delete pRef.bullets;
+    delete pRef.headline;
+    delete pRef.subheadline;
+    delete pRef.ads;
 
     const success = await updateCampaignConfig(config);
     

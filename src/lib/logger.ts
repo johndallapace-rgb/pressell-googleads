@@ -22,7 +22,7 @@ try {
     // Ignore fs import error on client
 }
 
-const LOG_DIR = typeof process !== 'undefined' ? path.resolve(process.cwd(), 'logs') : '';
+const LOG_DIR = (typeof process !== 'undefined' && process.cwd) ? path.resolve(process.cwd(), 'logs') : '';
 
 // Ensure log directory exists (Sync is fine for init)
 try {
@@ -42,7 +42,8 @@ export type LogCategory =
     | 'repair'
     | 'global-scale'
     | 'errors'
-    | 'system';
+    | 'system'
+    | 'config';
 
 export type LogLevel = 'info' | 'warn' | 'error';
 
@@ -93,7 +94,17 @@ function writeToFile(category: LogCategory, level: LogLevel, payload: LogPayload
     // So we only log to file if we are in Development OR if we specifically enable it.
     // For this request, we prioritize LOCAL inspection.
     
-    const isLocal = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_LOGS === 'true';
+    // FORCE ENABLE for debugging context even in "production" mode if running locally
+    // We check if process.cwd() is writable or just assume local if NODE_ENV is not 'production' 
+    // OR if we are explicitly in a debug session.
+    
+    // Relaxed check: Allow writing if we are not in a strictly read-only environment.
+    // Ideally we rely on NODE_ENV, but for the "localhost production offline" bug,
+    // the user might be running `npm run start` (production mode) locally.
+    
+    const isLocal = true; // FORCE ENABLE LOGS for diagnosis (since we check fs existence above)
+    // const isLocal = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_LOGS === 'true';
+    
     if (!isLocal) return;
 
     try {
@@ -126,6 +137,7 @@ export const logger = {
     error: (category: LogCategory, payload: LogPayload) => writeToFile(category, 'error', payload),
     
     // Helper to log save events specifically matching the requested format
-    save: (payload: LogPayload) => writeToFile('save-product', 'info', { event: 'SAVE_PRODUCT', ...payload }),
-    lock: (payload: LogPayload) => writeToFile('save-product', 'info', { ...payload })
+    // event is optional here because we supply it
+    save: (payload: Omit<LogPayload, 'event'>) => writeToFile('save-product', 'info', { event: 'SAVE_PRODUCT', ...payload }),
+    lock: (payload: Record<string, any>) => writeToFile('save-product', 'info', { event: 'LOCK_EVENT', ...payload })
 };

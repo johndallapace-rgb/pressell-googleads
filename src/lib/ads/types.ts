@@ -7,7 +7,8 @@ export type { StrategySettings, AdAssets };
 export const AdGroupSchema = z.object({
   name: z.string(),
   keywords: z.array(z.string()),
-  negatives: z.array(z.string()),
+  negatives: z.array(z.string()).optional(),
+  negativeKeywords: z.array(z.string()).optional(), // Compatibility alias
   ads: z.array(z.object({
     headlines: z.array(z.string()),
     descriptions: z.array(z.string()),

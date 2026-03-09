@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "generatedAt": "2026-03-09T00:28:51.464Z",
+    "docs": "Share system-structure.json and system-flows.md for context."
+  },
+  "logs": {
+    "location": "E:\\pressell-googleads\\logs",
+    "files": [
+      "2026-03-08-checker.log",
+      "2026-03-08-repair.log",
+      "2026-03-08-save-product.log",
+      "2026-03-09-checker.log",
+      "2026-03-09-repair.log",
+      "2026-03-09-save-product.log"
+    ]
+  },
+  "scenarios": {
+    "public_404": {
+      "description": "Product not found on public URL",
+      "files": [
+        "public-route.log",
+        "save-product.log",
+        "self-heal.log"
+      ],
+      "action": "Check if canonical key exists in save log. Check if self-heal triggered."
+    },
+    "save_error": {
+      "description": "Product not saving or updating",
+      "files": [
+        "save-product.log",
+        "errors.log"
+      ],
+      "action": "Check for lock contention or KV connection errors."
+    },
+    "checker_mismatch": {
+      "description": "Admin says Online, Public says 404",
+      "files": [
+        "checker.log",
+        "repair.log"
+      ],
+      "action": "Run Repair Keys in Admin."
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-03-09T00:28:51.488Z",
+  "project": "pressell-googleads",
+  "files_included": [
+    "structure/system-structure.json",
+    "structure/system-flows.md",
+    "structure/debug-pack.json",
+    "logs/2026-03-09-checker.log",
+    "logs/2026-03-09-repair.log",
+    "logs/2026-03-09-save-product.log",
+    "logs/2026-03-08-checker.log",
+    "logs/2026-03-08-save-product.log",
+    "logs/2026-03-08-repair.log"
+  ],
+  "missing_logs": [
+    "public-route",
+    "self-heal",
+    "errors"
+  ],
+  "system_info": {
+    "node": "v24.0.1",
+    "platform": "win32",
+    "git_commit": "d97081a",
+    "git_branch": "main"
+  },
+  "note": "This pack contains sanitized debug logs and structure info. No secrets included."
+}

@@ -40,7 +40,7 @@ function getFilesToPack() {
         const logFiles = fs.readdirSync(LOGS_DIR)
             .filter(f => f.endsWith('.log'))
             .sort((a, b) => fs.statSync(path.join(LOGS_DIR, b)).mtimeMs - fs.statSync(path.join(LOGS_DIR, a)).mtimeMs) // Newest first
-            .slice(0, 20); // Cap total logs
+            .slice(0, 50); // Increased cap to catch more context
 
         logFiles.forEach(f => {
             files.push({ src: path.join(LOGS_DIR, f), dest: `logs/${f}` });
@@ -59,6 +59,7 @@ function createManifest(files) {
         generated_at: new Date().toISOString(),
         project: 'pressell-googleads',
         files_included: files.map(f => f.dest),
+        missing_logs: [],
         system_info: {
             node: process.version,
             platform: process.platform,
@@ -67,6 +68,19 @@ function createManifest(files) {
         },
         note: 'This pack contains sanitized debug logs and structure info. No secrets included.'
     };
+    
+    // Explicitly list missing logs for better diagnosis
+    const expectedLogs = ['public-route', 'checker', 'save-product', 'self-heal', 'repair', 'errors'];
+    const foundCategories = new Set(files.map(f => f.dest.split('/').pop().split('-').slice(3).join('-').replace('.log', ''))); // Rough heuristic
+    
+    // Better heuristic: check if files array contains logs/DATE-CATEGORY.log
+    expectedLogs.forEach(cat => {
+        const found = files.some(f => f.dest.includes(`-${cat}.log`));
+        if (!found) {
+            // @ts-ignore
+            manifest.missing_logs.push(cat);
+        }
+    });
 
     const manifestPath = path.join(DEBUG_DIR, 'ai-debug-pack-manifest.json');
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));

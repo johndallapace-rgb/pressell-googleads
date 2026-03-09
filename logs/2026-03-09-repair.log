@@ -1,0 +1,8 @@
+{"ts":"2026-03-09T00:20:39.094Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
+{"ts":"2026-03-09T00:20:40.054Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":2,"repaired":2,"skipped":0,"errors":0,"ghostsDeleted":1}
+{"ts":"2026-03-09T00:20:46.613Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
+{"ts":"2026-03-09T00:20:47.448Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":2,"repaired":2,"skipped":0,"errors":0,"ghostsDeleted":0}
+{"ts":"2026-03-09T00:27:15.392Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
+{"ts":"2026-03-09T00:27:16.382Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":2,"repaired":2,"skipped":0,"errors":0,"ghostsDeleted":0}
+{"ts":"2026-03-09T00:35:10.686Z","level":"info","category":"repair","event":"REPAIR_STARTED"}
+{"ts":"2026-03-09T00:35:11.614Z","level":"info","category":"repair","event":"REPAIR_COMPLETE","scanned":2,"repaired":2,"skipped":0,"errors":0,"ghostsDeleted":0}

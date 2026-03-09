@@ -12,7 +12,12 @@
     "ship": "git add . && git commit -m \"Auto-deploy: Updates\" && git push origin main",
     "debug:snapshot": "node scripts/snapshot.js",
     "debug:pack": "node scripts/snapshot.js && echo \"Snapshot + Logs ready in ./debug/\"",
-    "debug:zip": "node scripts/debug-pack.js"
+    "debug:zip": "node scripts/debug-pack.js",
+    "debug:architect": "node scripts/ai-tools.js architect",
+    "debug:bug-hunter": "node scripts/ai-tools.js bug-hunter",
+    "debug:performance": "node scripts/ai-tools.js performance",
+    "debug:seo": "node scripts/ai-tools.js seo",
+    "debug:ai-all": "node scripts/ai-tools.js all"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

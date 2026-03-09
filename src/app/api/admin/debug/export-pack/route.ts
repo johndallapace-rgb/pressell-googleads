@@ -22,13 +22,24 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        console.log('[DebugPack] Starting AI Debug Pack generation...');
+        const body = await request.json().catch(() => ({}));
+        const mode = body.mode || 'engineer';
+        console.log(`[DebugPack] Starting AI Tool: ${mode}`);
         
-        // Run the script
-        const scriptPath = path.resolve(process.cwd(), 'scripts/debug-pack.js');
+        // Map mode to script command
+        let scriptName = 'debug-pack.js'; // Default (Engineer Mode)
+        let args = '';
+
+        if (['architect', 'bug-hunter', 'performance', 'seo'].includes(mode)) {
+            scriptName = 'ai-tools.js';
+            args = mode;
+        }
+
+        const scriptPath = path.resolve(process.cwd(), 'scripts', scriptName);
+        const cmd = `node "${scriptPath}" ${args}`;
         
         return new Promise((resolve) => {
-            exec(`node "${scriptPath}"`, (error, stdout, stderr) => {
+            exec(cmd, (error, stdout, stderr) => {
                 if (error) {
                     console.error('[DebugPack] Script failed:', stderr);
                     resolve(NextResponse.json({ error: 'Generation failed: ' + stderr }, { status: 500 }));
@@ -36,10 +47,17 @@ export async function POST(request: NextRequest) {
                 }
                 
                 console.log('[DebugPack] Generation complete:', stdout);
+                
+                let message = 'AI Debug Pack generated.';
+                if (mode === 'architect') message = 'Architecture Report generated.';
+                if (mode === 'bug-hunter') message = 'Bug Hunter Report generated.';
+                if (mode === 'performance') message = 'Performance Report generated.';
+                if (mode === 'seo') message = 'SEO Report generated.';
+
                 resolve(NextResponse.json({ 
                     success: true, 
-                    message: 'AI Debug Pack generated in /debug/ai-debug-pack.zip',
-                    path: '/debug/ai-debug-pack.zip'
+                    message,
+                    path: '/debug/'
                 }));
             });
         });
