@@ -41,6 +41,7 @@ export function createPresellFromBase(
         intent: intent,
         base_slug: baseProduct.slug,
         status: 'active', // Default to active? Or draft? Requirement says "active product entry"
+        vertical: baseProduct.vertical || 'health', // Explicitly inherit vertical
         
         // IMPORTANT: Ensure tracking/affiliate settings are inherited
         // They are already inherited via deep clone, but we explicitly list them for clarity
@@ -49,6 +50,12 @@ export function createPresellFromBase(
         // Reset specific fields that should be unique or re-generated
         // For phase 1, we just clone content. Later AI can rewrite it.
     };
+
+    console.log('FACTORY_VERTICAL_INHERITED', {
+        slug: newSlug,
+        vertical: newPresell.vertical,
+        baseSlug: baseProduct.slug
+    });
 
     return newPresell;
 }

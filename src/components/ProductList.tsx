@@ -23,10 +23,23 @@ const getFlag = (lang: string) => {
 // Helper: Get Real Link
 const getRealLink = (product: ProductConfig) => {
     if (typeof window === 'undefined') return '#';
-    // Use current origin + slug. 
-    // If product has specific domain logic, it should be handled here, 
-    // but for now we assume path-based routing on the main domain.
-    return `${window.location.origin}/${product.slug}`;
+    
+    // Check if product has a specific vertical that maps to a subdomain
+    // This logic must match the generator and product creation flow
+    const rootDomain = 'topproductofficial.com';
+    let hostname = window.location.hostname;
+    
+    // In dev, we might be on localhost:3000
+    if (hostname.includes('localhost')) {
+        return `${window.location.origin}/${product.slug}`;
+    }
+
+    // In production, we use subdomains
+    if (product.vertical && product.vertical !== 'other' && product.vertical !== 'general') {
+        return `https://${product.vertical}.${rootDomain}/${product.slug}`;
+    }
+    
+    return `https://${rootDomain}/${product.slug}`;
 };
 
 export default function ProductList({ products }: ProductListProps) {
@@ -42,6 +55,10 @@ export default function ProductList({ products }: ProductListProps) {
   const [viewMode, setViewMode] = useState<'list' | 'group'>('group');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [statusMap, setStatusMap] = useState<Record<string, { domain: boolean; pixel: boolean; affiliate: boolean; ads: boolean; }>>({});
+  
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const itemsPerPage = 20;
 
@@ -172,11 +189,89 @@ export default function ProductList({ products }: ProductListProps) {
     setTimeout(() => setZipping(false), 3000);
   };
 
+  // Bulk Actions
+  const toggleSelection = (slug: string) => {
+      const newSet = new Set(selectedIds);
+      if (newSet.has(slug)) {
+          newSet.delete(slug);
+      } else {
+          newSet.add(slug);
+      }
+      setSelectedIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+      // If all VISIBLE FACTORY items are selected, unselect all.
+      // Otherwise, select all VISIBLE FACTORY items.
+      
+      const visibleFactoryItems = (viewMode === 'list' ? paginatedList : paginatedGroups.flatMap(key => groupedData[key].factory))
+          .filter(p => (p as any).is_generated); // Safety check: ONLY select factory items
+      
+      const allSelected = visibleFactoryItems.length > 0 && visibleFactoryItems.every(p => selectedIds.has(p.slug));
+      
+      if (allSelected) {
+          setSelectedIds(new Set());
+      } else {
+          const newSet = new Set(selectedIds);
+          visibleFactoryItems.forEach(p => newSet.add(p.slug));
+          setSelectedIds(newSet);
+      }
+  };
+
+  const handleBulkDelete = async () => {
+      if (selectedIds.size === 0) return;
+      
+      // Safety Check: Verify all selected are FACTORY items
+      const selectedItems = products.filter(p => selectedIds.has(p.slug));
+      const hasBase = selectedItems.some(p => !(p as any).is_generated);
+      
+      if (hasBase) {
+          alert('SAFETY ERROR: You cannot delete BASE products in bulk. Please unselect base products.');
+          return;
+      }
+
+      if (!confirm(`Are you sure you want to delete ${selectedIds.size} selected presell pages? This cannot be undone.`)) return;
+      
+      setIsBulkDeleting(true);
+      try {
+          // Sequential delete to avoid rate limits / race conditions
+          for (const slug of Array.from(selectedIds)) {
+              await fetch(`/api/admin/products?slug=${slug}`, { method: 'DELETE' });
+          }
+          
+          setSelectedIds(new Set());
+          router.refresh();
+          alert(`Successfully deleted ${selectedIds.size} pages.`);
+      } catch (e) {
+          alert('Bulk delete failed partway through. Please refresh.');
+      } finally {
+          setIsBulkDeleting(false);
+      }
+  };
+
   // Helper: Render Row
-  const renderRow = (product: ProductConfig, indented = false) => (
-      <tr key={product.slug || product.id} className={`hover:bg-blue-50 transition-colors duration-150 group ${indented ? 'bg-white' : ''}`}>
+  const renderRow = (product: ProductConfig, indented = false) => {
+      const isFactory = (product as any).is_generated;
+      const isSelected = selectedIds.has(product.slug);
+
+      return (
+      <tr key={product.slug || product.id} className={`hover:bg-blue-50 transition-colors duration-150 group ${indented ? 'bg-white' : ''} ${isSelected ? 'bg-blue-50' : ''}`}>
+        {/* Column 0: Checkbox (Factory Only) */}
+        <td className="pl-6 py-4 w-10">
+            {isFactory ? (
+                <input 
+                    type="checkbox" 
+                    checked={isSelected}
+                    onChange={() => toggleSelection(product.slug)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                />
+            ) : (
+                <span className="text-gray-200 text-xs">🔒</span>
+            )}
+        </td>
+
         {/* Column 1: Product Identity */}
-        <td className={`px-6 py-4 whitespace-nowrap ${indented ? 'pl-12 border-l-4 border-gray-100' : ''}`}>
+        <td className={`px-6 py-4 whitespace-nowrap ${indented ? 'pl-2 border-l-4 border-gray-100' : ''}`}>
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full border border-gray-200 text-lg">
                 {getFlag(product.language)}
@@ -256,7 +351,8 @@ export default function ProductList({ products }: ProductListProps) {
           </div>
         </td>
       </tr>
-  );
+      );
+  };
 
   // Health Check Effect
   useEffect(() => {
@@ -340,7 +436,27 @@ export default function ProductList({ products }: ProductListProps) {
       {/* 2. Control Bar */}
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-end md:items-center">
           
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
+              {/* Bulk Actions */}
+              {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg mr-2 animate-in fade-in slide-in-from-left-4 duration-200">
+                      <span className="text-sm font-bold text-blue-800">{selectedIds.size} Selected</span>
+                      <div className="h-4 w-px bg-blue-200 mx-1"></div>
+                      <button 
+                        onClick={handleBulkDelete}
+                        disabled={isBulkDeleting}
+                        className="text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 disabled:opacity-50"
+                      >
+                          {isBulkDeleting ? (
+                              <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                          ) : (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          )}
+                          Delete Selected
+                      </button>
+                  </div>
+              )}
+
               {/* Search */}
               <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -423,6 +539,15 @@ export default function ProductList({ products }: ProductListProps) {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left w-10">
+                <input 
+                    type="checkbox" 
+                    onChange={toggleSelectAll}
+                    checked={selectedIds.size > 0}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    title="Select all visible Factory pages"
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
@@ -434,7 +559,7 @@ export default function ProductList({ products }: ProductListProps) {
             {viewMode === 'list' ? (
                 paginatedList.length === 0 ? (
                     <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                             No products found matching filters.
                         </td>
                     </tr>
@@ -444,7 +569,7 @@ export default function ProductList({ products }: ProductListProps) {
             ) : (
                 paginatedGroups.length === 0 ? (
                     <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                             No product groups found.
                         </td>
                     </tr>
@@ -459,7 +584,7 @@ export default function ProductList({ products }: ProductListProps) {
                             <Fragment key={baseSlug}>
                                 {/* Group Header */}
                                 <tr className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b border-gray-200 transition-colors" onClick={() => toggleGroup(baseSlug)}>
-                                    <td colSpan={5} className="px-6 py-3">
+                                    <td colSpan={6} className="px-6 py-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <span className={`transform transition-transform text-gray-400 font-bold ${isExpanded ? 'rotate-90' : ''}`}>
@@ -495,7 +620,7 @@ export default function ProductList({ products }: ProductListProps) {
                                         {group.global.length > 0 && (
                                             <>
                                                 <tr>
-                                                    <td colSpan={5} className="px-6 py-2 bg-gray-50 text-[10px] font-bold text-gray-500 uppercase pl-16 border-l-4 border-purple-200">
+                                                    <td colSpan={6} className="px-6 py-2 bg-gray-50 text-[10px] font-bold text-gray-500 uppercase pl-16 border-l-4 border-purple-200">
                                                         Global Scale Pages ({group.global.length})
                                                     </td>
                                                 </tr>
@@ -507,7 +632,7 @@ export default function ProductList({ products }: ProductListProps) {
                                         {group.factory.length > 0 && (
                                             <>
                                                 <tr>
-                                                    <td colSpan={5} className="px-6 py-2 bg-gray-50 text-[10px] font-bold text-gray-500 uppercase pl-16 border-l-4 border-green-200">
+                                                    <td colSpan={6} className="px-6 py-2 bg-gray-50 text-[10px] font-bold text-gray-500 uppercase pl-16 border-l-4 border-green-200">
                                                         Presell Factory Pages ({group.factory.length})
                                                     </td>
                                                 </tr>

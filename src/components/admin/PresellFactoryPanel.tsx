@@ -82,17 +82,18 @@ export default function PresellFactoryPanel({ products }: PresellFactoryPanelPro
                         subheadline: data.subheadline || presell.subheadline,
                         bullets: data.benefits || presell.bullets,
                         cta_text: data.cta_text || presell.cta_text,
-                        // Note: Story/FAQ support needs to be added to ProductConfig if not exists
-                        // Assuming ProductConfig has 'story' or similar text fields?
-                        // If not, we map 'story' to 'unique_mechanism' or 'pain_points' intro?
-                        // Let's map story to a new section if possible or just append to pain points for now.
-                        // Wait, ProductConfig has 'pain_points' (string[]).
-                        // Let's try to be smart.
                         pain_points: data.story ? [data.story] : presell.pain_points,
                         
-                        // We can store FAQ in a flexible field or just log it for now
-                        // Ideally we extend ProductConfig later.
+                        // Ensure vertical is set correctly for URL generation
+                        vertical: presell.vertical || 'health', 
                     };
+                    
+                    // Log for diagnostics
+                    console.log('FACTORY_URL_BUILD', {
+                        slug: updatedList[i].slug,
+                        vertical: updatedList[i].vertical,
+                        intent: updatedList[i].intent
+                    });
                 }
             } catch (e) {
                 console.error(`AI Gen failed for ${presell.slug}`, e);
