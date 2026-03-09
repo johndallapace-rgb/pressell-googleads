@@ -165,7 +165,44 @@ export default async function CatchAllProductPage({ params }: PageProps) {
                  status: product.status,
                  reason: resolution.blockReason
              });
+             
+             // DEBUG 404
+             logger.warn('public-route', {
+                event: 'ROUTE_DEBUG_404',
+                slug,
+                host: realHost,
+                detectedVertical,
+                attemptedKeys: resolution.attemptedKeys,
+                reason: 'blocked_status'
+             });
+
              return notFound(); 
+        }
+
+        // Validate Shape (Task 4)
+        const hasRequiredFields = !!(product.slug && product.vertical && product.status);
+        
+        logger.info('public-route', {
+            event: 'ROUTE_DEBUG_PRODUCT',
+            slug,
+            found: true,
+            source: resolution.source,
+            productSlug: product.slug,
+            productVertical: product.vertical,
+            productStatus: product.status,
+            hasRequiredFields
+        });
+
+        if (!hasRequiredFields) {
+             logger.warn('public-route', {
+                event: 'ROUTE_DEBUG_404',
+                slug,
+                host: realHost,
+                detectedVertical,
+                attemptedKeys: resolution.attemptedKeys,
+                reason: 'invalid_product_shape'
+             });
+             return notFound();
         }
 
         // Success Path
@@ -193,6 +230,16 @@ export default async function CatchAllProductPage({ params }: PageProps) {
             detectedVertical: resolution.detectedVertical,
             host: realHost
         });
+
+        logger.warn('public-route', {
+            event: 'ROUTE_DEBUG_404',
+            slug,
+            host: realHost,
+            detectedVertical,
+            attemptedKeys: resolution.attemptedKeys,
+            reason: 'unknown' // or detailed if we knew more
+        });
+
         return notFound();
     }
 
