@@ -227,9 +227,15 @@ export default function ProductList({ products }: ProductListProps) {
       // Safety Check: Verify all selected are FACTORY items
       const selectedItems = products.filter(p => selectedIds.has(p.slug));
       const hasBase = selectedItems.some(p => !(p as any).is_generated);
+      const hasProtected = selectedItems.some(p => p.protected_live);
       
       if (hasBase) {
           alert('SAFETY ERROR: You cannot delete BASE products in bulk. Please unselect base products.');
+          return;
+      }
+
+      if (hasProtected) {
+          alert('SAFETY ERROR: One or more selected pages are PROTECTED (Live Campaign). You must unprotect them manually first.');
           return;
       }
 
@@ -256,12 +262,13 @@ export default function ProductList({ products }: ProductListProps) {
   const renderRow = (product: ProductConfig, indented = false) => {
       const isFactory = (product as any).is_generated;
       const isSelected = selectedIds.has(product.slug);
+      const isProtected = product.protected_live;
 
       return (
       <tr key={product.slug || product.id} className={`hover:bg-blue-50 transition-colors duration-150 group ${indented ? 'bg-white' : ''} ${isSelected ? 'bg-blue-50' : ''}`}>
         {/* Column 0: Checkbox (Factory Only) */}
         <td className="pl-6 py-4 w-10">
-            {isFactory ? (
+            {isFactory && !isProtected ? (
                 <input 
                     type="checkbox" 
                     checked={isSelected}
@@ -269,18 +276,24 @@ export default function ProductList({ products }: ProductListProps) {
                     className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                 />
             ) : (
-                <span className="text-gray-200 text-xs">🔒</span>
+                <span className="text-gray-200 text-xs" title={isProtected ? "Protected: Live Campaign" : "Base Product"}>
+                    {isProtected ? '🛡️' : '🔒'}
+                </span>
             )}
         </td>
 
         {/* Column 1: Product Identity */}
         <td className={`px-6 py-4 whitespace-nowrap ${indented ? 'pl-2 border-l-4 border-gray-100' : ''}`}>
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full border border-gray-200 text-lg">
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full border border-gray-200 text-lg relative">
                 {getFlag(product.language)}
+                {isProtected && <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[8px] px-1 rounded-full shadow-sm">ADS</span>}
             </div>
             <div>
-                <div className="text-sm font-bold text-gray-900">{product.name}</div>
+                <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    {product.name}
+                    {isProtected && <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold border border-blue-200">PROTECTED</span>}
+                </div>
                 <div className="text-xs text-gray-500 font-mono">{product.slug}</div>
             </div>
           </div>
@@ -344,13 +357,23 @@ export default function ProductList({ products }: ProductListProps) {
                 EDIT
             </a>
             
-            <button 
-                onClick={() => handleDelete(product.slug, product.name)}
-                disabled={deleting === product.slug}
-                className="flex items-center justify-center gap-2 px-3 py-1.5 bg-white border border-red-200 rounded text-red-600 font-bold hover:bg-red-50 hover:border-red-300 transition-all shadow-sm disabled:opacity-50 disabled:cursor-wait text-xs w-full"
-            >
-                {deleting === product.slug ? '...' : 'DELETE'}
-            </button>
+            {isProtected ? (
+                <button 
+                    disabled
+                    className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-400 font-bold text-xs w-full cursor-not-allowed"
+                    title="Protected: Live Campaign Active"
+                >
+                    <span className="text-[10px]">🛡️</span> PROTECTED
+                </button>
+            ) : (
+                <button 
+                    onClick={() => handleDelete(product.slug, product.name)}
+                    disabled={deleting === product.slug}
+                    className="flex items-center justify-center gap-2 px-3 py-1.5 bg-white border border-red-200 rounded text-red-600 font-bold hover:bg-red-50 hover:border-red-300 transition-all shadow-sm disabled:opacity-50 disabled:cursor-wait text-xs w-full"
+                >
+                    {deleting === product.slug ? '...' : 'DELETE'}
+                </button>
+            )}
           </div>
         </td>
       </tr>

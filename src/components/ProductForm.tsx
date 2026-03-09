@@ -460,8 +460,9 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
 
       {/* Header with Status Toggle */}
       <div className="flex justify-between items-center border-b pb-4">
-        <h2 className="text-xl font-bold text-gray-800">
+        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
            {isNew ? 'New Product' : `Editing: ${product.name}`}
+           {product.protected_live && <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-sm">🛡️ Live Campaign Protected</span>}
         </h2>
         <div className="flex items-center space-x-3">
              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -503,10 +504,11 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             type="text"
             value={product.slug}
             onChange={e => handleChange('slug', e.target.value)}
-            disabled={!isNew || readOnly}
+            disabled={!isNew || readOnly || product.protected_live}
             className="bg-gray-50 disabled:opacity-60"
             placeholder="e.g. mitolyn"
           />
+          {product.protected_live && <p className="text-xs text-blue-600 font-bold mt-1">Locked: Live Campaign Protected</p>}
           <p className="text-xs text-gray-500 mt-1">URL-friendly ID (a-z, 0-9, hyphens)</p>
         </FormField>
         <FormField>
@@ -552,7 +554,7 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
           <FormSelect
             value={product.vertical}
             onChange={e => handleChange('vertical', e.target.value)}
-            disabled={readOnly}
+            disabled={readOnly || product.protected_live}
           >
             <option value="health">Health</option>
             <option value="diy">DIY</option>
@@ -561,6 +563,7 @@ export default function ProductForm({ initialProduct, onSubmit, isNew = false, r
             <option value="finance">Finance</option>
             <option value="other">Other</option>
           </FormSelect>
+          {product.protected_live && <p className="text-xs text-blue-600 font-bold mt-1">Locked: Live Campaign Protected</p>}
         </FormField>
         <FormField>
           <FormLabel>Template</FormLabel>

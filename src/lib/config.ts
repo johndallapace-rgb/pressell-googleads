@@ -106,6 +106,9 @@ export type ProductConfig = {
   // New Fields for Global Scaling
   subdomain?: string; // e.g. "health", "finance"
 
+  // Production Protection Flag
+  protected_live?: boolean; // If true, prevents deletion and slug/vertical edits
+
   // Ads Module Configuration
   ads?: AdsConfig;
   
