@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { getCampaignConfig } from '@/lib/server/config';
+import { getCampaignConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
