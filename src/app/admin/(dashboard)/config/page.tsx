@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SystemConfig } from '@/lib/config';
+import { SystemConfig } from '@/lib/shared/config';
 import { FormInput } from '@/components/ui/FormInput';
 import { FormLabel } from '@/components/ui/FormLabel';
 import { FormField } from '@/components/ui/FormField';
+import { FormTextarea } from '@/components/ui/FormTextarea';
 
 export default function ConfigSystemPage() {
   const [activeTab, setActiveTab] = useState<'api' | 'platforms' | 'health'>('api');
@@ -92,14 +93,30 @@ export default function ConfigSystemPage() {
           vercel: 'checking'
       });
 
+      let googleAdsState: 'OFFLINE' | 'CONFIGURED' | 'READY' | 'ACTIVE' = 'OFFLINE';
+      try {
+          const cfg =
+              config ||
+              (await fetch('/api/admin/config', { cache: 'no-store' })
+                  .then(r => r.json())
+                  .catch(() => null));
+          const g = (cfg as any)?.google_ads || {};
+          const requiredOk = !!(g?.developer_token && g?.client_id && g?.client_secret && g?.refresh_token && g?.manager_account_id);
+          const accessLevel = g?.access_level === 'production' ? 'production' : 'test';
+          const executionMode = g?.execution_mode === 'active' ? 'active' : g?.execution_mode === 'read_only' ? 'read_only' : 'config_only';
+
+          if (!requiredOk) googleAdsState = 'OFFLINE';
+          else if (accessLevel === 'test') googleAdsState = 'CONFIGURED';
+          else if (executionMode === 'active') googleAdsState = 'ACTIVE';
+          else googleAdsState = 'READY';
+      } catch (e) {
+          googleAdsState = 'OFFLINE';
+      }
+
       Promise.all([
           check('/api/admin/diagnostics/test-gemini'),
           check('/api/admin/diagnostics/test-kv'),
-          // Google Ads uses GET and has different response structure, handle separately
-          fetch('/api/admin/verify-google-ads', { headers: { 'Cache-Control': 'no-cache' } })
-            .then(r => r.json())
-            .then(d => d.error ? { status: 'error', error: d.error } : { status: 'ok', error: '' })
-            .catch(e => ({ status: 'error', error: e.message || 'Network Error' })),
+          Promise.resolve({ status: googleAdsState, error: '' }),
           check('/api/admin/diagnostics/test-platform', { platform: 'buygoods' }),
           check('/api/admin/diagnostics/test-platform', { platform: 'maxweb' }),
           check('/api/admin/diagnostics/test-platform', { platform: 'clickbank' }),
@@ -149,6 +166,18 @@ export default function ConfigSystemPage() {
   const safeConfig = config || { 
       affiliate_nickname: '', 
       api_keys: {}, 
+      google_ads: {
+          developer_token: '',
+          client_id: '',
+          client_secret: '',
+          refresh_token: '',
+          manager_account_id: '3380319096',
+          customer_accounts: ['7770764905'],
+          access_level: 'test',
+          execution_mode: 'config_only',
+          config_valid: false,
+          last_validation_at: null
+      },
       platforms: {} 
   } as SystemConfig;
 
@@ -291,6 +320,35 @@ export default function ConfigSystemPage() {
                                 </FormField>
                             </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField>
+                                    <FormLabel className="text-gray-700">SERP_PROVIDER</FormLabel>
+                                    <FormInput 
+                                        type="text" 
+                                        value={safeConfig.api_keys?.serp_provider || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig, 
+                                            api_keys: { ...safeConfig.api_keys, serp_provider: e.target.value }
+                                        })}
+                                        placeholder="serpapi"
+                                        className="font-medium"
+                                    />
+                                </FormField>
+                                <FormField>
+                                    <FormLabel className="text-gray-700">SERPAPI_API_KEY</FormLabel>
+                                    <FormInput 
+                                        type="password" 
+                                        value={safeConfig.api_keys?.serpapi_api_key || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig, 
+                                            api_keys: { ...safeConfig.api_keys, serpapi_api_key: e.target.value }
+                                        })}
+                                        placeholder="Paste SerpApi key"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+                            </div>
+
                             <FormField>
                                 <FormLabel className="text-gray-700">Vercel Token (Optional)</FormLabel>
                                 <FormInput 
@@ -303,6 +361,264 @@ export default function ConfigSystemPage() {
                                     className="font-mono text-sm"
                                 />
                             </FormField>
+                        </div>
+
+                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 className="text-lg font-bold text-gray-900">Google Ads API</h4>
+                                    <p className="text-sm text-gray-500">Credentials stored in Config System for future API enablement.</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Developer Token</FormLabel>
+                                    <FormInput
+                                        type="password"
+                                        value={safeConfig.google_ads?.developer_token || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, developer_token: e.target.value }
+                                        })}
+                                        placeholder="developer token"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Manager Account ID</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={safeConfig.google_ads?.manager_account_id || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, manager_account_id: e.target.value }
+                                        })}
+                                        placeholder="123-456-7890"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Client ID</FormLabel>
+                                    <FormInput
+                                        type="password"
+                                        value={safeConfig.google_ads?.client_id || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, client_id: e.target.value }
+                                        })}
+                                        placeholder="xxxxx.apps.googleusercontent.com"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Client Secret</FormLabel>
+                                    <FormInput
+                                        type="password"
+                                        value={safeConfig.google_ads?.client_secret || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, client_secret: e.target.value }
+                                        })}
+                                        placeholder="client secret"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Refresh Token</FormLabel>
+                                    <FormInput
+                                        type="password"
+                                        value={safeConfig.google_ads?.refresh_token || ''}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, refresh_token: e.target.value }
+                                        })}
+                                        placeholder="refresh token"
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Customer Account IDs</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={
+                                            Array.isArray(safeConfig.google_ads?.customer_accounts)
+                                                ? safeConfig.google_ads!.customer_accounts!.join(', ')
+                                                : ''
+                                        }
+                                        onChange={e => {
+                                            const raw = e.target.value || '';
+                                            const ids = raw
+                                                .split(/[\n,]+/g)
+                                                .map(s => s.trim())
+                                                .filter(Boolean);
+                                            setConfig({
+                                                ...safeConfig,
+                                                google_ads: { ...safeConfig.google_ads, customer_accounts: ids }
+                                            });
+                                        }}
+                                        placeholder="123-456-7890, 234-567-8901"
+                                        className="font-mono text-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">Comma-separated. Stored as an array.</p>
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Access Level</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={safeConfig.google_ads?.access_level || 'test'}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, access_level: (e.target.value as any) || 'test' }
+                                        })}
+                                        placeholder="test"
+                                        className="font-mono text-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">Default: test</p>
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Execution Mode</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={safeConfig.google_ads?.execution_mode || 'config_only'}
+                                        onChange={e => setConfig({
+                                            ...safeConfig,
+                                            google_ads: { ...safeConfig.google_ads, execution_mode: (e.target.value as any) || 'config_only' }
+                                        })}
+                                        placeholder="config_only"
+                                        className="font-mono text-sm"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">Default: config_only</p>
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Config Valid</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={String(!!safeConfig.google_ads?.config_valid)}
+                                        disabled
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+
+                                <FormField>
+                                    <FormLabel className="text-gray-700">Last Validation At</FormLabel>
+                                    <FormInput
+                                        type="text"
+                                        value={safeConfig.google_ads?.last_validation_at || ''}
+                                        disabled
+                                        className="font-mono text-sm"
+                                    />
+                                </FormField>
+                            </div>
+
+                            <div className="mt-8 bg-white p-6 rounded-xl border border-gray-200">
+                                <div className="mb-4">
+                                    <h5 className="text-lg font-bold text-gray-900">Google Ads Test & Production Accounts</h5>
+                                    <p className="text-sm text-gray-500">
+                                        Configure allowlists de contas para execução real em TEST e para futura liberação segura em PRODUÇÃO.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField>
+                                        <FormLabel className="text-gray-700">Test Manager Account ID</FormLabel>
+                                        <FormInput
+                                            type="text"
+                                            value={safeConfig.google_ads?.test_manager_account_id || ''}
+                                            onChange={e => setConfig({
+                                                ...safeConfig,
+                                                google_ads: { ...safeConfig.google_ads, test_manager_account_id: e.target.value }
+                                            })}
+                                            placeholder="123-456-7890"
+                                            className="font-mono text-sm"
+                                        />
+                                    </FormField>
+
+                                    <FormField>
+                                        <FormLabel className="text-gray-700">Production Manager Account ID</FormLabel>
+                                        <FormInput
+                                            type="text"
+                                            value={safeConfig.google_ads?.production_manager_account_id || ''}
+                                            onChange={e => setConfig({
+                                                ...safeConfig,
+                                                google_ads: { ...safeConfig.google_ads, production_manager_account_id: e.target.value }
+                                            })}
+                                            placeholder="123-456-7890"
+                                            className="font-mono text-sm"
+                                        />
+                                    </FormField>
+                                </div>
+
+                                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField>
+                                        <FormLabel className="text-gray-700">Test Customer Accounts</FormLabel>
+                                        <FormTextarea
+                                            value={
+                                                Array.isArray(safeConfig.google_ads?.test_customer_accounts)
+                                                    ? safeConfig.google_ads!.test_customer_accounts!.join(', ')
+                                                    : ''
+                                            }
+                                            onChange={e => {
+                                                const raw = e.target.value || '';
+                                                const ids = raw
+                                                    .split(/[\n,]+/g)
+                                                    .map(s => s.trim())
+                                                    .filter(Boolean);
+                                                setConfig({
+                                                    ...safeConfig,
+                                                    google_ads: { ...safeConfig.google_ads, test_customer_accounts: ids }
+                                                });
+                                            }}
+                                            placeholder="111-111-1111, 222-222-2222"
+                                            className="font-mono text-sm min-h-[120px]"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">Separar por vírgula ou quebra de linha. Armazenado como string[].</p>
+                                    </FormField>
+
+                                    <FormField>
+                                        <FormLabel className="text-gray-700">Production Customer Accounts</FormLabel>
+                                        <FormTextarea
+                                            value={
+                                                Array.isArray(safeConfig.google_ads?.production_customer_accounts)
+                                                    ? safeConfig.google_ads!.production_customer_accounts!.join(', ')
+                                                    : ''
+                                            }
+                                            onChange={e => {
+                                                const raw = e.target.value || '';
+                                                const ids = raw
+                                                    .split(/[\n,]+/g)
+                                                    .map(s => s.trim())
+                                                    .filter(Boolean);
+                                                setConfig({
+                                                    ...safeConfig,
+                                                    google_ads: { ...safeConfig.google_ads, production_customer_accounts: ids }
+                                                });
+                                            }}
+                                            placeholder="111-111-1111, 222-222-2222"
+                                            className="font-mono text-sm min-h-[120px]"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Preencher apenas quando formos liberar PRODUÇÃO. Mantém produção bloqueada enquanto estiver vazio.
+                                        </p>
+                                    </FormField>
+                                </div>
+
+                                <div className="mt-6 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <div className="font-bold text-gray-800 mb-2">Ajuda rápida</div>
+                                    <div className="space-y-1">
+                                        <div>TEST real: access_level=test, execution_mode=active, test_customer_accounts com pelo menos 1 Customer ID.</div>
+                                        <div>PRODUÇÃO: preencher production_customer_accounts apenas quando formos liberar produção com segurança.</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -578,22 +894,74 @@ export default function ConfigSystemPage() {
                         </div>
 
                         {/* Google Ads Status */}
-                        <div className={`p-6 rounded-xl border-l-4 shadow-sm ${health.googleAds === 'ok' ? 'bg-green-50 border-green-500' : health.googleAds === 'error' ? 'bg-red-50 border-red-500' : 'bg-gray-50 border-gray-400'}`}>
+                        <div className={`p-6 rounded-xl border-l-4 shadow-sm ${
+                            health.googleAds === 'ACTIVE' ? 'bg-green-50 border-green-500' :
+                            health.googleAds === 'READY' ? 'bg-blue-50 border-blue-500' :
+                            health.googleAds === 'CONFIGURED' ? 'bg-gray-50 border-gray-400' :
+                            health.googleAds === 'OFFLINE' ? 'bg-red-50 border-red-500' :
+                            'bg-gray-50 border-gray-400'
+                        }`}>
                             <div className="flex items-center justify-between mb-3">
                                 <span className="font-bold text-gray-800 text-lg">Google Ads</span>
-                                {health.googleAds === 'ok' && <span className="bg-green-200 text-green-800 text-xs font-bold px-2 py-1 rounded-full">LINKED</span>}
-                                {health.googleAds === 'error' && (
-                                    <div className="flex items-center gap-2">
-                                        <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded-full">OFFLINE</span>
-                                        <div className="group relative">
-                                            <svg className="w-4 h-4 text-red-500 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-black text-white text-xs rounded p-2 hidden group-hover:block z-10">
-                                                Check API credentials or account status. Code: 401
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {health.googleAds === 'checking' && <span className="text-gray-500 text-xs">Checking...</span>}
+                                <div className="flex items-center gap-3">
+                                    {health.googleAds === 'ACTIVE' && <span className="bg-green-200 text-green-800 text-xs font-bold px-2 py-1 rounded-full">ACTIVE</span>}
+                                    {health.googleAds === 'READY' && <span className="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">READY</span>}
+                                    {health.googleAds === 'CONFIGURED' && <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-full">CONFIGURED</span>}
+                                    {health.googleAds === 'OFFLINE' && <span className="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded-full">OFFLINE</span>}
+                                    {health.googleAds === 'checking' && <span className="text-gray-500 text-xs">Checking...</span>}
+
+                                    <span className="text-xs font-bold text-gray-600">
+                                        {safeConfig.google_ads?.execution_mode === 'active' ? 'PRODUÇÃO' : 'HOMOLOGAÇÃO'}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={safeConfig.google_ads?.execution_mode === 'active'}
+                                        disabled={
+                                            saving ||
+                                            (safeConfig.google_ads?.execution_mode !== 'active' && safeConfig.google_ads?.config_valid !== true)
+                                        }
+                                        onClick={async () => {
+                                            const canEnable = safeConfig.google_ads?.config_valid === true;
+                                            const nextMode =
+                                                safeConfig.google_ads?.execution_mode === 'active'
+                                                    ? 'config_only'
+                                                    : canEnable
+                                                      ? 'active'
+                                                      : 'config_only';
+                                            const updated = {
+                                                ...safeConfig,
+                                                google_ads: {
+                                                    ...safeConfig.google_ads,
+                                                    execution_mode: nextMode
+                                                }
+                                            };
+                                            setConfig(updated);
+                                            setSaving(true);
+                                            try {
+                                                await fetch('/api/admin/config', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(updated)
+                                                });
+                                                await checkHealth();
+                                            } finally {
+                                                setSaving(false);
+                                            }
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            safeConfig.google_ads?.execution_mode === 'active' ? 'bg-blue-600' : 'bg-gray-300'
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    >
+                                        <span className="sr-only">Google Ads Mode Toggle</span>
+                                        <span
+                                            className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                                                safeConfig.google_ads?.execution_mode === 'active' ? 'translate-x-5' : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-600 leading-relaxed">
                                 Conexão para publicação automática de campanhas e rastreamento de conversões.
@@ -611,6 +979,68 @@ export default function ConfigSystemPage() {
                             </div>
                             <p className="text-sm text-gray-600 leading-relaxed">
                                 Usado para encontrar URLs oficiais e imagens para o efeito Blur.
+                            </p>
+                        </div>
+
+                        {/* SerpApi Status */}
+                        <div
+                            className={`p-6 rounded-xl border-l-4 shadow-sm ${
+                                safeConfig.api_keys?.serp_provider === 'serpapi' && safeConfig.api_keys?.serpapi_api_key
+                                    ? (safeConfig.api_keys?.serpapi_enabled === true ? 'bg-green-50 border-green-500' : 'bg-gray-50 border-gray-400')
+                                    : 'bg-gray-50 border-gray-400'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="font-bold text-gray-800 text-lg">SerpApi</span>
+                                <div className="flex items-center gap-3">
+                                    {safeConfig.api_keys?.serp_provider === 'serpapi' && safeConfig.api_keys?.serpapi_api_key ? (
+                                        safeConfig.api_keys?.serpapi_enabled === true ? (
+                                            <span className="bg-green-200 text-green-800 text-xs font-bold px-2 py-1 rounded-full">ONLINE</span>
+                                        ) : (
+                                            <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-full">DISABLED</span>
+                                        )
+                                    ) : (
+                                        <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-full">NOT CONFIGURED</span>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={safeConfig.api_keys?.serpapi_enabled === true}
+                                        disabled={saving || !(safeConfig.api_keys?.serp_provider === 'serpapi' && safeConfig.api_keys?.serpapi_api_key)}
+                                        onClick={async () => {
+                                            const updated = {
+                                                ...safeConfig,
+                                                api_keys: { ...safeConfig.api_keys, serpapi_enabled: !(safeConfig.api_keys?.serpapi_enabled === true) }
+                                            };
+                                            setConfig(updated);
+                                            setSaving(true);
+                                            try {
+                                                await fetch('/api/admin/config', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(updated)
+                                                });
+                                                await checkHealth();
+                                            } finally {
+                                                setSaving(false);
+                                            }
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            safeConfig.api_keys?.serpapi_enabled === true ? 'bg-blue-600' : 'bg-gray-300'
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    >
+                                        <span className="sr-only">Enable SerpApi</span>
+                                        <span
+                                            className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                                                safeConfig.api_keys?.serpapi_enabled === true ? 'translate-x-5' : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                SERP intelligence para encontrar URLs oficiais e sinais de busca.
                             </p>
                         </div>
 
