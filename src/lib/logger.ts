@@ -99,8 +99,8 @@ function getLogDir(): string | null {
 
   try {
     const path = getPath();
-    if (!path || typeof process === 'undefined' || !process.cwd) return null;
-    return path.resolve(process.cwd(), 'logs');
+    if (!path) return null;
+    return path.resolve('logs');
   } catch (e) {
     console.warn('[Logger] Failed to resolve log directory', e);
     return null;
