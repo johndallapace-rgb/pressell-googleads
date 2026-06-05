@@ -18,17 +18,21 @@ let tokenCache: { token: string; expiresAt: number } | null = null;
 
 // Async function to get config (since we might need to read KV)
 async function getConfig(): Promise<GoogleAdsConfig> {
-  let refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN || '';
-
-  // If not in env, check KV
-  if (!refreshToken) {
-      try {
-          const config = await getCampaignConfig();
-          refreshToken = config.system?.api_keys?.google_ads_refresh_token || '';
-      } catch (e) {
-          console.warn('[GoogleAds] Failed to fetch config from KV', e);
-      }
+  let refreshToken = '';
+  try {
+    const config = await getCampaignConfig();
+    refreshToken =
+      (typeof (config as any)?.system?.google_ads?.refresh_token === 'string'
+        ? (config as any).system.google_ads.refresh_token
+        : '') ||
+      (typeof (config as any)?.system?.api_keys?.google_ads_refresh_token === 'string'
+        ? (config as any).system.api_keys.google_ads_refresh_token
+        : '');
+  } catch (e) {
+    console.warn('[GoogleAds] Failed to fetch config from KV', e);
   }
+
+  if (!refreshToken) refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN || '';
 
   const cfg = {
     clientId: process.env.GOOGLE_ADS_CLIENT_ID || '',
