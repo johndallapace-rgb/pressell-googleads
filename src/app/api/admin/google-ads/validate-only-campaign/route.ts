@@ -89,7 +89,31 @@ async function googleAdsMutate(args: {
   return parsed;
 }
 
-async function googleAdsGet(args: { path: string; developer_token: string; access_token: string; login_customer_id?: string }) {
+type GoogleAdsGetDiagnostic = {
+  google_status: number;
+  google_status_text: string;
+  google_error_body_text: string;
+  google_request_path: string;
+  google_request_url: string;
+  method: 'GET';
+};
+
+class GoogleAdsGetError extends Error {
+  diagnostic: GoogleAdsGetDiagnostic;
+
+  constructor(diagnostic: GoogleAdsGetDiagnostic) {
+    super('google_ads_get_failed');
+    this.diagnostic = diagnostic;
+  }
+}
+
+async function googleAdsGet(args: {
+  path: string;
+  developer_token: string;
+  access_token: string;
+  login_customer_id?: string;
+  diagnostic?: boolean;
+}) {
   const url = `${GOOGLE_ADS_API_BASE}/${GOOGLE_ADS_API_VERSION}/${args.path}`;
   const headers: Record<string, string> = {
     Authorization: `Bearer ${args.access_token}`,
@@ -107,6 +131,17 @@ async function googleAdsGet(args: { path: string; developer_token: string; acces
   }
 
   if (!res.ok) {
+    if (args.diagnostic) {
+      const diagnostic: GoogleAdsGetDiagnostic = {
+        google_status: res.status,
+        google_status_text: res.statusText || '',
+        google_error_body_text: String(text || '').slice(0, 1000),
+        google_request_path: args.path,
+        google_request_url: url,
+        method: 'GET',
+      };
+      throw new GoogleAdsGetError(diagnostic);
+    }
     const msg = parsed?.error?.message || `google_ads_get_failed:${res.status}`;
     throw new Error(msg);
   }
@@ -155,7 +190,13 @@ export async function POST(request: NextRequest) {
     const access_token = await getAccessToken({ client_id, client_secret, refresh_token });
 
     if (discover_only) {
-      const data = await googleAdsGet({ path: 'customers:listAccessibleCustomers', developer_token, access_token });
+      try {
+        const data = await googleAdsGet({
+          path: 'customers:listAccessibleCustomers',
+          developer_token,
+          access_token,
+          diagnostic: true,
+        });
       const resourceNames = Array.isArray(data?.resourceNames) ? data.resourceNames.map((x: any) => String(x)) : [];
       const customerIds = resourceNames
         .map((rn: string) => rn.split('/').pop() || '')
@@ -169,6 +210,20 @@ export async function POST(request: NextRequest) {
           masked: customerIds.slice(0, 25).map(maskId),
         },
       });
+      } catch (e: any) {
+        if (e instanceof GoogleAdsGetError) {
+          return NextResponse.json(
+            {
+              validate_only: true,
+              created_any_resource: false,
+              error: e.message,
+              diagnostic: e.diagnostic,
+            },
+            { status: 502 },
+          );
+        }
+        throw e;
+      }
     }
 
     const customerId = digitsOnly(body?.customerId);
