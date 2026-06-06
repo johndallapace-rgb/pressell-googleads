@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 type GoogleAdsOAuthToken = { access_token: string; expires_in: number; token_type: string };
 
-const GOOGLE_ADS_API_VERSION = 'v19';
+const GOOGLE_ADS_API_VERSION = 'v24';
 const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com';
 const GOOGLE_OAUTH_URL = 'https://oauth2.googleapis.com/token';
 
