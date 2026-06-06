@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getSystemConfig, updateSystemConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -11,25 +10,20 @@ export async function POST(request: NextRequest) {
         if (!token) {
             return NextResponse.json({ error: 'Token is required' }, { status: 400 });
         }
-
-        const envPath = path.join(process.cwd(), '.env.local');
-        let envContent = '';
         
-        if (fs.existsSync(envPath)) {
-            envContent = fs.readFileSync(envPath, 'utf8');
-        }
+        const sys = await getSystemConfig();
+        const next: any = { ...(sys as any) };
+        if (!next.api_keys || typeof next.api_keys !== 'object') next.api_keys = {};
+        if (!next.platforms || typeof next.platforms !== 'object') next.platforms = {};
+        if (!next.google_ads || typeof next.google_ads !== 'object') next.google_ads = {};
+        
+        next.google_ads.refresh_token = String(token);
+        next.api_keys.google_ads_refresh_token = String(token);
 
-        if (envContent.includes('GOOGLE_ADS_REFRESH_TOKEN=')) {
-            envContent = envContent.replace(
-                /GOOGLE_ADS_REFRESH_TOKEN=.*/,
-                `GOOGLE_ADS_REFRESH_TOKEN=${token}`
-            );
-        } else {
-            envContent += `\nGOOGLE_ADS_REFRESH_TOKEN=${token}\n`;
+        const ok = await updateSystemConfig(next);
+        if (!ok) {
+            return NextResponse.json({ error: 'Failed to persist token' }, { status: 500 });
         }
-
-        fs.writeFileSync(envPath, envContent);
-        console.log('[System] Saved Google Ads Refresh Token to .env.local');
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
