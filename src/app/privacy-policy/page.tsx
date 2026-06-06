@@ -1,61 +1,72 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { MarketingShell } from '@/components/marketing/MarketingShell';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Top Product Official',
-  description: 'Privacy Policy for Top Product Official.',
+  description:
+    'Privacy Policy for Top Product Official, an internal advertising operations platform with documented Google Ads API integration and compliance-focused data handling.',
 };
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
-      <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">T</div>
-            <Link href="/" className="font-semibold text-lg tracking-tight hover:text-blue-600 transition-colors">Top Product Official</Link>
-          </div>
-        </div>
-      </header>
+    <MarketingShell>
+      <main data-build-marker="marketing-shell-privacy-ac41246" className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <p className="text-xs font-semibold uppercase tracking-widest text-neutral-600">Legal</p>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight text-neutral-900">Privacy Policy</h1>
+        <p className="mt-3 text-sm text-neutral-500">Last Updated: 06/06/2026</p>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex-grow">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">Privacy Policy</h1>
-        <div className="prose prose-lg text-gray-600">
-          <p className="text-sm text-gray-500 mb-6">Last Updated: {new Date().toLocaleDateString()}</p>
-          
-          <h3 className="text-xl font-bold mt-8 mb-4">1. Introduction</h3>
-          <p>
-            Top Product Official ("we", "us", or "our") respects your privacy. This Privacy Policy explains how we handle data within our internal advertising platform.
-          </p>
+        <div className="mt-10 space-y-8 text-neutral-600 leading-relaxed">
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-neutral-900">1. Overview</h2>
+            <p>
+              This website and platform describe and support internal advertising operations. We process advertising data for internal reporting, decision support, and workflow efficiency.
+            </p>
+          </section>
 
-          <h3 className="text-xl font-bold mt-8 mb-4">2. Data Collection</h3>
-          <p>
-            This platform is an internal tool used for managing advertising campaigns. We collect and process data strictly for operational purposes, including campaign performance metrics and ad configuration settings retrieved via the Google Ads API.
-          </p>
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-neutral-900">2. Data Processed</h2>
+            <p>
+              The platform may process campaign performance metrics, keyword-level performance, search term reports, and operational configuration data retrieved through authorized integrations (including the Google Ads API).
+            </p>
+          </section>
 
-          <h3 className="text-xl font-bold mt-8 mb-4">3. Google Ads API</h3>
-          <p>
-            Our application uses the Google Ads API to create, manage, and report on advertising campaigns. Data retrieved from Google services is used solely for internal optimization and reporting. We do not share this data with third parties.
-          </p>
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-neutral-900">3. Google Ads API</h2>
+            <p>
+              We use the Google Ads API to support internal advertising workflows, including retrieving performance metrics, analyzing keyword performance, generating reporting views, reviewing campaign structure, and assisting optimization workflows.
+            </p>
+            <p>
+              The platform only accesses Google Ads accounts that are owned by us or explicitly authorized for operational management.
+            </p>
+          </section>
 
-          <h3 className="text-xl font-bold mt-8 mb-4">4. Contact</h3>
-          <p>
-            If you have questions about this policy, please contact us at <a href="mailto:support@topproductofficial.com" className="text-blue-600">support@topproductofficial.com</a>.
-          </p>
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-neutral-900">4. Data Sharing</h2>
+            <p>
+              Advertising data is used for internal operational purposes. We do not sell or publicly distribute Google Ads account data. Any sharing is limited to internal stakeholders and authorized operational processes.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-neutral-900">5. Contact</h2>
+            <p>
+              For privacy or compliance questions, contact{' '}
+              <a href="mailto:contact@topproductofficial.com" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                contact@topproductofficial.com
+              </a>
+              .
+            </p>
+            <p className="text-sm text-neutral-500">
+              You can also review our{' '}
+              <Link href="/terms-of-service" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                Terms of Service
+              </Link>
+              .
+            </p>
+          </section>
         </div>
       </main>
-      
-      <footer className="py-12 bg-gray-50 border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Top Product Official. All rights reserved.
-          </p>
-          <div className="flex gap-6 text-sm text-gray-500">
-            <Link href="/privacy-policy" className="text-gray-900 font-medium">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-gray-900 transition-colors">Terms of Service</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </MarketingShell>
   );
 }

@@ -1,54 +1,81 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { MarketingShell } from '@/components/marketing/MarketingShell';
 
 export const metadata: Metadata = {
   title: 'About Us | Top Product Official',
-  description: 'Learn more about Top Product Official and our mission to streamline advertising operations.',
+  description:
+    'Learn about Top Product Official, an internal advertising operations platform built for compliant Google Ads campaign management, reporting, and analytics.',
 };
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
-      <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">T</div>
-            <Link href="/" className="font-semibold text-lg tracking-tight hover:text-blue-600 transition-colors">Top Product Official</Link>
-          </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
-            <Link href="/about" className="text-blue-600">About</Link>
-            <Link href="/contact" className="hover:text-blue-600 transition-colors">Contact</Link>
-          </nav>
-        </div>
-      </header>
+    <MarketingShell active="about">
+      <main data-build-marker="marketing-shell-about-ac41246" className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <p className="text-xs font-semibold uppercase tracking-widest text-neutral-600">About</p>
+        <h1 className="mt-3 text-4xl font-bold tracking-tight text-neutral-900">Built for internal advertising operations</h1>
+        <div className="mt-8 space-y-10 text-neutral-600 leading-relaxed">
+          <section className="space-y-4">
+            <p>
+              Top Product Official is an internal advertising operations platform used by our team to plan, monitor, and improve Google Search campaigns. The platform brings together reporting, diagnostics, and structured execution workflows in a controlled environment.
+            </p>
+            <p>
+              We do not offer this platform as a public self-serve advertising product and we do not provide campaign management services for unrelated third-party client accounts.
+            </p>
+          </section>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex-grow">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">About Us</h1>
-        <div className="prose prose-lg text-gray-600 space-y-6">
-          <p>
-            Top Product Official is a specialized internal platform developed to manage and optimize advertising campaigns across the Google Search Network.
-          </p>
-          <p>
-            Our mission is to ensure high-quality, policy-compliant advertising operations through automation and structured data management. By leveraging the Google Ads API, we streamline the process of campaign creation, reporting, and optimization.
-          </p>
-          <p>
-            We operate strictly as an internal tool for our own product promotions and do not offer services to third-party advertisers.
-          </p>
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">What the platform does</h2>
+            <div className="mt-4 space-y-3">
+              <p>
+                The platform supports internal workflows such as performance reporting, keyword and intent analysis, campaign structure planning, and operational audits.
+              </p>
+              <p>
+                It is designed to help internal users keep execution consistent through documented processes, repeatable templates, and compliance-aware guardrails.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">Why we use the Google Ads API</h2>
+            <div className="mt-4 space-y-3">
+              <p>
+                The Google Ads API enables our platform to retrieve account performance metrics and support internal reporting, analysis, and operational review workflows.
+              </p>
+              <p>
+                When enabled for authorized accounts, the API can also support controlled campaign operations in a way that is auditable and aligned with policy-aware workflows.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">Internal-only and authorized access</h2>
+            <div className="mt-4 space-y-3">
+              <p>
+                Access is limited to internal users. The platform only accesses Google Ads accounts that are owned by us or explicitly authorized for operational management.
+              </p>
+              <p>
+                Our compliance posture is built around clear account scoping, transparent data handling, and support for access revocation when required.
+              </p>
+            </div>
+          </section>
+
+          <div className="rounded-2xl border border-black/10 bg-neutral-50 p-6">
+            <p className="text-sm font-semibold text-neutral-900">Learn more</p>
+            <div className="mt-3 flex flex-col sm:flex-row gap-3 text-sm">
+              <Link href="/google-ads-api-use-case" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+                Google Ads API Use Case
+              </Link>
+              <Link href="/developers/google-ads-api" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+                Developers / API Integration
+              </Link>
+              <Link href="/compliance" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+                Compliance Overview
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
-      
-      <footer className="py-12 bg-gray-50 border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Top Product Official. All rights reserved.
-          </p>
-          <div className="flex gap-6 text-sm text-gray-500">
-            <Link href="/privacy-policy" className="hover:text-gray-900 transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-gray-900 transition-colors">Terms of Service</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </MarketingShell>
   );
 }
