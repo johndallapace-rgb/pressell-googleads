@@ -38,9 +38,9 @@ export function SiteFooter({ vertical = 'general' }: SiteFooterProps) {
 
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-6 pt-4 border-t border-gray-800">
-           <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-           <Link href="/legal/terms" className="hover:text-white transition-colors">Terms of Use</Link>
-           <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
+           <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+           <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Use</Link>
+           <Link href="/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
            {/* Admin link removed for security */}
         </div>
 

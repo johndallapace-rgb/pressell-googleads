@@ -27,9 +27,9 @@ export function BrandHeader({ locale = 'en' }: BrandHeaderProps) {
         </Link>
         
         <nav className="hidden md:flex items-center space-x-6 text-xs text-gray-500 font-medium uppercase tracking-wider">
-          <Link href="/legal/privacy" className="hover:text-blue-600 transition-colors">{t.privacy}</Link>
-          <Link href="/legal/terms" className="hover:text-blue-600 transition-colors">{t.terms}</Link>
-          <Link href="/legal/disclaimer" className="hover:text-blue-600 transition-colors">{t.disclaimer}</Link>
+          <Link href="/privacy-policy" className="hover:text-blue-600 transition-colors">{t.privacy}</Link>
+          <Link href="/terms-of-service" className="hover:text-blue-600 transition-colors">{t.terms}</Link>
+          <Link href="/disclaimer" className="hover:text-blue-600 transition-colors">{t.disclaimer}</Link>
         </nav>
 
         {/* Mobile menu placeholder or simple text */}

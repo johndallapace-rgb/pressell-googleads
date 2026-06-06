@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductConfig } from '@/lib/config';
+import { ProductConfig } from '@/lib/shared/config';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
 import { SafeImage } from '@/components/SafeImage';
@@ -133,8 +133,8 @@ export function ComparisonTemplate({ product }: Props) {
        <footer className="bg-gray-900 text-gray-500 py-8 text-center text-xs mt-12">
             <p className="mb-2">© {new Date().getFullYear()} Comparison Report. All rights reserved.</p>
             <div className="flex justify-center space-x-4">
-                <a href="/legal/privacy" className="hover:text-white">Privacy</a>
-                <a href="/legal/terms" className="hover:text-white">Terms</a>
+                <a href="/privacy-policy" className="hover:text-white">Privacy</a>
+                <a href="/terms-of-service" className="hover:text-white">Terms</a>
             </div>
        </footer>
     </div>

@@ -5,6 +5,19 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = request.headers.get('host') || '';
 
+  if (pathname === '/legal/privacy') {
+    return NextResponse.redirect(new URL('/privacy-policy', request.url), 308);
+  }
+  if (pathname === '/legal/terms') {
+    return NextResponse.redirect(new URL('/terms-of-service', request.url), 308);
+  }
+  if (pathname === '/legal/disclaimer') {
+    return NextResponse.redirect(new URL('/disclaimer', request.url), 308);
+  }
+  if (pathname === '/terms') {
+    return NextResponse.redirect(new URL('/terms-of-service', request.url), 308);
+  }
+
   // 0. Debug Logging
   if (process.env.DEBUG_MIDDLEWARE) {
     console.log(`[Middleware] ${request.method} ${pathname} | Host: ${hostname}`);

@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductConfig } from '@/lib/config';
+import { ProductConfig } from '@/lib/shared/config';
 import { CTAButton } from '@/components/CTAButton';
 import { StickyCTA } from '@/components/StickyCTA';
 import { SafeImage } from '@/components/SafeImage';
@@ -84,9 +84,9 @@ export function StoryTemplate({ product }: Props) {
       <div className="relative z-10 bg-white/90 py-3 px-6 flex justify-between items-center text-xs text-gray-500 border-b border-gray-200 font-sans backdrop-blur-sm shadow-sm">
         <div className="font-bold text-gray-800 text-lg tracking-tight">TopProductOfficial™</div>
         <div className="hidden md:flex gap-4">
-            <a href="/legal/privacy" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
-            <a href="/legal/terms" className="hover:text-gray-900 transition-colors">Terms of Use</a>
-            <a href="/legal/disclaimer" className="hover:text-gray-900 transition-colors">Disclaimer</a>
+            <a href="/privacy-policy" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
+            <a href="/terms-of-service" className="hover:text-gray-900 transition-colors">Terms of Use</a>
+            <a href="/disclaimer" className="hover:text-gray-900 transition-colors">Disclaimer</a>
         </div>
       </div>
 
@@ -193,9 +193,9 @@ export function StoryTemplate({ product }: Props) {
             </p>
 
             <div className="flex justify-center space-x-6 pt-4 border-t border-gray-200 mt-4">
-             <a href="/legal/privacy" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
-             <a href="/legal/terms" className="hover:text-gray-900 transition-colors">Terms of Use</a>
-             <a href="/legal/disclaimer" className="hover:text-gray-900 transition-colors">Disclaimer</a>
+             <a href="/privacy-policy" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
+             <a href="/terms-of-service" className="hover:text-gray-900 transition-colors">Terms of Use</a>
+             <a href="/disclaimer" className="hover:text-gray-900 transition-colors">Disclaimer</a>
              <a href={`mailto:${product.support_email || 'support@topproductofficial.com'}`} className="hover:text-gray-900 transition-colors">Contact Support</a>
           </div>
           <p className="text-xs mt-6 opacity-50">© {new Date().getFullYear()} All Rights Reserved.</p>

@@ -59,9 +59,9 @@ export function BrandFooter({ vertical = 'general', supportEmail, locale = 'en' 
 
         {/* Links */}
         <div className="flex flex-wrap justify-center gap-6 pt-6 border-t border-gray-800 text-xs font-medium uppercase tracking-wide">
-           <Link href="/legal/privacy" className="hover:text-white transition-colors">{t.privacy}</Link>
-           <Link href="/legal/terms" className="hover:text-white transition-colors">{t.terms}</Link>
-           <Link href="/legal/disclaimer" className="hover:text-white transition-colors">{t.disclaimer}</Link>
+           <Link href="/privacy-policy" className="hover:text-white transition-colors">{t.privacy}</Link>
+           <Link href="/terms-of-service" className="hover:text-white transition-colors">{t.terms}</Link>
+           <Link href="/disclaimer" className="hover:text-white transition-colors">{t.disclaimer}</Link>
            
            {/* Impressum for Germany */}
            {isDe && (

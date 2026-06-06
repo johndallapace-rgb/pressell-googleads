@@ -1,50 +1,31 @@
-import { getCampaignConfig } from '@/lib/config';
-
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
   
-  let config;
-  try {
-      config = await getCampaignConfig();
-  } catch (e) {
-      console.warn('Failed to fetch campaign config for sitemap (likely build time), using empty default.');
-      config = { products: {} };
-  }
-
   const urls: string[] = [];
 
-  // Home
-  urls.push(`
-    <url>
-      <loc>${baseUrl}</loc>
-      <lastmod>${new Date().toISOString()}</lastmod>
-      <changefreq>daily</changefreq>
-      <priority>1.0</priority>
-    </url>
-  `);
+  const now = new Date().toISOString();
 
-  // Product Pages from Config (Active Only)
-  Object.values(config.products)
-    .filter(p => p.status === 'active')
-    .forEach(product => {
-      urls.push(`
-        <url>
-          <loc>${baseUrl}/${product.slug}</loc>
-          <lastmod>${new Date().toISOString()}</lastmod>
-          <changefreq>daily</changefreq>
-          <priority>0.9</priority>
-        </url>
-      `);
-    });
+  const canonicalPaths = [
+    '/',
+    '/about',
+    '/contact',
+    '/platform',
+    '/google-ads-api-use-case',
+    '/developers/google-ads-api',
+    '/compliance',
+    '/privacy-policy',
+    '/terms-of-service',
+    '/disclaimer',
+  ];
 
-  // Legal pages
-  ['legal/privacy', 'legal/terms', 'legal/disclaimer'].forEach(path => {
+  canonicalPaths.forEach((path) => {
+    const loc = path === '/' ? baseUrl : `${baseUrl}${path}`;
     urls.push(`
       <url>
-        <loc>${baseUrl}/${path}</loc>
-        <lastmod>${new Date().toISOString()}</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.5</priority>
+        <loc>${loc}</loc>
+        <lastmod>${now}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
       </url>
     `);
   });

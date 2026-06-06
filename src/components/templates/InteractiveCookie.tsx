@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductConfig } from '@/lib/config';
+import { ProductConfig } from '@/lib/shared/config';
 import { CTAButton } from '@/components/CTAButton';
 import { useState, useEffect } from 'react';
 
@@ -17,26 +17,29 @@ export function InteractiveCookie({ product }: Props) {
     // 1. Animation Entrance
     const timer = setTimeout(() => setIsVisible(true), 100);
 
-    // 2. Smart Iframe Check
-    const checkIframe = async () => {
-        const targetUrl = product.affiliate_url || product.official_url;
-        if (!targetUrl) {
-            setIframeAllowed(false);
-            return;
-        }
-        
-        try {
-            const res = await fetch(`/api/utils/check-iframe?url=${encodeURIComponent(targetUrl)}`);
-            const data = await res.json();
-            setIframeAllowed(data.canLoad);
-        } catch {
-            setIframeAllowed(false);
-        }
-    };
-    checkIframe();
+    // 2. Smart Iframe Check (Optimized)
+    // Only check if we really need it (e.g. if no sales page image)
+    if (!product.sales_page_image_url) {
+        const checkIframe = async () => {
+            const targetUrl = product.affiliate_url || product.official_url;
+            if (!targetUrl) {
+                setIframeAllowed(false);
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/utils/check-iframe?url=${encodeURIComponent(targetUrl)}`);
+                const data = await res.json();
+                setIframeAllowed(data.canLoad);
+            } catch {
+                setIframeAllowed(false);
+            }
+        };
+        checkIframe();
+    }
 
     return () => clearTimeout(timer);
-  }, [product.affiliate_url, product.official_url]);
+  }, [product.affiliate_url, product.official_url, product.sales_page_image_url]);
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-900">
@@ -134,9 +137,9 @@ export function InteractiveCookie({ product }: Props) {
 
         {/* Footer Links (Compliance) */}
         <div className="mt-6 pt-6 border-t border-gray-100 flex justify-center space-x-4 text-xs text-gray-400">
-            <a href="/legal/privacy" target="_blank" className="hover:text-gray-600 transition-colors">Privacy Policy</a>
+            <a href="/privacy-policy" target="_blank" className="hover:text-gray-600 transition-colors">Privacy Policy</a>
             <span>•</span>
-            <a href="/legal/terms" target="_blank" className="hover:text-gray-600 transition-colors">Terms of Service</a>
+            <a href="/terms-of-service" target="_blank" className="hover:text-gray-600 transition-colors">Terms of Service</a>
             <span>•</span>
             <a href={product.official_url} target="_blank" rel="nofollow noopener" className="hover:text-gray-600 transition-colors">Official Site</a>
         </div>
