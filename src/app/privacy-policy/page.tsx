@@ -59,7 +59,7 @@ export default function PrivacyPage() {
             </p>
             <p className="text-sm text-neutral-500">
               You can also review our{' '}
-              <Link href="/terms-of-service" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+              <Link href="/terms-of-service" prefetch={false} className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
                 Terms of Service
               </Link>
               .

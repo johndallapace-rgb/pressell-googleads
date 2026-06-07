@@ -81,13 +81,13 @@ export default function ContactPage() {
           <div className="rounded-2xl border border-black/10 bg-neutral-50 p-6">
             <p className="text-sm font-semibold text-neutral-900">Related pages</p>
             <div className="mt-3 flex flex-col sm:flex-row gap-3 text-sm">
-              <Link href="/google-ads-api-use-case" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+              <Link href="/google-ads-api-use-case" prefetch={false} className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
                 Google Ads API Use Case
               </Link>
-              <Link href="/developers/google-ads-api" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+              <Link href="/developers/google-ads-api" prefetch={false} className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
                 Developers / API Integration
               </Link>
-              <Link href="/compliance" className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
+              <Link href="/compliance" prefetch={false} className="rounded-xl border border-black/10 bg-white px-4 py-2 font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors">
                 Compliance Overview
               </Link>
             </div>

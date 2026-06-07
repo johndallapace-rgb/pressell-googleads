@@ -5,6 +5,13 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = request.headers.get('host') || '';
 
+  if (hostname === 'topproductofficial.com' && !pathname.startsWith('/api') && !pathname.startsWith('/admin')) {
+    const url = request.nextUrl.clone();
+    url.hostname = 'www.topproductofficial.com';
+    url.protocol = 'https:';
+    return NextResponse.redirect(url, 308);
+  }
+
   if (pathname === '/legal/privacy') {
     return NextResponse.redirect(new URL('/privacy-policy', request.url), 308);
   }
@@ -16,6 +23,33 @@ export async function middleware(request: NextRequest) {
   }
   if (pathname === '/terms') {
     return NextResponse.redirect(new URL('/terms-of-service', request.url), 308);
+  }
+  if (pathname.startsWith('/terms-of-service/')) {
+    return NextResponse.redirect(new URL('/terms-of-service', request.url), 308);
+  }
+  if (pathname.startsWith('/privacy-policy/')) {
+    return NextResponse.redirect(new URL('/privacy-policy', request.url), 308);
+  }
+  if (pathname.startsWith('/disclaimer/')) {
+    return NextResponse.redirect(new URL('/disclaimer', request.url), 308);
+  }
+  if (pathname.startsWith('/about/')) {
+    return NextResponse.redirect(new URL('/about', request.url), 308);
+  }
+  if (pathname.startsWith('/contact/')) {
+    return NextResponse.redirect(new URL('/contact', request.url), 308);
+  }
+  if (pathname.startsWith('/platform/')) {
+    return NextResponse.redirect(new URL('/platform', request.url), 308);
+  }
+  if (pathname.startsWith('/google-ads-api-use-case/')) {
+    return NextResponse.redirect(new URL('/google-ads-api-use-case', request.url), 308);
+  }
+  if (pathname.startsWith('/developers/google-ads-api/')) {
+    return NextResponse.redirect(new URL('/developers/google-ads-api', request.url), 308);
+  }
+  if (pathname.startsWith('/compliance/')) {
+    return NextResponse.redirect(new URL('/compliance', request.url), 308);
   }
 
   // 0. Debug Logging

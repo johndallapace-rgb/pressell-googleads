@@ -52,12 +52,14 @@ export default function PlatformPage() {
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/google-ads-api-use-case"
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
                 >
                   Google Ads API Use Case
                 </Link>
                 <Link
                   href="/compliance"
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
                 >
                   Compliance
@@ -97,4 +99,3 @@ export default function PlatformPage() {
     </MarketingShell>
   );
 }
-

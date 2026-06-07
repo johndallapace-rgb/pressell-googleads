@@ -14,16 +14,17 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.topproductofficial.com'),
   title: 'Advertising Automation Platform | Top Product Official',
-  description: 'Top Product Official is an internal advertising management platform used to create, manage and optimize Google Search campaigns for affiliate product promotions.',
+  description:
+    'Top Product Official is an internal advertising operations platform used for Google Search campaign management, reporting, and analytics with documented Google Ads API integration.',
   openGraph: {
     title: 'Advertising Automation Platform | Top Product Official',
-    description: 'Internal advertising management platform for Google Search campaigns.',
+    description: 'Internal advertising operations platform for Google Search campaign management, reporting, and analytics.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Advertising Automation Platform | Top Product Official',
-    description: 'Internal advertising management platform for Google Search campaigns.',
+    description: 'Internal advertising operations platform for Google Search campaign management, reporting, and analytics.',
   },
   robots: {
     index: true,
@@ -104,12 +105,14 @@ export default async function HomePage() {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href="/google-ads-api-use-case"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
               >
                 Google Ads API Use Case
               </Link>
               <Link
                 href="/platform"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
               >
                 Platform Overview
@@ -219,12 +222,14 @@ export default async function HomePage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/compliance"
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-100 transition-colors"
                 >
                   Compliance Overview
                 </Link>
                 <Link
                   href="/contact"
+                  prefetch={false}
                   className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-transparent px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
                 >
                   Contact

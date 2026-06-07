@@ -17,17 +17,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = headerList.get("host");
   const vertical = getVerticalFromHost(host) || "default";
 
+  const resolvedHost = host || "www.topproductofficial.com";
+  const normalizedHost = resolvedHost === "topproductofficial.com" ? "www.topproductofficial.com" : resolvedHost;
+  const metadataBase = new URL(`https://${normalizedHost}`);
+
   // Define base path for icons based on vertical
   // If vertical is 'health', path is /icons/health/
   // If 'default' (no subdomain), path is /icons/default/
   const iconPath = `/icons/${vertical}`;
 
   return {
+    metadataBase,
     title: {
-      template: "%s | TopProductDigest",
-      default: "TopProductDigest - Independent Reviews",
+      template: "%s",
+      default: "Advertising Automation Platform | Top Product Official",
     },
-    description: "Expert reviews and independent analysis of top-rated products.",
+    description:
+      "Internal advertising operations platform with documented Google Ads API use case and compliance pages.",
     icons: {
       icon: [
         { url: `${iconPath}/favicon-16x16.png`, sizes: "16x16", type: "image/png" },
@@ -47,13 +53,13 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       type: "website",
-      siteName: "TopProductDigest",
+      siteName: "Top Product Official",
       images: [
         {
           url: `/og/${vertical}.png`, // Dynamic OG image per vertical
           width: 1200,
           height: 630,
-          alt: "TopProductDigest Review",
+          alt: "Top Product Official",
         },
       ],
     },

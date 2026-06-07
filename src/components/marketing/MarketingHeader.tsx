@@ -12,23 +12,29 @@ export function MarketingHeader({ active }: MarketingHeaderProps) {
           <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-semibold">
             T
           </div>
-          <Link href="/" className="font-semibold text-lg tracking-tight hover:text-neutral-700 transition-colors">
+          <Link href="/" prefetch={false} className="font-semibold text-lg tracking-tight hover:text-neutral-700 transition-colors">
             Top Product Official
           </Link>
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-600">
-          <Link href="/" className={active === 'home' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}>
+          <Link
+            href="/"
+            prefetch={false}
+            className={active === 'home' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}
+          >
             Home
           </Link>
           <Link
             href="/platform"
+            prefetch={false}
             className={active === 'platform' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}
           >
             Platform
           </Link>
           <Link
             href="/google-ads-api-use-case"
+            prefetch={false}
             className={
               active === 'google-ads-api-use-case' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'
             }
@@ -37,15 +43,21 @@ export function MarketingHeader({ active }: MarketingHeaderProps) {
           </Link>
           <Link
             href="/compliance"
+            prefetch={false}
             className={active === 'compliance' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}
           >
             Compliance
           </Link>
-          <Link href="/about" className={active === 'about' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}>
+          <Link
+            href="/about"
+            prefetch={false}
+            className={active === 'about' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}
+          >
             About
           </Link>
           <Link
             href="/contact"
+            prefetch={false}
             className={active === 'contact' ? 'text-neutral-900' : 'hover:text-neutral-900 transition-colors'}
           >
             Contact
@@ -55,4 +67,3 @@ export function MarketingHeader({ active }: MarketingHeaderProps) {
     </header>
   );
 }
-

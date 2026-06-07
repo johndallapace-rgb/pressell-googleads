@@ -91,7 +91,10 @@ export default function GoogleAdsApiUseCasePage() {
               policy-aware processes.
             </p>
             <p className="mt-4 text-sm text-neutral-500">
-              See: <Link href="/compliance" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">Compliance</Link>
+              See:{' '}
+              <Link href="/compliance" prefetch={false} className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                Compliance
+              </Link>
             </p>
           </section>
 
@@ -107,12 +110,14 @@ export default function GoogleAdsApiUseCasePage() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
                 href="/platform"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
               >
                 Platform Overview
               </Link>
               <Link
                 href="/privacy-policy"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
               >
                 Privacy Policy
@@ -124,4 +129,3 @@ export default function GoogleAdsApiUseCasePage() {
     </MarketingShell>
   );
 }
-

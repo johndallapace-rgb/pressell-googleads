@@ -43,7 +43,11 @@ export default function TermsOfServicePage() {
               The platform may use the Google Ads API to retrieve campaign performance metrics, analyze keyword performance, generate internal reporting dashboards, review campaign structure, and assist optimization workflows.
             </p>
             <p className="text-sm text-neutral-500">
-              See also: <Link href="/google-ads-api-use-case" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">Google Ads API Use Case</Link>.
+              See also:{' '}
+              <Link href="/google-ads-api-use-case" prefetch={false} className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                Google Ads API Use Case
+              </Link>
+              .
             </p>
           </section>
 
@@ -53,7 +57,11 @@ export default function TermsOfServicePage() {
               Our workflows are designed to support policy-aware advertising operations. Users are responsible for ensuring that campaign assets and configurations comply with applicable platform requirements and policies.
             </p>
             <p className="text-sm text-neutral-500">
-              See also: <Link href="/compliance" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">Compliance</Link>.
+              See also:{' '}
+              <Link href="/compliance" prefetch={false} className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                Compliance
+              </Link>
+              .
             </p>
           </section>
 
@@ -79,4 +87,3 @@ export default function TermsOfServicePage() {
     </MarketingShell>
   );
 }
-

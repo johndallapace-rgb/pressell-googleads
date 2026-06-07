@@ -20,22 +20,22 @@ export function MarketingFooter() {
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-widest text-neutral-400">Company</p>
             <div className="flex flex-col gap-2 text-sm">
-              <Link href="/about" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/about" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 About
               </Link>
-              <Link href="/platform" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/platform" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 Platform
               </Link>
-              <Link href="/google-ads-api-use-case" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/google-ads-api-use-case" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 Google Ads API Use Case
               </Link>
-              <Link href="/developers/google-ads-api" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/developers/google-ads-api" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 Developers / API Integration
               </Link>
-              <Link href="/compliance" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/compliance" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 Compliance
               </Link>
-              <Link href="/contact" className="text-neutral-200 hover:text-sky-200 transition-colors">
+              <Link href="/contact" prefetch={false} className="text-neutral-200 hover:text-sky-200 transition-colors">
                 Contact
               </Link>
             </div>
@@ -49,10 +49,10 @@ export function MarketingFooter() {
               </a>
               <p className="text-neutral-400">Operating Region: Global</p>
               <div className="flex flex-wrap gap-4 pt-2 text-sm text-neutral-300">
-                <Link href="/privacy-policy" className="hover:text-sky-200 transition-colors">
+                <Link href="/privacy-policy" prefetch={false} className="hover:text-sky-200 transition-colors">
                   Privacy Policy
                 </Link>
-                <Link href="/terms-of-service" className="hover:text-sky-200 transition-colors">
+                <Link href="/terms-of-service" prefetch={false} className="hover:text-sky-200 transition-colors">
                   Terms of Service
                 </Link>
               </div>

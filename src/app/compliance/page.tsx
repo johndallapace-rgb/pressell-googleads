@@ -38,14 +38,66 @@ export default function CompliancePage() {
               We use the Google Ads API to retrieve campaign performance metrics, analyze keyword performance, generate internal reporting dashboards, review campaign structure, and assist campaign optimization workflows.
             </p>
             <p className="mt-4 text-sm text-neutral-500">
-              See: <Link href="/google-ads-api-use-case" className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">Google Ads API Use Case</Link>
+              See:{' '}
+              <Link href="/google-ads-api-use-case" prefetch={false} className="font-semibold text-neutral-900 hover:text-neutral-700 transition-colors">
+                Google Ads API Use Case
+              </Link>
             </p>
           </section>
 
           <section className="rounded-2xl border border-black/10 bg-white p-8">
-            <h2 className="text-xl font-semibold text-neutral-900">Data handling and confidentiality</h2>
+            <h2 className="text-xl font-semibold text-neutral-900">Data usage</h2>
+            <div className="mt-3 space-y-4 text-neutral-600 leading-relaxed">
+              <p>
+                The platform processes Google Ads account data for internal reporting, decision support, and workflow efficiency. The data we access is limited to what is required for these operational workflows.
+              </p>
+              <div className="rounded-xl border border-black/10 bg-neutral-50 p-5">
+                <p className="text-sm font-semibold text-neutral-900">Typical data categories</p>
+                <ul className="mt-3 space-y-2 text-sm text-neutral-700">
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Campaign-level data (campaign configuration and performance metrics)</span></li>
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Ad group data (structure and performance metrics)</span></li>
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Keyword and search term performance signals used for relevance and efficiency review</span></li>
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Reporting metrics used for internal dashboards, alerts, and audits</span></li>
+                </ul>
+              </div>
+              <p>
+                We do not sell advertising data and we do not use Google Ads API data for personal user profiling. Access is restricted to owned or explicitly authorized accounts.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">Data retention</h2>
+            <div className="mt-3 space-y-4 text-neutral-600 leading-relaxed">
+              <p>
+                Data is retained at a high level for operational reporting, analytics, and auditability. Retention is aligned to internal operational needs and is limited to what is necessary to support reporting and troubleshooting.
+              </p>
+              <p className="text-sm text-neutral-600">
+                We regularly review stored operational data and remove or rotate data that is no longer required for internal reporting and compliance purposes.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">Access revocation</h2>
+            <div className="mt-3 space-y-4 text-neutral-600 leading-relaxed">
+              <p>
+                Access to Google Ads accounts is granted through Google OAuth. Authorized users and account owners can revoke access at any time through their Google Account security settings.
+              </p>
+              <div className="rounded-xl border border-black/10 bg-neutral-50 p-5">
+                <p className="text-sm font-semibold text-neutral-900">Disconnect process</p>
+                <ul className="mt-3 space-y-2 text-sm text-neutral-700">
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Revoke the app’s access in the Google Account “Third‑party access” / security settings</span></li>
+                  <li className="flex gap-2"><span className="text-neutral-400">•</span><span>Contact us for operational assistance if a disconnect must be confirmed or documented</span></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-black/10 bg-white p-8">
+            <h2 className="text-xl font-semibold text-neutral-900">Authorized accounts</h2>
             <p className="mt-3 text-neutral-600 leading-relaxed">
-              Data processed by the platform is used for internal reporting, decision support, and workflow efficiency. We do not market the platform as a service for managing third-party client accounts.
+              The platform is built for internal operations and only accesses Google Ads accounts that are owned by us or explicitly authorized for operational management. We do not position the platform as a service for managing unrelated third-party client accounts.
             </p>
           </section>
 
@@ -68,12 +120,14 @@ export default function CompliancePage() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
                 href="/privacy-policy"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
               >
                 Privacy Policy
               </Link>
               <Link
                 href="/terms-of-service"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
               >
                 Terms of Service
@@ -85,4 +139,3 @@ export default function CompliancePage() {
     </MarketingShell>
   );
 }
-

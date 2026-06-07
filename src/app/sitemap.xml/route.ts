@@ -1,6 +1,24 @@
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  
+  const rawBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  let baseUrl = rawBaseUrl;
+
+  try {
+    baseUrl = new URL(rawBaseUrl).origin;
+  } catch {
+    try {
+      baseUrl = new URL(`https://${rawBaseUrl}`).origin;
+    } catch {
+      baseUrl = 'http://localhost:3000';
+    }
+  }
+
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.hostname === 'topproductofficial.com' || parsed.hostname === 'www.topproductofficial.com') {
+      baseUrl = 'https://www.topproductofficial.com';
+    }
+  } catch {}
+
   const urls: string[] = [];
 
   const now = new Date().toISOString();
