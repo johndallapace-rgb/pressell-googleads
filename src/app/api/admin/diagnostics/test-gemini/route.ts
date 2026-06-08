@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
 import { generateContent } from '@/lib/gemini';
-import { getSystemConfig } from '@/lib/config';
+import { getSystemConfig } from '@/lib/server/config';
+import { isAdminRequestAuthorized } from '@/lib/server/admin-auth';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value;
-  if (!token || !(await verifyToken(token))) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
     const config = await getSystemConfig();
     const apiKey = config.api_keys?.gemini;
     if (apiKey) {
-        console.log('[Gemini-Test] Testing with key:', apiKey.substring(0, 8) + '...');
+        console.log('[Gemini-Test] Configured Gemini connection test requested.');
     } else {
         console.log('[Gemini-Test] No key found in config.');
     }

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSystemConfig, updateSystemConfig, SystemConfig } from '@/lib/config';
-import { verifyToken } from '@/lib/auth';
+import { getSystemConfig, updateSystemConfig, SystemConfig } from '@/lib/server/config';
+import { isAdminRequestAuthorized } from '@/lib/server/admin-auth';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value;
-  if (!token && request.headers.get('Authorization') !== `Bearer ${process.env.ADMIN_TOKEN}`) {
-    if (token && !(await verifyToken(token))) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!(await isAdminRequestAuthorized(request))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -21,11 +18,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value;
-  if (!token && request.headers.get('Authorization') !== `Bearer ${process.env.ADMIN_TOKEN}`) {
-    if (token && !(await verifyToken(token))) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!(await isAdminRequestAuthorized(request))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -33,6 +27,18 @@ export async function POST(request: NextRequest) {
       
       // Basic Validation
       if (!newConfig.api_keys) newConfig.api_keys = {};
+      if (!newConfig.google_ads) newConfig.google_ads = { customer_accounts: [] } as any;
+      if (!Array.isArray((newConfig.google_ads as any).customer_accounts)) (newConfig.google_ads as any).customer_accounts = [];
+      if (!Array.isArray((newConfig.google_ads as any).test_customer_accounts)) (newConfig.google_ads as any).test_customer_accounts = [];
+      if (!Array.isArray((newConfig.google_ads as any).production_customer_accounts)) (newConfig.google_ads as any).production_customer_accounts = [];
+      if ((newConfig.google_ads as any).access_level !== 'test' && (newConfig.google_ads as any).access_level !== 'production') (newConfig.google_ads as any).access_level = 'test';
+      if ((newConfig.google_ads as any).execution_mode !== 'config_only' && (newConfig.google_ads as any).execution_mode !== 'read_only' && (newConfig.google_ads as any).execution_mode !== 'active') {
+        (newConfig.google_ads as any).execution_mode = 'config_only';
+      }
+      const g = newConfig.google_ads as any;
+      const requiredOk = !!(g?.developer_token && g?.client_id && g?.client_secret && g?.refresh_token && g?.manager_account_id);
+      (newConfig.google_ads as any).config_valid = requiredOk;
+      (newConfig.google_ads as any).last_validation_at = new Date().toISOString();
       if (!newConfig.platforms) newConfig.platforms = {};
       
       const success = await updateSystemConfig(newConfig);

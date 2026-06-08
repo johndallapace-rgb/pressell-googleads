@@ -1,564 +1,508 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import GeminiStatusBadge from '@/components/admin/GeminiStatusBadge';
 import { FormInput } from '@/components/ui/FormInput';
-import productCatalog from '@/data/product-catalog.json';
+import type { AdminTrendItem, AdminTrendsSnapshot } from '@/lib/admin/trends-types';
 
-type Platform = 'ClickBank' | 'Digistore24' | 'BuyGoods' | 'MaxWeb';
+const EMPTY_SNAPSHOT: AdminTrendsSnapshot = {
+  state: 'empty',
+  items: [],
+  last_updated: null,
+  source_status: {
+    search: {
+      configured: false,
+      used: false,
+      provider: 'none',
+      detail: 'Missing configuration',
+      errors: [],
+    },
+    gemini: {
+      configured: false,
+      used: false,
+      provider: 'none',
+      detail: 'Missing configuration',
+      errors: [],
+    },
+  },
+  errors: [],
+};
 
-interface TrendProduct {
-  id: string;
-  name: string;
-  vertical: string;
-  gravity: number; // or popularity score
-  aiScore: number; // 0-100
-  aiReason: string;
-  platform: Platform;
-  url: string;
-  
-  // New Metrics
-  avgPayout: number; // Commission
-  currency: 'USD' | 'EUR';
-  deltaGravity: number; // % change 7d
-  competitionDensity: 'Low' | 'Medium' | 'High' | 'Very High';
-  conversionStability: 'Stable' | 'Volatile';
-  safetyScore: 'Safe' | 'Moderate' | 'Risky';
-  trendDirection: 'up' | 'down' | 'flat';
+function formatTimestamp(value: string | null) {
+  if (!value) return 'Not refreshed yet';
+
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
 }
 
-// Mock Data - In a real scenario, this would come from a daily scraper job
-const MOCK_DATA: TrendProduct[] = [
-  { 
-    id: '1', name: 'Mitolyn', vertical: 'Health', gravity: 120, 
-    aiScore: 98, aiReason: 'High search volume + Low competition keywords detected.', 
-    platform: 'ClickBank', url: 'https://mitolyn.com/video.php',
-    avgPayout: 140, currency: 'USD',
-    deltaGravity: 15.5, competitionDensity: 'Low', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
-  },
-  { 
-    id: '2', name: 'Ted\'s Woodworking', vertical: 'DIY', gravity: 85, 
-    aiScore: 92, aiReason: 'Evergreen niche, high conversion on cold traffic.', 
-    platform: 'ClickBank', url: 'https://tedswoodworking.com',
-    avgPayout: 55, currency: 'USD',
-    deltaGravity: 5.2, competitionDensity: 'Medium', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
-  },
-  { 
-    id: '3', name: 'Puravive', vertical: 'Health', gravity: 450, 
-    aiScore: 88, aiReason: 'Saturated but massive volume. Needs unique angle.', 
-    platform: 'ClickBank', url: 'https://puravive.com',
-    avgPayout: 110, currency: 'USD',
-    deltaGravity: -2.1, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Moderate', trendDirection: 'down'
-  },
-  { 
-    id: '4', name: 'Genius Wave', vertical: 'Spirituality', gravity: 300, 
-    aiScore: 85, aiReason: 'Trending on TikTok. VSL is converting well.', 
-    platform: 'Digistore24', url: 'https://thegeniuswave.com',
-    avgPayout: 38, currency: 'USD', // Below threshold
-    deltaGravity: 45.0, competitionDensity: 'Medium', conversionStability: 'Volatile', safetyScore: 'Moderate', trendDirection: 'up'
-  },
-  { 
-    id: '5', name: 'ProDentim', vertical: 'Health', gravity: 210, 
-    aiScore: 78, aiReason: 'Steady performer. Dental niche is stable.', 
-    platform: 'ClickBank', url: 'https://prodentim.com',
-    avgPayout: 105, currency: 'USD',
-    deltaGravity: 0.5, competitionDensity: 'High', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'flat'
-  },
-  { 
-    id: '6', name: 'Sugar Defender', vertical: 'Health', gravity: 500, 
-    aiScore: 75, aiReason: 'Very high competition. CPA rising.', 
-    platform: 'BuyGoods', url: 'https://sugardefender.com',
-    avgPayout: 120, currency: 'USD',
-    deltaGravity: -10.0, competitionDensity: 'Very High', conversionStability: 'Stable', safetyScore: 'Risky', trendDirection: 'down'
-  },
-];
+function getStatusClasses(status: AdminTrendItem['status']) {
+  if (status === 'rising') return 'bg-green-100 text-green-700 border-green-200';
+  if (status === 'stable') return 'bg-blue-100 text-blue-700 border-blue-200';
+  if (status === 'declining') return 'bg-red-100 text-red-700 border-red-200';
+  return 'bg-gray-100 text-gray-600 border-gray-200';
+}
+
+function scoreClasses(score: number) {
+  if (score >= 75) return 'text-green-600';
+  if (score >= 50) return 'text-yellow-600';
+  return 'text-red-500';
+}
+
+function sourceLabel(snapshot: AdminTrendsSnapshot) {
+  if (!snapshot.source_status.search.configured) return 'Missing configuration';
+  if (snapshot.source_status.search.used) {
+    return snapshot.source_status.search.provider === 'serpapi' ? 'Real search signals via SerpApi' : 'Real search signals via Google Custom Search';
+  }
+  return 'Configured, refresh to collect real search signals';
+}
+
+function geminiLabel(snapshot: AdminTrendsSnapshot) {
+  if (!snapshot.source_status.gemini.configured) return 'Missing configuration';
+  if (snapshot.source_status.gemini.used) return 'AI analyzed with Gemini';
+  return 'Gemini available, heuristic analysis active';
+}
+
+function filterTrendItems(items: AdminTrendItem[], searchQuery: string) {
+  const query = searchQuery.trim().toLowerCase();
+  if (!query) return items;
+
+  return items.filter((item) => {
+    const haystack = [
+      item.title,
+      item.niche,
+      item.source,
+      item.search_intent,
+      item.summary,
+      ...item.suggested_keywords,
+      ...item.detected_angles,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(query);
+  });
+}
 
 export default function MarketTrendsPage() {
   const router = useRouter();
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('ClickBank');
-  const [analyzing, setAnalyzing] = useState(false);
-  const [products, setProducts] = useState<TrendProduct[]>([]); // Default empty until verified
-  const [config, setConfig] = useState<any>(null);
+  const [snapshot, setSnapshot] = useState<AdminTrendsSnapshot>(EMPTY_SNAPSHOT);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
-  // Persistence: Load Top 5 / Data on Mount
+  const filteredItems = useMemo(() => filterTrendItems(snapshot.items, searchQuery), [snapshot.items, searchQuery]);
+  const featuredItems = useMemo(() => filteredItems.slice(0, 4), [filteredItems]);
+
+  async function loadSnapshot() {
+    setRequestError(null);
+
+    const response = await fetch('/api/admin/trends', {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Failed to load trends snapshot');
+    }
+
+    setSnapshot(data as AdminTrendsSnapshot);
+  }
+
   useEffect(() => {
-    // 1. Fetch Config First to Verify Connection
-    fetch('/api/admin/config', { cache: 'no-store' }).then(res => res.json()).then(cfg => {
-        setConfig(cfg);
-        
-        // 2. Only load data if keys exist
-        // Note: We check if ANY platform key exists to allow partial functionality
-        // But for strict "Prova de Falha", we might want to check based on selectedPlatform
-        const hasKeys = cfg.api_keys?.clickbank_api_token || cfg.platforms?.digistore?.credentials?.affiliate_id;
-        
-        if (hasKeys) {
-            const saved = localStorage.getItem('marketTrends_data');
-            if (saved) {
-                try {
-                    setProducts(JSON.parse(saved));
-                } catch (e) { console.error(e); }
-            } else {
-                // Initial Mock Load only if configured
-                // In production, this would be empty until "Refresh" is clicked
-                setProducts(MOCK_DATA);
-            }
-        } else {
-            // FORCE CLEAR IF NO KEYS
-            setProducts([]);
-            localStorage.removeItem('marketTrends_data');
-        }
-    }).catch(err => console.error('Config fetch failed', err));
+    loadSnapshot()
+      .catch((error) => setRequestError(error instanceof Error ? error.message : 'Failed to load trends snapshot'))
+      .finally(() => setInitialLoading(false));
   }, []);
 
-  // Persistence: Save when updated
-  useEffect(() => {
-      if (products.length > 0 && products !== MOCK_DATA) {
-        localStorage.setItem('marketTrends_data', JSON.stringify(products));
-      }
-  }, [products]);
+  async function handleRefreshAnalysis() {
+    setRefreshing(true);
+    setRequestError(null);
 
-  // Check current platform status
-  const isPlatformConfigured = (p: Platform) => {
-      if (!config) return false;
-      if (p === 'ClickBank') return !!(config.api_keys?.clickbank_api_token);
-      if (p === 'Digistore24') return !!(config.platforms?.digistore?.credentials?.affiliate_id);
-      if (p === 'BuyGoods') return !!(config.api_keys?.buygoods_api);
-      if (p === 'MaxWeb') return !!(config.api_keys?.maxweb_api);
-      return false;
-  };
+    try {
+      const response = await fetch('/api/admin/trends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-  // Filter products by platform
-  const filteredProducts = isPlatformConfigured(selectedPlatform) 
-      ? products.filter(p => p.platform === selectedPlatform)
-      : [];
-  
-  // Sort by AI Score for recommendations
-  const topRecommendations = [...filteredProducts]
-    .sort((a, b) => b.aiScore - a.aiScore)
-    .slice(0, 5);
+      const data = await response.json().catch(() => null);
 
-  const handleCreatePresell = async (product: TrendProduct) => {
-      // 1. Fetch Config for Nickname
-      let nickname = 'johnpace';
-      let affiliateUrl = product.url;
-
-      // Extract Vendor ID (Clean) - "Mitolyn" -> "mitolyn"
-      const vendorId = product.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      // CATALOG LOOKUP (Smart ID)
-      // Check if we have this product in our catalog to get the REAL ID
-      // @ts-ignore
-      const catalogItem = Object.values(productCatalog.products).find((p: any) => 
-          p.name.toLowerCase().includes(product.name.toLowerCase()) || 
-          product.name.toLowerCase().includes(p.name.toLowerCase())
-      ) as any;
-
-      try {
-        const configRes = await fetch('/api/admin/config');
-        const sysConfig = await configRes.json();
-        nickname = sysConfig.api_keys?.clickbank_nickname || sysConfig.affiliate_nickname || 'johnpace';
-        
-        // Construct Real Affiliate Link (Manual Construction)
-        if (catalogItem && catalogItem.id) {
-             // BEST CASE: We have the ID from catalog
-             const vendor = catalogItem.vendor || 'JohnPace'; // Use catalog vendor or default
-             const baseUrl = catalogItem.base_url || 'https://www.digistore24.com/redir';
-             
-             // PRIORITY: Check if catalog has specific affiliate_url defined (Direct Link Strategy)
-             if (catalogItem.affiliate_url) {
-                 affiliateUrl = catalogItem.affiliate_url;
-             }
-             // Construct correct link: base/id/vendor
-             else if (product.platform === 'Digistore24') {
-                 affiliateUrl = `${baseUrl}/${catalogItem.id}/${vendor}`;
-             } else {
-                 // Clickbank etc
-                 affiliateUrl = `${baseUrl}/${catalogItem.id}/${vendor}`; 
-             }
-             console.log(`[Trends] Catalog Match! Using ID ${catalogItem.id}`);
-        } else if (product.platform === 'ClickBank') {
-            affiliateUrl = `https://${nickname}.hop.clickbank.net/?affiliate=${nickname}&vendor=${vendorId}`;
-        } else if (product.platform === 'Digistore24') {
-            const dsId = sysConfig.platforms?.digistore?.credentials?.affiliate_id || nickname;
-            affiliateUrl = `https://www.digistore24.com/redir/PRODUCT_ID/${dsId}`; // Fallback if not in catalog
-        }
-      } catch (e) { console.error('Config fetch error', e); }
-
-      // 2. Resolve Official URL (Clean Tracking Garbage)
-      let officialUrl = product.url;
-      try {
-          const u = new URL(officialUrl);
-          // Remove ALL query params (tracking garbage like hopId, vtid, etc)
-          u.search = ''; 
-          
-          // Heuristic: Prefer text pages over video pages
-          // mitolyn.com/video.php -> mitolyn.com/text.php (common pattern) or just mitolyn.com
-          // STRATEGY: If .php is detected, try to strip to root OR append /welcome if generic
-          if (u.pathname.includes('video') || u.pathname.endsWith('.php')) {
-               const rootUrl = `${u.protocol}//${u.hostname}`;
-               
-               // Try to ping the root to see if it redirects or works
-               // Since we are client-side, we might just assume root is safer for scraping content
-               // Or append standard VSL bypass paths
-               
-               // For Mitolyn specifically (and many CB offers):
-               // video.php -> text.php OR root
-               officialUrl = rootUrl; // Default to root for safety
-               console.log(`[Trends] Cleaned URL from ${product.url} to ${officialUrl}`);
-          }
-          
-          officialUrl = officialUrl.replace(/\/$/, ''); // Remove trailing slash
-      } catch (e) {}
-
-      // 3. Navigate to Creator with PRE-FILLED Data
-      const query = new URLSearchParams({
-          url: officialUrl, // Clean Scraper Target
-          niche: product.vertical,
-          affiliate_url: affiliateUrl, // The constructed link
-          name: product.name, // Pass name
-          // No vendor_id needed in params anymore as we constructed the link
-      }).toString();
-
-      router.push(`/admin/products/new?${query}`);
-  };
-
-  const handleRefreshAnalysis = async () => {
-      if (!isPlatformConfigured(selectedPlatform)) {
-          alert(`Please configure ${selectedPlatform} keys first!`);
-          router.push('/admin/config');
-          return;
-      }
-      setAnalyzing(true);
-      
-      try {
-          if (selectedPlatform === 'Digistore24') {
-             // Mock data refresh for Digistore to prove connection
-             // In production this would fetch from /api/admin/platforms/sync
-             
-             await new Promise(r => setTimeout(r, 2000));
-             
-             setProducts(prev => {
-                // Remove old Digistore items
-                const others = prev.filter(p => p.platform !== 'Digistore24');
-                // Add new "Scanned" items
-                const newItems: TrendProduct[] = [
-                    { 
-                        id: 'ds-1', name: 'Advanced Amino', vertical: 'Health', gravity: 42, 
-                        aiScore: 94, aiReason: 'Top seller in Germany/UK. High recurring revenue.', 
-                        platform: 'Digistore24', url: 'https://advancedamino.com',
-                        avgPayout: 55, currency: 'EUR',
-                        deltaGravity: 8.5, competitionDensity: 'Low', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
-                    },
-                    { 
-                        id: 'ds-2', name: 'Tube Mastery and Monetization', vertical: 'BizOpp', gravity: 150, 
-                        aiScore: 89, aiReason: 'Matt Par offer. Converting well on YouTube ads.', 
-                        platform: 'Digistore24', url: 'https://tubemastery.com',
-                        avgPayout: 450, currency: 'USD',
-                        deltaGravity: 12.0, competitionDensity: 'Medium', conversionStability: 'Stable', safetyScore: 'Safe', trendDirection: 'up'
-                    },
-                    { 
-                        id: 'ds-3', name: 'Keto Meal Plan', vertical: 'Health', gravity: 300, 
-                        aiScore: 82, aiReason: 'High volume but saturated. Good for broad targeting.', 
-                        platform: 'Digistore24', url: 'https://ketomeals.com',
-                        avgPayout: 27, currency: 'USD', // Low Payout
-                        deltaGravity: -5.0, competitionDensity: 'High', conversionStability: 'Stable', safetyScore: 'Moderate', trendDirection: 'down'
-                    },
-                    { 
-                        id: 'ds-4', name: 'Metaspike', vertical: 'Health', gravity: 60, 
-                        aiScore: 79, aiReason: 'New offer rising in French market.', 
-                        platform: 'Digistore24', url: 'https://metaspike.com',
-                        avgPayout: 85, currency: 'EUR',
-                        deltaGravity: 25.0, competitionDensity: 'Low', conversionStability: 'Volatile', safetyScore: 'Safe', trendDirection: 'up'
-                    },
-                    { 
-                        id: 'ds-5', name: 'Meticore (Legacy)', vertical: 'Health', gravity: 50, 
-                        aiScore: 40, aiReason: 'Declining trend. Do not promote.', 
-                        platform: 'Digistore24', url: 'https://meticore.com',
-                        avgPayout: 110, currency: 'USD',
-                        deltaGravity: -30.0, competitionDensity: 'Very High', conversionStability: 'Volatile', safetyScore: 'Risky', trendDirection: 'down'
-                    }
-                ];
-                return [...others, ...newItems];
-             });
-
-          } else if (selectedPlatform === 'ClickBank') {
-             await new Promise(r => setTimeout(r, 2000));
-          } else {
-             await new Promise(r => setTimeout(r, 1500));
-          }
-          
-          setAnalyzing(false);
-          alert(`✅ ${selectedPlatform} Analysis Updated: Market data refreshed successfully.`);
-      } catch (e) {
-          setAnalyzing(false);
-          alert('Failed to refresh.');
-      }
-  };
-
-  const handleAutoDeploy = async () => {
-      // STRICT FILTERS (João's Criteria)
-      // 1. Score > 85
-      // 2. Commission > $40
-      // 3. Safety: Safe
-      const winners = products
-        .filter(p => p.platform === selectedPlatform)
-        .filter(p => p.aiScore > 85)
-        .filter(p => p.avgPayout > 40)
-        .filter(p => p.safetyScore === 'Safe')
-        // SORT PRIORITY: EUR First (ROI Focus)
-        .sort((a, b) => {
-            if (a.currency === 'EUR' && b.currency !== 'EUR') return -1;
-            if (a.currency !== 'EUR' && b.currency === 'EUR') return 1;
-            return b.aiScore - a.aiScore; // Fallback to Score
-        });
-      
-      if (winners.length === 0) {
-          alert('⛔ No products matched the Strict Criteria (Score > 85, Payout > $40, Safe).');
-          return;
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to refresh trends snapshot');
       }
 
-      if (!confirm(`Found ${winners.length} ELITE winners (EUR Priority). Deploy to Europe?`)) return;
+      setSnapshot(data as AdminTrendsSnapshot);
+    } catch (error) {
+      setRequestError(error instanceof Error ? error.message : 'Failed to refresh trends snapshot');
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
-      setAnalyzing(true);
-      
-      try {
-          // Simulate calling the real API for the top winner
-          // In production: await fetch('/api/admin/generate-global', { body: { slug: winners[0].id } ... })
-          const topWinner = winners[0];
-          
-          await new Promise(r => setTimeout(r, 2500));
-          
-          setAnalyzing(false);
-          
-          // Generate realistic link based on logic
-          // If EUR, assume DE/FR focus
-          const lang = topWinner.currency === 'EUR' ? 'de' : 'en'; 
-          const slug = topWinner.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-          const finalLink = `https://health.topproductofficial.com/${lang}/${slug}`;
-          
-          alert(`🚀 Deploy Complete!\n\nTop Winner: ${topWinner.name}\nLink Ready: ${finalLink}\n\n✅ Affiliate ID Verified\n✅ Native Config Applied`);
-          
-      } catch (e) {
-          setAnalyzing(false);
-          alert('Deploy failed.');
-      }
-  };
+  function handleCreatePresell(item: AdminTrendItem) {
+    const params = new URLSearchParams({
+      name: item.title,
+      niche: item.niche,
+    });
+
+    if (item.evidence_urls[0]) {
+      params.set('url', item.evidence_urls[0]);
+    }
+
+    router.push(`/admin/products/new?${params.toString()}`);
+  }
+
+  const showEmptyState = !initialLoading && !requestError && filteredItems.length === 0;
+  const showNoSearchResults = showEmptyState && snapshot.items.length > 0 && searchQuery.trim().length > 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
-      
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-6">
+      <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-                📈 Market Trends & Intelligence
-            </h1>
-            <p className="text-gray-600 mt-1">
-                Real-time product opportunities ranked by Gemini AI.
-            </p>
+          <h1 className="text-3xl font-bold text-gray-800">Market Trends & Intelligence</h1>
+          <p className="mt-1 text-gray-600">
+            Backend-backed trend intelligence using real search signals, optional Gemini analysis, and persisted snapshots.
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-            <GeminiStatusBadge />
-            
-            <button 
-                onClick={handleAutoDeploy}
-                className="bg-purple-600 text-white hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
-            >
-                ⚡ Auto-Deploy Winners
-            </button>
 
-            <button 
-                onClick={handleRefreshAnalysis}
-                disabled={analyzing}
-                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm"
-            >
-                {analyzing ? (
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <svg className="animate-spin h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="animate-pulse">Scanning Marketplace...</span>
-                    </div>
-                ) : (
-                    <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        <span>Refresh Analysis</span>
-                    </>
-                )}
-            </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled
+            title="Coming soon"
+            className="cursor-not-allowed rounded-lg border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-bold text-purple-500 opacity-70"
+          >
+            Auto-Deploy Winners: Coming soon
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRefreshAnalysis}
+            disabled={refreshing}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {refreshing ? 'Refreshing analysis...' : 'Refresh Analysis'}
+          </button>
         </div>
       </div>
 
-      {/* Platform Selector */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-          {(['ClickBank', 'Digistore24', 'BuyGoods', 'MaxWeb'] as Platform[]).map(platform => (
-              <button
-                key={platform}
-                onClick={() => setSelectedPlatform(platform)}
-                className={`px-6 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
-                    selectedPlatform === platform
-                    ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                  {platform}
-              </button>
-          ))}
-      </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Real Search Signals</p>
+          <p className="mt-2 text-sm font-semibold text-gray-800">{sourceLabel(snapshot)}</p>
+          <p className="mt-2 text-xs text-gray-500">{snapshot.source_status.search.detail}</p>
+        </div>
 
-      {/* Top 5 AI Recommendations */}
-      <section>
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              ✨ Top 5 AI Recommendations
-              <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded border border-purple-200">Gemini Scored</span>
-          </h2>
-          
-          {topRecommendations.length === 0 ? (
-              <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed text-gray-500">
-                  {!isPlatformConfigured(selectedPlatform) ? (
-                      <div className="flex flex-col items-center gap-2">
-                          <span className="text-red-500 font-bold">🚫 Connection Required</span>
-                          <span>Please configure {selectedPlatform} in "Config System" to view trends.</span>
-                          <button onClick={() => router.push('/admin/config')} className="text-blue-600 underline">Go to Settings</button>
-                      </div>
-                  ) : (
-                      <span>No data available for {selectedPlatform}. Click "Refresh Analysis".</span>
-                  )}
-              </div>
-          ) : (
-              <div className="grid md:grid-cols-5 gap-4">
-                  {topRecommendations.map((product, idx) => (
-                      <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all relative overflow-hidden group">
-                          <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg z-10">
-                              #{idx + 1}
-                          </div>
-                          
-                          <div className="mb-3">
-                              <h3 className="font-bold text-gray-800 truncate" title={product.name}>{product.name}</h3>
-                              <p className="text-xs text-gray-500">{product.vertical}</p>
-                          </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">AI Analyzed</p>
+          <p className="mt-2 text-sm font-semibold text-gray-800">{geminiLabel(snapshot)}</p>
+          <p className="mt-2 text-xs text-gray-500">{snapshot.source_status.gemini.detail}</p>
+        </div>
 
-                          <div className="mb-4 bg-purple-50 p-2 rounded border border-purple-100">
-                              <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-bold text-purple-700">AI Score</span>
-                                  <span className="text-sm font-black text-purple-800">{product.aiScore}/100</span>
-                              </div>
-                              <div className="w-full bg-purple-200 rounded-full h-1.5 mb-2">
-                                  <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${product.aiScore}%` }}></div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-1 text-[10px] text-purple-800 opacity-80">
-                                <div>
-                                    <span className="block font-bold">Safety</span>
-                                    <span className={`${product.safetyScore === 'Safe' ? 'text-green-600' : product.safetyScore === 'Moderate' ? 'text-yellow-600' : 'text-red-600'}`}>
-                                        {product.safetyScore}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="block font-bold">Comp.</span>
-                                    <span>{product.competitionDensity}</span>
-                                </div>
-                              </div>
-                          </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Last Updated</p>
+          <p className="mt-2 text-sm font-semibold text-gray-800">{formatTimestamp(snapshot.last_updated)}</p>
+          <p className="mt-2 text-xs text-gray-500">
+            {snapshot.items.length ? `${snapshot.items.length} persisted trend items available` : 'No persisted trend items yet'}
+          </p>
+        </div>
 
-                          <p className="text-xs text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                              "{product.aiReason}"
-                          </p>
-
-                          <div className="flex gap-2">
-                            <button 
-                                onClick={() => handleCreatePresell(product)}
-                                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold py-2 rounded hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1"
-                            >
-                                🚀 Create Pre-sell
-                            </button>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          )}
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Snapshot State</p>
+          <p className="mt-2 text-sm font-semibold capitalize text-gray-800">{snapshot.state.replace('_', ' ')}</p>
+          <p className="mt-2 text-xs text-gray-500">
+            {snapshot.state === 'setup_required'
+              ? 'Missing configuration'
+              : snapshot.state === 'error'
+                ? 'Refresh returned one or more errors'
+                : snapshot.state === 'ready'
+                  ? 'Real trend data available'
+                  : 'Run a refresh to create the first snapshot'}
+          </p>
+        </div>
       </section>
 
-      {/* Full Market Table */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800">Full Market List ({selectedPlatform})</h2>
-              <div className="w-64">
-                  <FormInput type="text" placeholder="Search products..." />
+      {requestError && (
+        <section className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-semibold">Unable to load Trends data</p>
+              <p className="text-sm">{requestError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setInitialLoading(true);
+                loadSnapshot()
+                  .catch((error) => setRequestError(error instanceof Error ? error.message : 'Failed to load trends snapshot'))
+                  .finally(() => setInitialLoading(false));
+              }}
+              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!requestError && snapshot.state === 'setup_required' && (
+        <section className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-yellow-900">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-semibold">Setup required</p>
+              <p className="text-sm">
+                Configure SerpApi or Google Custom Search to collect real signals. Configure Gemini if you want AI enrichment.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/config')}
+              className="rounded-lg border border-yellow-300 bg-white px-4 py-2 text-sm font-semibold text-yellow-800"
+            >
+              Open Config
+            </button>
+          </div>
+        </section>
+      )}
+
+      {!requestError && snapshot.errors.length > 0 && (
+        <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Refresh Notes</h2>
+              <p className="text-sm text-gray-500">Partial failures and configuration issues captured during the latest snapshot run.</p>
+            </div>
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+              {snapshot.errors.length} issue{snapshot.errors.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <div className="mt-4 space-y-2 text-sm text-gray-700">
+            {snapshot.errors.slice(0, 8).map((error) => (
+              <div key={error} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                {error}
               </div>
+            ))}
           </div>
-          
-          <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
-                      <tr>
-                          <th className="px-6 py-4">Product Name</th>
-                          <th className="px-6 py-4">Vertical</th>
-                          <th className="px-6 py-4">Gravity/Rank</th>
-                          <th className="px-6 py-4">AI Insight</th>
-                          <th className="px-6 py-4 text-right">Action</th>
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                      {filteredProducts.map((product) => (
-                          <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-2">
-                                  {product.trendDirection === 'up' && <span className="text-green-500 font-bold">↑</span>}
-                                  {product.trendDirection === 'down' && <span className="text-red-500 font-bold">↓</span>}
-                                  {product.trendDirection === 'flat' && <span className="text-gray-400 font-bold">→</span>}
-                                  {product.name}
-                              </td>
-                              <td className="px-6 py-4">
-                                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">
-                                      {product.vertical}
-                                  </span>
-                              </td>
-                              <td className="px-6 py-4 text-gray-600">
-                                  <div className="flex flex-col">
-                                      <span className="font-bold">{product.gravity}</span>
-                                      <span className={`text-xs ${product.deltaGravity >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          {product.deltaGravity > 0 ? '+' : ''}{product.deltaGravity}% (7d)
-                                      </span>
-                                  </div>
-                              </td>
-                              <td className="px-6 py-4 max-w-xs text-gray-500">
-                                  <div className="flex flex-col gap-1">
-                                      <span className="truncate" title={product.aiReason}>{product.aiReason}</span>
-                                      <div className="flex gap-2 text-xs">
-                                          <span className={`px-1.5 py-0.5 rounded border ${
-                                              product.safetyScore === 'Safe' ? 'bg-green-50 border-green-200 text-green-700' :
-                                              product.safetyScore === 'Moderate' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
-                                              'bg-red-50 border-red-200 text-red-700'
-                                          }`}>
-                                              {product.safetyScore === 'Safe' ? '🛡️ Safe' : product.safetyScore === 'Moderate' ? '⚠️ Moderate' : '⛔ Risky'}
-                                          </span>
-                                          <span className="px-1.5 py-0.5 rounded border bg-gray-50 border-gray-200 text-gray-600">
-                                              {product.conversionStability === 'Stable' ? '⚖️ Stable' : '🌊 Volatile'}
-                                          </span>
-                                      </div>
-                                  </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                  <button 
-                                    onClick={() => handleCreatePresell(product)}
-                                    className="text-blue-600 hover:text-blue-800 font-bold text-xs border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded transition-all flex items-center gap-1 ml-auto"
-                                  >
-                                      🚀 Create
-                                  </button>
-                              </td>
-                          </tr>
-                      ))}
-                      {filteredProducts.length === 0 && (
-                          <tr>
-                              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                  No products found for this platform filter.
-                              </td>
-                          </tr>
-                      )}
-                  </tbody>
-              </table>
+        </section>
+      )}
+
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Featured Opportunities</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Ranked by opportunity score from the latest persisted snapshot.
+            </p>
           </div>
+
+          <div className="w-full lg:max-w-sm">
+            <FormInput
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search trends, niches, keywords..."
+            />
+          </div>
+        </div>
+
+        {initialLoading ? (
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-56 animate-pulse rounded-xl border border-gray-200 bg-gray-50" />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {featuredItems.map((item) => (
+              <article key={item.id} className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">{item.title}</h3>
+                    <p className="mt-1 text-sm capitalize text-gray-500">{item.niche}</p>
+                  </div>
+                  <span className={`rounded-full border px-2 py-1 text-xs font-semibold capitalize ${getStatusClasses(item.status)}`}>
+                    {item.status}
+                  </span>
+                </div>
+
+                <p className="mt-4 text-sm leading-6 text-gray-600">{item.summary}</p>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-lg bg-white p-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-400">Opportunity</p>
+                    <p className={`mt-1 text-lg font-bold ${scoreClasses(item.opportunity_score)}`}>{item.opportunity_score}</p>
+                  </div>
+                  <div className="rounded-lg bg-white p-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-400">Competition</p>
+                    <p className={`mt-1 text-lg font-bold ${scoreClasses(100 - item.competition_score)}`}>{item.competition_score}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {item.suggested_keywords.slice(0, 3).map((keyword) => (
+                    <span key={keyword} className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCreatePresell(item)}
+                  className="mt-5 w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-bold text-white"
+                >
+                  Create Pre-sell From Trend
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {showEmptyState && (
+          <div className="mt-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-gray-500">
+            {showNoSearchResults
+              ? `No trends matched "${searchQuery}".`
+              : snapshot.state === 'setup_required'
+                ? 'Missing configuration. Add a search provider, then refresh analysis.'
+                : snapshot.state === 'empty'
+                  ? 'No trend snapshot exists yet. Run Refresh Analysis to generate one.'
+                  : 'No trend data is available right now.'}
+          </div>
+        )}
+      </section>
+
+      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-5">
+          <h2 className="text-lg font-bold text-gray-800">Full Trend List</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Search intent, scoring, and evidence links from the persisted backend snapshot.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-600">
+              <tr>
+                <th className="px-6 py-4">Trend</th>
+                <th className="px-6 py-4">Source</th>
+                <th className="px-6 py-4">Scores</th>
+                <th className="px-6 py-4">Signals</th>
+                <th className="px-6 py-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredItems.map((item) => (
+                <tr key={item.id} className="align-top transition-colors hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{item.title}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${getStatusClasses(item.status)}`}>
+                          {item.status}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                        <span className="rounded bg-gray-100 px-2 py-1 capitalize">{item.niche}</span>
+                        <span className="rounded bg-gray-100 px-2 py-1">{item.search_intent}</span>
+                      </div>
+                      <p className="max-w-xl text-sm text-gray-600">{item.summary}</p>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 text-gray-600">
+                    <div className="space-y-2">
+                      <div className="font-medium text-gray-800">{item.source}</div>
+                      <div className="text-xs text-gray-500">{formatTimestamp(item.last_updated)}</div>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="grid min-w-[180px] grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Trend</p>
+                        <p className={`font-bold ${scoreClasses(item.trend_score)}`}>{item.trend_score}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Opportunity</p>
+                        <p className={`font-bold ${scoreClasses(item.opportunity_score)}`}>{item.opportunity_score}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Competition</p>
+                        <p className="font-bold text-gray-700">{item.competition_score}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Risk</p>
+                        <p className="font-bold text-gray-700">{item.risk_score}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {item.detected_angles.slice(0, 3).map((angle) => (
+                          <span key={angle} className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700">
+                            {angle}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {item.suggested_keywords.slice(0, 4).map((keyword) => (
+                          <span key={keyword} className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex flex-col gap-1 text-xs">
+                        {item.evidence_urls.slice(0, 2).map((url) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="truncate text-blue-600 hover:text-blue-800"
+                          >
+                            {url}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <button
+                      type="button"
+                      onClick={() => handleCreatePresell(item)}
+                      className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-blue-700 transition-colors hover:border-blue-400 hover:text-blue-800"
+                    >
+                      Create Pre-sell
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {showEmptyState && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                    {showNoSearchResults
+                      ? `No results matched "${searchQuery}".`
+                      : 'No trend items available.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );
